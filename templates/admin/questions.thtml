@@ -1,0 +1,7 @@
+{# begin {templatelocation} #}
+<p>{question_adminlist}</p>
+<form action="{action_url}" method="post">
+  <input type="hidden" name="quiz_id" value="{quiz_id}" />
+  <button name="editquestion" class="uk-button uk-button-success" type="submit">{$LANG_QUIZ['add_question']}</button>
+</form>
+{# end {templatelocation} #}

@@ -1,0 +1,1 @@
+# Quizzer plugin for glFusion
