@@ -29,11 +29,7 @@ case 'saveresponse':
         'submitted_ans' => $a_id,
         'correct_ans' => $correct,
     );
-    $sql = "INSERT INTO {$_TABLES['quizzer_values']}
-        (results_id, q_id, value)
-        VALUES ($result_id, $q_id, $a_id)";
-    DB_query($sql);
-
+    Quizzer\Value::Save($result_id, $q_id, $a_id);
 }
 
 header('Content-Type: application/json; charset=utf-8');
