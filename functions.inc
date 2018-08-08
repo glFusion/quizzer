@@ -186,7 +186,6 @@ function plugin_upgrade_quizzer()
 */
 function plugin_geticon_quizzer()
 {
-    global $_CONF;
     return QUIZ_PI_URL . '/images/quizzer.png';
 }
 
