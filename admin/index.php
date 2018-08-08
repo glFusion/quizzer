@@ -182,20 +182,6 @@ case 'deleteQuestion':
 
 // Select the page to display
 switch ($view) {
-case 'results':
-    $instance_id = isset($_GET['instance_id']) ? $_GET['instance_id'] : '';
-    if (!empty($instance_id)) {
-        $other_text = sprintf($LANG_QUIZ['showing_instance'], $instance_id) .
-            ' <a href="' . QUIZ_ADMIN_URL . '/index.php?results=x&quiz_id=' . $quiz_id .
-            '">' . $LANG_QUIZ['clear_instance'] . '</a>';
-    } else {
-        $other_text = '';
-    }
-    $content .= adminMenu($view, 'hdr_form_results', $other_text);
-    //$content .= QUIZ_ResultsTable($quiz_id, true);
-    $content .= listResults($quiz_id, $instance_id);
-    break;
-
 case 'export':
     $Frm = new Quiz($quiz_id);
 
@@ -234,60 +220,10 @@ case 'export':
     exit;
     break;
 
-case 'preview':
-    $content .= adminMenu($view, 'hdr_form_preview');
-    if ($quiz_id != '') {
-        $F = new Quiz($quiz_id);
-        $T = new \Template($_CONF['path'] . '/plugins/quizzer/templates/');
-        $T->set_file('header', 'preview_header.thtml');
-        $T->set_var(array(
-            'frm_name'      => $F->name,
-            'quiz_id'        => $F->id,
-            'frm_link'      => QUIZ_PI_URL . '/index.php?quiz_id=' . $F->id,
-        ) );
-        $T->parse('output', 'header');
-        $content .= $T->finish($T->get_var('output'));
-        $content .= $F->Render('preview');
-    }
-    break;
-
-case 'showhtml':
-    if ($quiz_id != '') {
-        $F = new Quiz($quiz_id);
-        header('Content-type: text/html');
-        echo '<html><body><pre>' .
-            htmlentities($F->Render('preview')) .
-            '</pre></body></html>';
-        exit;
-    }
-    break;
-
-case 'print':
-    $res_id = isset($_REQUEST['res_id']) ? (int)$_REQUEST['res_id'] : 0;
-    if ($quiz_id != '' && $res_id > 0) {
-        $F = new Quiz($quiz_id);
-        $content .= $F->Prt($res_id, true);
-        echo $content;
-        exit;
-    }
-    break;
-
-case 'editresult':
-case 'moderate':
-    $res_id = (int)$_GET['res_id'];
-    $quiz_id = DB_getItem($_TABLES['quizzer_results'], 'quiz_id',
-            "id={$res_id}");
-    if (!empty($quiz_id)) {
-        $F = new Quiz($quiz_id);
-        $F->ReadData($res_id);
-        $content .= $F->Render('edit', $res_id);
-    }
-    break;
-
 case 'editquiz':
     // Edit a single definition
     $Q = new Quiz($quiz_id);
-    $content .= adminMenu($view, 'hlp_edit_form');
+    $content .= adminMenu($view, 'hlp_edit_quiz');
     $content .= $Q->editQuiz();
 
     // Allow adding/removing fields from existing quizzer
@@ -314,15 +250,9 @@ case 'none':
     // In case any modes create their own content
     break;
 
-case 'questions':
-    if (!$isAdmin) COM_404();
-    $content .= adminMenu($view, 'hdr_field_list');
-    $content .= listQuestions();
-    break;
-
 case 'listquizzes':
 default:
-    $content .= adminMenu('listquizzes', 'hdr_form_list');
+    $content .= adminMenu('listquizzes', 'hlp_quiz_list');
     $content .= listQuizzes();
     break;
 
@@ -369,10 +299,6 @@ function listQuizzes()
             'sort' => false,
             'align' => 'center',
         ),
-        array('text' => $LANG_QUIZ['questions'],
-            'field' => 'questions',
-            'sort' => false,
-            'align' => 'center'),
         array('text' => $LANG_QUIZ['submissions'],
             'field' => 'submissions',
             'sort' => false,
@@ -385,10 +311,12 @@ function listQuizzes()
         array('text' => $LANG_QUIZ['enabled'],
             'field' => 'enabled',
             'sort' => false,
+            'align' => 'center',
         ),
-        array('text' => $LANG_QUIZ['action'],
-            'field' => 'action',
+        array('text' => $LANG_QUIZ['export'],
+            'field' => 'export',
             'sort' => true,
+            'align' => 'center',
         ),
         array('text' => $LANG_ADMIN['delete'],
             'field' => 'delete',
@@ -499,7 +427,7 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
     case 'edit':
         $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quiz_id={$A['id']}";
         $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-edit frm-icon-info"></i>',
+                '-edit qz-icon-info"></i>',
                 $url
         );
         break;
@@ -507,7 +435,7 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
     case 'copy':
         $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quiz_id={$A['id']}";
         $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-copy frm-icon-info"></i>',
+                '-copy qz-icon-info"></i>',
                 $url
         );
         break;
@@ -515,13 +443,13 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
     case 'questions':
         $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quiz_id={$A['id']}";
         $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] . '-code frm-icon-info"></i>', $url);
+            '<i class="' . $_CONF_QUIZ['_iconset'] . '-question qz-icon-info"></i>', $url);
         break;
 
     case 'delete':
         $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quiz_id={$A['id']}";
         $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
-                '-trash-o frm-icon-danger" ' .
+                '-trash-o qz-icon-danger" ' .
                 'onclick="return confirm(\'' .$LANG_QUIZ['confirm_delete'] .
                     '?\');"',
                 $url
@@ -542,16 +470,6 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
                 "/>\n";
     break;
 
-    case 'name':
-        $retval = COM_createLink($fieldvalue,
-            QUIZ_ADMIN_URL . '/index.php?action=preview&quiz_id=' . $A['id'],
-            array(
-                'class' => 'tooltip',
-                'title' => $LANG_QUIZ['preview'],
-            )
-        );
-        break;
-
     case 'submissions':
         $url = QUIZ_ADMIN_URL . '/index.php?results=x&quiz_id=' . $A['id'];
         $txt = (int)DB_count($_TABLES['quizzer_results'], 'quiz_id', $A['id']);
@@ -561,6 +479,12 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
                 'title' => $LANG_QUIZ['form_results'],
             )
         );
+        break;
+
+    case 'export':
+        $url = QUIZ_ADMIN_URL . "/index.php?export=x&amp;quiz_id={$A['id']}";
+        $retval = COM_createLink(
+            '<i class="' . $_CONF_QUIZ['_iconset'] . '-download qz-icon-info"></i>', $url);
         break;
 
     case 'action':
@@ -603,14 +527,14 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
     switch($fieldname) {
     case 'edit':
         $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-edit frm-icon-info"></i>',
+                '-edit qz-icon-info"></i>',
             QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;q_id={$A['q_id']}"
         );
         break;
 
     case 'delete':
         $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] . '-trash-o frm-icon-danger"></i>',
+            '<i class="' . $_CONF_QUIZ['_iconset'] . '-trash-o qz-icon-danger"></i>',
             QUIZ_ADMIN_URL . '/index.php?delQuestion=x&q_id=' .
                     $A['q_id'] . '&quiz_id=' . $A['quiz_id'],
             array(
@@ -620,7 +544,6 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
        break;
 
     case 'enabled':
-    case 'required':
         if ($A[$fieldname] == 1) {
             $chk = ' checked ';
             $enabled = 1;
@@ -645,127 +568,6 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
 
     }
 
-    return $retval;
-}
-
-
-/**
-*   Uses lib-admin to list the form results.
-*
-*   @param  string  $quiz_id         ID of form
-*   @param  string  $instance_id    Optional form instance ID
-*   @return string          HTML for the list
-*/
-function listResults($quiz_id, $instance_id='')
-{
-    global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $perm_sql;
-
-    $retval = '';
-
-    if ($quiz_id == '') return $retval;
-
-    $header_arr = array(
-        array('text' => $LANG_QUIZ['action'],
-            'field' => 'action',
-            'sort' => false,
-            'align' => 'center',
-        ),
-        array('text' => $LANG_QUIZ['instance'],
-            'field' => 'instance_id',
-            'sort' => true,
-        ),
-        array('text' => $LANG_QUIZ['submitter'],
-            'field' => 'uid',
-            'sort' => true,
-        ),
-        array('text' => $LANG_QUIZ['submitted'],
-            'field' => 'submitted',
-            'sort' => true,
-        ),
-        array('text' => $LANG_QUIZ['ip_addr'],
-            'field' => 'ip',
-            'sort' => true,
-        ),
-    );
-
-    $defsort_arr = array('field' => 'submitted', 'direction' => 'desc');
-
-    $text_arr = array(
-        'form_url'  => QUIZ_ADMIN_URL . '/index.php?quiz_id=' . $quiz_id,
-    );
-
-    $sql = "SELECT *, FROM_UNIXTIME(dt) as submitted
-            FROM {$_TABLES['quizzer_results']}
-            WHERE quiz_id = '" . DB_escapeString($quiz_id) . "'";
-    if (!empty($instance_id)) {
-        $sql .= " AND instance_id = '" . DB_escapeString($instance_id) . "'";
-    }
-
-    $query_arr = array('table' => 'quizzer_results',
-        'sql' =>  $sql,
-        //'query_fields' => array(''),
-        'default_filter' => ''
-    );
-    $form_arr = array();
-    $options_arr = array(
-        'chkdelete' => true,
-        'chkname' => 'delresmulti',
-        'chkfield' => 'id',
-    );
-    $retval .= ADMIN_list('quizzer', __NAMESPACE__ . '\getField_results',
-                $header_arr, $text_arr, $query_arr, $defsort_arr, '', '',
-                $options_arr, $form_arr);
-    return $retval;
-}
-
-
-/**
-*   Determine what to display in the admin list for each results field.
-*
-*   @param  string  $fieldname  Name of the field, from database
-*   @param  mixed   $fieldvalue Value of the current field
-*   @param  array   $A          Array of all name/field pairs
-*   @param  array   $icon_arr   Array of system icons
-*   @return string              HTML for the field cell
-*/
-function getField_results($fieldname, $fieldvalue, $A, $icon_arr)
-{
-    global $_CONF, $_CONF_QUIZ, $LANG_ADMIN, $LANG_QUIZ;
-
-    $retval = '';
-
-    switch($fieldname) {
-    case 'action':
-        $url = QUIZ_ADMIN_URL . '/index.php?print=x&quiz_id=' . $A['quiz_id'] .
-                '&res_id=' . $A['id'];
-        $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-print frm-icon-info tooltip" title="' . $LANG_QUIZ['print'] .
-                '"></i>',
-            '#',
-            array(
-                'onclick' => "popupWindow('$url', '', 640, 480, 1); return false;",
-            )
-        );
-        $retval .= '&nbsp;<a href="' . QUIZ_ADMIN_URL .
-            '/index.php?editresult=x&res_id=' . $A['id'] . '"><i class="' .
-            $_CONF_QUIZ['_iconset'] . '-edit frm-icon-info tooltip"' .
-            'title="' . $LANG_ADMIN['edit'] . '"></i></a>';
-        break;
-
-    case 'instance_id':
-        $url = QUIZ_ADMIN_URL . '/index.php?results=x&quiz_id=' . $A['quiz_id'];
-        $retval = '<a href="' . $url . '&instance_id=' . $fieldvalue . '">' . $fieldvalue . '</a>';
-        break;
-
-    case 'uid':
-        $retval = COM_getDisplayName($fieldvalue);
-        break;
-
-    default:
-        $retval = $fieldvalue;
-        break;
-    }
     return $retval;
 }
 

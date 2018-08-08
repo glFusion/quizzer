@@ -8,7 +8,7 @@
   <div class="qz-name">{quiz_name}</div>
 {!endif}
 <div class="uk-progress tooltip">
-    <div class="uk-progress-bar" style="width:{pct}%">{q_num} / {num_q}</div>
+    <div class="uk-progress-bar" style="width:{pct}%">{$LANG_QUIZ['question']} {q_num} of {num_q}</div>
 </div>
   <div class="qz-question">{question}</div>
   <div class="qz-answers">

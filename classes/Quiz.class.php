@@ -73,16 +73,13 @@ class Quiz
         } else {
             $this->isNew = true;
             $this->fill_gid = 0;
-//            $this->results_gid = 0;
             $this->group_id = $def_group;
             $this->enabled = 1;
             $this->id = COM_makeSid();
             $this->introtext = '';
             $this->introfields = '';
             $this->name = '';
-//            $this->filled_by = 0;
             $this->onetime = 0;
-            $this->redirect = '';
             $this->num_q = 0;
         }
     }
@@ -140,7 +137,6 @@ class Quiz
         case 'introtext':
         case 'introfields':
         case 'name':
-        case 'redirect':
             $this->properties[$name] = trim($value);
             break;
 
@@ -159,17 +155,6 @@ class Quiz
     */
     public function __get($name)
     {
-        global $_CONF;
-
-        // Special handling, return the site_url by default
-        if ($name == 'redirect') {
-            if (isset($this->properties['redirect']) &&
-                    !empty($this->properties['redirect']))
-                return $this->properties['redirect'];
-            else
-                return $_CONF['site_url'];
-        }
-
         if (array_key_exists($name, $this->properties)) {
             return $this->properties[$name];
         } else {
@@ -246,13 +231,8 @@ class Quiz
         $this->name = $A['name'];
         $this->introtext = $A['introtext'];
         $this->introfields = $A['introfields'];
-        //$this->email = $A['email'];
-//        $this->owner_id = $A['owner_id'];
-//        $this->group_id = $A['group_id'];
         $this->fill_gid = $A['fill_gid'];
-//        $this->results_gid = $A['results_gid'];
         $this->onetime = $A['onetime'];
-        //$this->redirect = $A['redirect'];
         $this->num_q = $A['num_q'];
 
         if ($fromdb) {
@@ -294,38 +274,13 @@ class Quiz
             'name'  => $this->name,
             'introtext' => $this->introtext,
             'introfields' => $this->introfields,
-//            'submit_msg' => $this->submit_msg,
-//            'noaccess_msg' => $this->noaccess_msg,
-//            'noedit_msg' => $this->noedit_msg,
-//            'max_submit' => $this->max_submit,
-//            'max_submit_msg' => $this->max_submit_msg,
-            'redirect' => $this->redirect,
             'ena_chk' => $this->enabled == 1 ? 'checked="checked"' : '',
-            //'mod_chk' => $this->moderate == 1 ? 'checked="checked"' : '',
-            //'owner_dropdown' => QUIZ_UserDropdown($this->owner_id),
             'email' => $this->email,
-/*            'admin_group_dropdown' =>
-QUIZ_GroupDropdown($this->group_id, 3),
- */
             'user_group_dropdown' =>
                     QUIZ_GroupDropdown($this->fill_gid, 3),
-/*            'results_group_dropdown' =>
-                    QUIZ_GroupDropdown($this->results_gid, 3),
-            'emailowner_chk' => $this->onsubmit & QUIZ_ACTION_MAILOWNER ?
-                        'checked="checked"' : '',
-            'emailgroup_chk' => $this->onsubmit & QUIZ_ACTION_MAILGROUP ?
-                        'checked="checked"' : '',
-            'emailadmin_chk' => $this->onsubmit & QUIZ_ACTION_MAILADMIN ?
-                        'checked="checked"' : '',
-            'store_chk' => $this->onsubmit & QUIZ_ACTION_STORE ?
-                        'checked="checked"' : '',
-            'preview_chk' => $this->onsubmit & QUIZ_ACTION_DISPLAY ?
-            'checked="checked"' : '',*/
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
-//            'captcha_chk' => $this->captcha == 1 ? 'checked="checked"' : '',
-//            'inblock_chk' => $this->inblock == 1 ? 'checked="checked"' : '',
             'one_chk_' . $this->onetime => 'selected="selected"',
             'num_q'     => (int)$this->num_q,
             'iconset'   => $_CONF_QUIZ['_iconset'],
@@ -450,12 +405,6 @@ QUIZ_GroupDropdown($this->group_id, 3),
             enabled = '{$this->enabled}',
             fill_gid = '{$this->fill_gid}',
             onetime = '{$this->onetime}'";
-/*            owner_id = '{$this->owner_id}',
-    group_id = '{$this->group_id}',
-            submit_msg = '" . DB_escapeString($this->submit_msg) . "',
-            results_gid = '{$this->results_gid}',
-            redirect = '" . DB_escapeString($this->redirect) . "',
- */
         $sql = $sql1 . $sql2 . $sql3;
         DB_query($sql, 1);
 

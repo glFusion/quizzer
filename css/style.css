@@ -1,5 +1,21 @@
+.qz-icon-ok {
+    color: green;
+}
+.qz-icon-danger {
+    color: red;
+}
+.qz-icon-warning {
+    color: #FFD300;
+}
+.qz-icon-info {
+    color: #0077dd;
+}
+.qz-icon-unknown {
+    color: #530E53;
+}
+
 div.qz-question-wrapper {
-    width: 80%;
+    width: 90%;
 }
 div.qz-incorrect {
     border-width: 3px;
