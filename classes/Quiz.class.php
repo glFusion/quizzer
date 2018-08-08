@@ -39,7 +39,6 @@ class Quiz
     var $allow_submit;  // Turn off the submit button when previewing
     var $isNew;
     var $uid;
-    var $access;
 
 
     /**
@@ -50,7 +49,7 @@ class Quiz
     *   @param  integer $uid    Optional user ID
     *   @param  string  $key    Optional key to retrieve
     */
-    function __construct($id = '', $access=QUIZ_ACCESS_ADMIN)
+    function __construct($id = '')
     {
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
@@ -67,7 +66,7 @@ class Quiz
             $id = COM_sanitizeID($id);
             $this->id = $id;
             $this->isNew = false;
-            if (!$this->Read($id, $access)) {
+            if (!$this->Read($id)) {
                 $this->id = COM_makeSid();
                 $this->isNew = true;
             }
@@ -187,7 +186,7 @@ class Quiz
     *   @param  string  $key    Optional specific key to retrieve
     *   @param  integer $uid    Optional user ID
     */
-    public function Read($id = '', $access=QUIZ_ACCESS_ADMIN)
+    public function Read($id = '')
     {
         global $_TABLES;
 
@@ -196,29 +195,16 @@ class Quiz
         // Clear out any existing items, in case we're reusing this instance.
         $this->fields = array();
 
-        $sql = "SELECT qd.* FROM {$_TABLES['quizzer_quizzes']} qd
-            WHERE qd.id = '" . $this->id . "'";
+        $sql = "SELECT * FROM {$_TABLES['quizzer_quizzes']}
+                WHERE id = '" . $this->id . "'";
         //echo $sql;die;
         $res1 = DB_query($sql, 1);
         if (!$res1 || DB_numRows($res1) < 1) {
-            $this->access = false;
             return false;
         }
 
         $A = DB_fetchArray($res1, false);
         $this->SetVars($A, true);
-        $this->access = $this->hasAccess($access);
-
-        // Now get field inquization
-        $sql = "SELECT *
-                FROM {$_TABLES['quizzer_questions']}
-                WHERE id = '{$this->id}'
-                ORDER BY orderby ASC";
-        //echo $sql;die;
-        $res2 = DB_query($sql, 1);
-        while ($A = DB_fetchArray($res2, false)) {
-            $this->questions[$A['name']] = Question::getInstance($A, $this);
-        }
         return true;
     }
 
@@ -482,10 +468,9 @@ QUIZ_GroupDropdown($this->group_id, 3),
                 DB_query("UPDATE {$_TABLES['quizzer_flddef']}
                         SET frm_id = '{$this->id}'
                         WHERE id = '{$this->old_id}'", 1);
-                Cache::clear('quiz_' . $this->old_id);  // Clear old quiz cache
             }
             CTL_clearCache();       // so autotags pick up changes
-            Cache::clear('quiz_' . $this->id);      // Clear plugin cache
+            Cache::clear();      // Clear plugin cache
             $msg = '';              // no error message if successful
         } else {
             $msg = 5;
@@ -526,7 +511,7 @@ QUIZ_GroupDropdown($this->group_id, 3),
         if ($question == 0) {
             SESS_unset('quizzer_questions');
             SESS_unset('quizzer_resultset');
-            SESS_setVar('quizzer_questions', Question::getQuestions($this->num_q));
+            SESS_setVar('quizzer_questions', Question::getQuestions($this->id, $this->num_q));
         }
 
         if ($question == 0 &&
@@ -534,6 +519,7 @@ QUIZ_GroupDropdown($this->group_id, 3),
                 $T = new \Template(QUIZ_PI_PATH . '/templates');
                 $T->set_file('intro', 'intro.thtml');
                 $T->set_var('introtext', $this->introtext);
+                $T->set_var('quiz_name', $this->name);
                 $introfields = explode('|', $this->introfields);
                 $T->set_block('intro', 'introFields', 'iField');
                 foreach ($introfields as $fld) {
@@ -550,57 +536,9 @@ QUIZ_GroupDropdown($this->group_id, 3),
             $total_q = count($questions);
             if (isset($questions[$question])) {
                 $Q = Question::getInstance($questions[$question]);
-                $retval .= $Q->Render($question >= $total_q);
+                $retval .= $Q->Render($question, $total_q);
             }
         }
-
-/*
-
-        $T = QUIZ_getTemplate('quiz', 'quiz');
-        // Set template variables without allowing caching
-        $T->set_var(array(
-            'frm_action'    => $actionurl,
-            'btn_submit'    => $saveaction,
-            'frm_id'        => $this->id,
-            'introtext'     => $this->introtext,
-            'error_msg'     => isset($_POST['quizzer_error_msg']) ?
-                                $_POST['quizzer_error_msg'] : '',
-            'referrer'      => $referrer,
-            'res_id'        => $res_id,
-            'success_msg'   => self::_stripHtml($success_msg),
-            'help_msg'      => self::_stripHtml($this->help_msg),
-            'pi_url'        => QUIZ_PI_URL,
-            'submit_disabled' => $allow_submit ? '' : 'disabled="disabled"',
-            'instance_id'   => $this->instance_id,
-            'iconset'       => $_CONF_QUIZ['_iconset'],
-            'additional'    => $additional,
-            'ajax'          => $this->sub_type == 'ajax' ? true : false,
-        ), '', false, true );
-
-        $T->set_block('quiz', 'QueueRow', 'qrow');
-        $hidden = '';
-
-        foreach ($this->questions as $Q) {
-            // Fields that can't be rendered (no permission, calc, disabled)
-            // return null. Skip those completely.
-            $rendered = $F->displayField($res_id, $mode);
-            if ($rendered !== NULL) {
-                $T->set_var(array(
-                    'prompt'    => PLG_replaceTags($F->prompt),
-                    'safe_prompt' => self::_stripHtml($F->prompt),
-                    'fieldname' => $F->name,
-                    'field'     => $rendered,
-                    'help_msg'  => self::_stripHtml($F->help_msg),
-                    'spancols'  => isset($F->options['spancols']) && $F->options['spancols'] == 1 ? 'true' : '',
-                    'is_required' => $F->access == QUIZ_FIELD_REQUIRED ? 'true' : '',
-                ), '', false, true);
-                $T->parse('qrow', 'QueueRow', true);
-            }
-        }
-
-        $T->set_var('hidden_vars', $hidden);*/
-    //    $T->parse('output', 'quiz');
-    //    $retval .= $T->finish($T->get_var('output'));
         return $retval;
     }
 

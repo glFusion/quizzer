@@ -18,15 +18,19 @@ namespace Quizzer;
 */
 class Result
 {
-    /** Form fields, array of Field objects
+    /** Questions, with answers
     *   @var array */
-    var $fields = array();
+    var $Questions = array();
+
+    /** Values
+     * @var array */
+    var $Values = array();
 
     /** Result record ID
     *   @var integer */
-    var $id;
+    var $res_id;
 
-    /** Form ID
+    /** Quize ID
     *   @var string */
     var $quiz_id;
 
@@ -46,6 +50,10 @@ class Result
     *   @var string */
     var $token;
 
+    /** Answers provided in intro fields
+     *  @var string */
+    var $introfields;
+
 
     /**
     *   Constructor.
@@ -53,28 +61,47 @@ class Result
     *   then the fields are simply copied from the array, e.g. when displaying
     *   many results in a table.
     *
-    *   @param  mixed   $id     Result set ID or array from DB
+    *   @param  mixed   $res_id     Result set ID or array from DB
     */
-    public function __construct($id=0)
+    public function __construct($res_id=0)
     {
-        if (is_array($id)) {
+        if (is_array($res_id)) {
             // Already read from the DB, just load the values
             $this->SetVars($id);
-        } elseif ($id > 0) {
+            $this->isNew = false;
+        } elseif ($res_id > 0) {
             // Result ID supplied, read it
             $this->isNew = false;
-            $this->id = (int)$id;
-            $this->Read($id);
+            $this->res_id = (int)$res_id;
+            $this->Read($res_id);
         } else {
             // No ID supplied, create a new object
             $this->isNew = true;
-            $this->id = 0;
+            $this->res_id = 0;
             $this->quiz_id = '';
             $this->uid = 0;
             $this->dt = 0;
             $this->ip = '';
             $this->token = '';
+            $this->introfields = '';
         }
+
+        if (!$this->isNew) {    // existing record, get the questions and answers
+            $this->Values = Value::getByResult($this->res_id);
+            $this->Questions = array();
+            foreach ($this->Values as $val) {
+                $this->Questions[$val->q_id] = new Question($val->q_id);
+            }
+        }
+    }
+
+
+    public static function getResult($res_id = 0)
+    {
+        if ($res_id == 0) {
+            $res_id = SESS_getVar('quizzer_resultset');
+        }
+        return new self($res_id);
     }
 
 
@@ -94,7 +121,7 @@ class Result
         if ($id > 0) $this->id = (int)$id;
 
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE results_id = " . $this->id;
+                WHERE res_id = " . $this->id;
         //echo $sql;die;
         $res1 = DB_query($sql);
         if (!$res1)
@@ -118,35 +145,13 @@ class Result
         if (!is_array($A))
             return false;
 
-        $this->id = (int)$A['id'];
+        $this->res_id = (int)$A['res_id'];
         $this->quiz_id = COM_sanitizeID($A['quiz_id']);
         $this->dt = (int)$A['dt'];
-        $this->approved = $A['approved'] == 0 ? 0 : 1;
         $this->uid = (int)$A['uid'];
         $this->ip = $A['ip'];
         $this->token = $A['token'];
-    }
-
-
-    /**
-    *   Find the result set ID for a single form/user combination.
-    *   Assumes only one result per user for a given form.
-    *
-    *   @param  string  $quiz_id     Form ID
-    *   @param  integer $uid        Optional user id, default=$_USER['uid']
-    *   @return integer             Result set ID
-    */
-    public static function FindResult($quiz_id, $uid=0, $token='')
-    {
-        global $_TABLES, $_USER;
-
-        $quiz_id = COM_sanitizeID($quiz_id);
-        $uid = $uid == 0 ? $_USER['uid'] : (int)$uid;
-        $query = "quiz_id='$quiz_id' AND uid='$uid'";
-        if (!empty($token))
-            $query .= " AND token = '" . DB_escapeString($token) . "'";
-        $id = (int)DB_getItem($_TABLES['quizzer_results'], 'id', $query);
-        return $id;
+        $this->introfields = $A['introfields'];
     }
 
 
@@ -159,7 +164,7 @@ class Result
     {
         global $_TABLES;
         $sql = "SELECT * from {$_TABLES['quizzer_values']}
-                WHERE results_id = '{$this->id}'";
+                WHERE res_id = '{$this->id}'";
         $res = DB_query($sql);
         $vals = array();
         // First get the values into an array indexed by field ID
@@ -276,80 +281,13 @@ class Result
         if ($res_id == 0) return false;
         $uid = (int)$uid;
 
-        $keys = array('results_id');
+        $keys = array('res_id');
         $vals = array($res_id);
         if ($uid > 0) {
             $keys[] = 'uid';
             $vals[] = $uid;
         }
-
         DB_delete($_TABLES['quizzer_values'], $keys, $vals);
-    }
-
-
-    /**
-    *   Create a printable copy of the form results.
-    *
-    *   @param  boolean $admin  TRUE if this is done by an administrator
-    *   @return string          HTML page for printable form data.
-    */
-    public function Prt($admin = false)
-    {
-        global $_CONF, $_TABLES, $LANG_FORMS, $_GROUPS;
-
-        // Retrieve the values for this result set
-        $this->GetValues($this->fields);
-
-        $dt = new Date($this->dt, $_CONF['timezone']);
-
-        $T = new Template(QUIZ_PI_PATH . '/templates');
-        $T->set_file('form', 'print.thtml');
-        $T->set_var(array(
-            'introtext'     => $this->introtext,
-            'title'         => $this->name,
-            'filled_by'     => COM_getDisplayName($this->uid),
-            'filled_date'   => $dt->format($_CONF['date'], true),
-        ) );
-
-        if ($admin) $T->set_var('ip_addr', $this->ip);
-
-        $T->set_block('form', 'QueueRow', 'qrow');
-        foreach ($this->fields as $F) {
-            $data = $F->displayValue($this->fields);
-            if ($data === NULL) continue;
-            $prompt = $F->displayPrompt();
-/*
-            if (!in_array($F->results_gid, $_GROUPS)) {
-                continue;
-            }
-            switch ($F->type) {
-            case 'static':
-                $data = $F->GetDefault($F->options['default']);
-                $prompt = '';
-                break;
-            case 'textarea':
-                $data = nl2br($F->value_text);
-                $prompt = $F->prompt == '' ? $F->name : $F->prompt;
-                break;
-            default;
-                $data = $F->value_text;
-                $prompt = $F->prompt == '' ? $F->name : $F->prompt;
-                break;
-            }
-*/
-            $T->set_var(array(
-                'prompt'    => $prompt,
-                'fieldname' => $F->name,
-                'data'      => $data,
-                'colspan'   => $F->options['spancols'] == 1 ? 'true' : '',
-            ) );
-
-            $T->parse('qrow', 'QueueRow', true);
-        }
-
-        $T->parse('output', 'form');
-        return $T->finish($T->get_var('output'));
-
     }
 
 
@@ -366,7 +304,44 @@ class Result
         return $this->token;
     }
 
-}
 
+    public function showScore()
+    {
+        $total_q = 0;
+        $correct = 0;
+
+        foreach ($this->Values as $V) {
+            $total_q++;
+            if ($this->Questions[$V->q_id]->Verify($V->value)) {
+                $correct++;
+            }
+        }
+        $Q = Quiz::getInstance($this->quiz_id);
+        if ($total_q > 0) {
+            $pct = (int)(($correct / $total_q) * 100);
+        } else {
+            $pct = 100;
+        }
+        if ($pct > 75) {
+            $prog_status = 'success';
+        } elseif ($pct < 50) {
+            $prog_status = 'danger';
+        } else {
+            $prog_status = 'warning';
+        } 
+        $T = new \Template(QUIZ_PI_PATH . '/templates');
+        $T->set_file('result', 'finish.thtml');
+        $T->set_var(array(
+            'pct' => $pct,
+            'quiz_name' => $Q->name,
+            'correct' => $correct,
+            'total' => $total_q,
+            'prog_status' => $prog_status,
+        ) );
+        $T->parse('output', 'result');
+        return $T->finish($T->get_var('output'));
+    }
+
+}
 
 ?>
