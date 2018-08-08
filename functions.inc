@@ -271,6 +271,38 @@ function plugin_getheadercss_quizzer()
 
 
 /**
+*   Create the centerblock.
+*
+*   @uses   EVLIST_cb_content()
+*   @param  string  $where  Position (top, etc.)
+*   @param  string  $page   Page currently being displayed
+*   @param  string  $topic  Topic currently being displayed
+*   @return string          HTML for centerblock
+*/
+function plugin_centerblock_quizzer($where, $page, $topic = '')
+{
+    global $_CONF_QUIZ;
+
+    // If we show only on the homepage, check if that's where we are
+    // If a topic is being displayed, then we're not on the homepage
+    if ($_CONF_QUIZ['centerblock'] == 0 ||
+            ($page > 1 || !empty($topic)) ) {
+        return '';
+    }
+
+    $content = '';
+    $Q = Quizzer\Quiz::getFirst();
+    if (!$Q->isNew) {
+        // If the quiz exists, render the question
+        $content = COM_siteHeader();
+        $content .= $Q->Render();
+        $content .= COM_siteFooter();
+    }
+    return $content;
+}
+
+
+/**
 *   Returns a name=>value array of options broken out from the given string.
 *
 *   @param  mixed   $str    Array, or serialized array, of options
