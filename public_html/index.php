@@ -23,7 +23,7 @@ $content = '';
 $action = '';
 $actionval = '';
 $expected = array(
-    'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz', 'next_q',
+    'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz', 'next_q', 'finishquiz',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -44,122 +44,34 @@ if (empty($action)) {
 } else {
     $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
 }
+if ($quiz_id == '') {
+    // Missing quiz ID, get the first enabled one
+    $Q = Quizzer\Quiz::getFirst();
+} else {
+    // Else get the specific quiz
+    $Q = Quizzer\Quiz::getInstance($quiz_id);
+}
 $q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
-
-if ($action == 'mode') $action = $actionval;
 
 switch ($action) {
 case 'saveintro':
     $R = new Quizzer\Result();
-    $R->Create($quiz_id, $_POST['intro']);
+    $R->Create($Q->id, $_POST['intro']);
     SESS_setVar('quizzer_resultset', $R->id);
     echo COM_refresh(QUIZ_PI_URL . '/index.php?startquiz=x&q_id=1');
     break;
 
-case 'savedata':
-    $F = new \Quizzer\Form($_POST['quiz_id']);
-    $redirect = str_replace('{site_url}', $_CONF['site_url'], $F->redirect);
-    $errmsg = $F->SaveData($_POST);
-    if (empty($errmsg)) {
-        // Success
-        if ($F->onsubmit & QUIZ_ACTION_DISPLAY) {
-            $redirect = QUIZ_PI_URL . '/index.php?results=x&res_id=' .
-                    $F->res_id;
-            if ($F->onsubmit & QUIZ_ACTION_STORE) {
-                $redirect .= '&token=' . $F->Result->Token();
-            }
-        } elseif (empty($redirect)) {
-            $redirect = $_CONF['site_url'];
-        }
-        $u = parse_url($redirect);
-        if ($F->submit_msg != '') {
-            LGLIB_storeMessage($F->submit_msg);
-            $msg = '';
-        } else {
-            $msg = isset($_POST['submit_msg']) ? $_POST['submit_msg'] : '1';
-        }
-        $q = array();
-        if (!empty($u['query'])) {
-            parse_str($u['query'], $q);
-        }
-        $q['msg'] = $msg;
-        $q['plugin'] = $_CONF_QUIZ['pi_name'];
-        $q['quiz_id'] = $F->id;
-        //$redirect = $u['scheme'].'://'.$u['host'].$u['path'].'?';
-        $q_arr = array();
-        foreach($q as $key=>$value) {
-            $q_arr[] = "$key=" . urlencode($value);
-        }
-        $sep = strpos($redirect, '?') ? '&' : '?';
-        $redirect .= $sep . join('&', $q_arr);
-        echo COM_refresh($redirect);
-    } else {
-        $msg = '2';
-        if (!isset($_POST['referrer']) || empty($_POST['referrer'])) {
-            $_POST['referrer'] = $_SERVER['HTTP_REFERER'];
-        }
-        $_POST['forms_error_msg'] = $errmsg;
-        QUIZ_showForm($_POST['quiz_id']);
-    }
-    exit;
-    break;
-
-case 'results':
-    $res_id = isset($_REQUEST['res_id']) ? (int)$_REQUEST['res_id'] : 0;
-    $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
-    $token  = isset($_GET['token']) ? $_GET['token'] : '';
-    echo COM_siteHeader();
-    if ($res_id > 0 && $quiz_id != '') {
-        $F = new \Quizzer\Form($quiz_id);
-        $F->ReadData($res_id);
-        if (($F->Result->uid == $_USER['uid'] && $F->Result->Token() == $token)
-                || plugin_isadmin_forms()) {
-            $content .= '<h1>';
-            $content .= $F->submit_msg == '' ? $LANG_FORMS['def_submit_msg'] :
-                    $F->submit_msg;
-            $content .= '</h1>';
-            $content .= $F->Prt($res_id);
-            $content .= '<hr />' . LB;
-            $content .= '<center><a href="' . QUIZ_PI_URL .
-                '/index.php?print=x&res_id=' . $res_id . '&quiz_id=' . $quiz_id .
-                '" target="_blank">' .
-                '<img src="' . $_CONF['layout_url'] .
-                '/images/print.png" border="0" title="' .
-                $LANG01[65] . '"></a></center>';
-        }
-    }
-    echo $content;
-    echo COM_siteFooter();
-    exit;
-    break;
-
-case 'print':
-    $res_id = isset($_REQUEST['res_id']) ? (int)$_REQUEST['res_id'] : 0;
-    $quiz_id = isset($_GET['quiz_id']) ? $_GET['quiz_id'] : '';
-    if ($quiz_id != '' && $res_id > 0) {
-        $F = Quizzer\Form::getInstance($quiz_id);
-        $F->ReadData($res_id);
-        if ((!empty($F->Result) && $F->Result->uid == $_USER['uid']) ||
-                plugin_isadmin_forms() ) {
-            $content .= $F->Prt($res_id, true);
-        }
-        echo $content;
-        exit;
-    }
+case 'finishquiz':
+    $R = Quizzer\Result::getResult();
+    $content .= $R->showScore();
     break;
 
 case 'next_q':
-    echo "here";die;
-    $q_id++;
+    $q_id = isset($_REQUEST['next_q_id']) ? $_REQUEST['next_q_id'] : $q_id++;
 case 'startquiz':
 default:
-    if ($quiz_id == '') {
-        // Missing form ID, we don't know what to do.
-        $Q = Quizzer\Quiz::getFirst();
-    } else {
-        $Q = Quizzer\Quiz::getInstance($quiz_id);
-    }
     if (!$Q->isNew) {
+        // If the quiz exists, render the question
         $content .= $Q->Render($q_id);
     }
     break;
