@@ -18,7 +18,8 @@ var QUIZ_submit = function(frm_id)
                     correct_ans = result.correct_ans;
                     submitted_ans = result.submitted_ans;
                     correct_div = document.getElementById("row_" + correct_ans);
-                    correct_div.className = 'qz-correct';
+                    correct_div.className = 'qz-answerrow qz-correct';
+                    document.getElementById('answer_msg').style.display = "";
                     if (correct_ans == submitted_ans) {
                         // Mark the correct answer
                         status_div = document.getElementById("stat_" + correct_ans);
@@ -27,7 +28,7 @@ var QUIZ_submit = function(frm_id)
                         status_div = document.getElementById("stat_" + submitted_ans);
                         status_div.innerHTML = "<i class=\"uk-icon uk-icon-close uk-icon-medium qz-color-incorrect\"></i>";
                         submitted_div = document.getElementById("row_" + submitted_ans);
-                        submitted_div.className = "qz-incorrect";
+                        submitted_div.className = "qz-answerrow qz-incorrect";
                     }
                     document.getElementById("btn_save").style.display = "none";
                     document.getElementById("btn_next").style.display = "";

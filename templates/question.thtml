@@ -1,28 +1,37 @@
 {# begin {templatelocation} #}
-<form class="uk-form uk-form-horizontal" id="quiz_form" action="{pi_url}/index.php" method="post">
+<form class="uk-form uk-form-horizontal" id="quiz_form" action="{site_url}/quizzer/index.php" method="post">
   <input type="hidden" name="quiz_id" value="{quiz_id}" />
   <input type="hidden" name="q_id" value="{q_id}" />
   <input type="hidden" name="next_q_id" value="{next_q_id}" />
 <div class="qz-question-wrapper">
+{!if quiz_name}
+  <div class="qz-name">{quiz_name}</div>
+{!endif}
+<div class="uk-progress tooltip">
+    <div class="uk-progress-bar" style="width:{pct}%">{q_num} / {num_q}</div>
+</div>
   <div class="qz-question">{question}</div>
   <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
-    <div width="100%" style="clear:both;" id="row_{a_id}">
+    <div id="row_{a_id}" class="qz-answerrow {border_class}">
     <table width="100%">
         <td style="width: 80%">{answer}</td>
         <td>&nbsp;&nbsp;{answer_select}</td>
-        <td style="width:10%" id="stat_{a_id}">&nbsp;</td>
+        <td style="width:10%" id="stat_{a_id}">{icon}</td>
     </tr>
     </table>
     </div>
 <!-- END AnswerRow -->
   </div>
 </div>
-<button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');">Submit</button>
+<div id="answer_msg" class="qz-answermsg" style="display:{answer_vis};">{answer_msg}</div>
+<div class="qz-buttons">
+<button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');" style="display:{sub_btn_vis};">Submit</button>
 {!if is_last}
-<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="finishquiz" style="display:none;">Finish Quiz</button>
+<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="finishquiz" style="display:{next_btn_vis};">Finish Quiz</button>
 {!else}
-<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="next_q" style="display:none;">Next question</button>
+<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="next_q" style="display:{next_btn_vis};">Next question</button>
 {!endif}
+</div>
 </form>
 {# end {templatelocation} #}
