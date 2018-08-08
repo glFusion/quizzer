@@ -223,7 +223,7 @@ case 'export':
 case 'editquiz':
     // Edit a single definition
     $Q = new Quiz($quiz_id);
-    $content .= adminMenu($view, 'hlp_edit_quiz');
+    $content .= adminMenu($view, 'hlp_quiz_edit');
     $content .= $Q->editQuiz();
 
     // Allow adding/removing fields from existing quizzer
@@ -237,7 +237,7 @@ case 'editquestion':
     if (!$isAdmin) COM_404();
     $q_id = isset($_GET['q_id']) ? (int)$_GET['q_id'] : 0;
     $Q = new Question($q_id, $quiz_id);
-    $content .= adminMenu($view, 'hdr_field_edit');
+    $content .= adminMenu($view, 'hlp_question_edit');
     $content .= $Q->EditDef();
     break;
 
@@ -304,7 +304,7 @@ function listQuizzes()
             'sort' => false,
             'align' => 'center',
         ),
-        array('text' => $LANG_QUIZ['name'],
+        array('text' => $LANG_QUIZ['quiz_name'],
             'field' => 'name',
             'sort' => true,
         ),
