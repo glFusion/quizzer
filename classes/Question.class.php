@@ -23,6 +23,7 @@ class Question
     public $Answers = array();  // Answer options
     protected $properties = array();
     protected $sub_type = 'regular';
+    protected $have_answer = 0;     // indicates the answer value
 
     /**
     *   Constructor.  Sets the local properties using the array $item.
@@ -46,7 +47,9 @@ class Question
         } elseif (is_array($id)) {
             $this->SetVars($id, true);
         } else {
-            if ($this->Read($id)) {
+            $q = self::Read($id);
+            if ($q) {
+                $this->SetVars($q);
                 $this->isNew = false;
             }
         }
@@ -87,7 +90,8 @@ class Question
         } elseif (is_numeric($question)) {
             // Received a field ID, have to look up the record to get the type
             $q_id = (int)$question;
-            $question = self::_readFromDB($q_id);
+            COM_errorLog("reading $q_id");
+            $question = self::Read($q_id);
             if (DB_error() || empty($question)) return NULL;
         }
 
@@ -104,30 +108,15 @@ class Question
     *   Read this field definition from the database and load the object
     *
     *   @see Question::SetVars
-    *   @uses Question::_readFromDB()
-    *   @param  string  $name   Optional field name
-    *   @return boolean     Status from SetVars()
+    *   @param  integer $id     Record ID of question
+    *   @return array           DB record array
     */
-    public function Read($id = 0)
-    {
-        if ($id != 0) $this->q_id = $id;
-        $A = self::_readFromDB($id);
-        return $A ? $this->setVars($A, true) : false;
-    }
-
-
-    /**
-    *   Actually read a field from the database
-    *
-    *   @param  integer $id     Question ID
-    *   @return mixed       Array of fields or False on error
-    */
-    private static function _readFromDB($id)
+    public static function Read($id = 0)
     {
         global $_TABLES;
-
+        $id = (int)$id;
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE q_id='" . (int)$id . "'";
+                WHERE q_id = $id";
         $res = DB_query($sql, 1);
         if (DB_error() || !$res) return false;
         return DB_fetchArray($res, false);
@@ -161,13 +150,10 @@ class Question
         case 'name':
         case 'type':
         case 'help_msg':
+        case 'value':
+        case 'answer_msg':
             $this->properties[$name] = trim($value);
             break;
-
-        case 'value':
-            $this->properties['value'] = $this->setValue($value);
-            break;
-
         }
     }
 
@@ -202,21 +188,10 @@ class Question
 
         $this->q_id = $A['q_id'];
         $this->quiz_id = $A['quiz_id'];
-        //$this->orderby = empty($A['orderby']) ? 255 : $A['orderby'];
         $this->enabled = isset($A['enabled']) ? $A['enabled'] : 0;
         $this->question= $A['question'];
-        //$this->name = $A['name'];
-        // Make sure 'type' is set before 'value'
         $this->type = $A['type'];
-        //$this->help_msg = $A['help_msg'];
-
-        /*if (!$fromdb) {
-            $this->options = $this->optsFromForm($_POST);
-            $this->value = $this->valueFromForm($_POST);
-        } else {
-            $this->options = @unserialize($A['options']);
-            if (!$this->options) $this->options = array();
-        }*/
+        $this->answer_msg = $A['answer_msg'];
         return true;
     }
 
@@ -225,7 +200,7 @@ class Question
     *   Render the question
     *   @return string  HTML for the question form
     */
-    public function Render($last = false)
+    public function Render($q_num, $num_q)
     {
         global $_CONF, $_TABLES, $LANG_QUIZ, $_GROUPS, $_CONF_QUIZ;
 
@@ -233,14 +208,41 @@ class Question
         $saveaction = 'savedata';
         $allow_submit = true;
 
+        // Determine if this question has already been answered
+        $res_id = SESS_getVar('quizzer_resultset');
+        $Val = new Value();
+        if ($res_id) {
+            $res_id = (int)$res_id;
+            $Val->Read($res_id, $this->q_id);
+        }
+        if (!$Val->isNew) {
+            $sub_btn_vis = 'none';
+            $next_btn_vis = '';
+            $ans = $Val->value;
+            $this->have_answer = $Val->value;
+        } else {
+            $sub_btn_vis = '';
+            $next_btn_vis = 'none';
+            $this->have_answer = 0;
+        }
+
+        $Q = Quiz::getInstance($this->quiz_id);
         $T = QUIZ_getTemplate('question', 'question');
         // Set template variables without allowing caching
         $T->set_var(array(
             'quiz_id'       => $this->quiz_id,
+            'quiz_name'     => $Q->name,
+            'num_q'         => $num_q,
+            'q_num'         => $q_num,
             'q_id'          => $this->q_id,
             'question'      => $this->question,
-            'next_q_id'     => $this->q_id + 1,
-            'is_last'       => $last,
+            'answer_msg'    => $this->answer_msg,
+            'next_q_id'     => $q_num + 1,
+            'is_last'       => $q_num == $num_q,
+            'sub_btn_vis'   => $sub_btn_vis,
+            'next_btn_vis'  => $next_btn_vis,
+            'answer_vis'    => $this->have_answer ? '' : 'none',
+            'pct'           => (int)(($q_num / $num_q) * 100),
         ) );
 
         $T->set_block('question', 'AnswerRow', 'Answer');
@@ -251,6 +253,28 @@ class Question
                 'answer'    => $A['value'],
                 'answer_select' => $this->makeSelection($A['a_id']),
             ) );
+
+            // If the question has been answered, show the answer and score.
+            // Don't allow updates.
+            if ($this->have_answer > 0) {
+                $correct = $this->getCorrectAnswers();
+                $cls = '';
+                $icon = '';
+                if ($this->have_answer == $A['a_id'] && !in_array($this->have_answer, $correct)) {
+                    $cls = 'qz-incorrect';
+                    $icon = '<i class="uk-icon uk-icon-close uk-icon-medium qz-color-incorrect"></i>';
+                }
+                if (in_array($A['a_id'], $correct)) {
+                    $cls = 'qz-correct';
+                    if (in_array($this->have_answer, $correct)) {
+                        $icon = '<i class="uk-icon uk-icon-check uk-icon-medium qz-color-correct"></i>';
+                    }
+                }
+                $T->set_var(array(
+                    'border_class' => $cls,
+                    'icon' => $icon,
+                ) );
+            }
             $T->parse('Answer', 'AnswerRow', true);
         }
         $T->parse('output', 'question');
@@ -261,7 +285,14 @@ class Question
 
     protected function makeSelection($a_id)
     {
-        return '<input type="radio" name="a_id" value="' . $a_id . '" />';
+        if ($this->have_answer > 0) {
+            $disabled = 'disabled="disabled"';
+            $sel = $this->have_answer == $a_id ? 'checked="checked"' : '';
+        } else {
+            $disabled = '';
+            $sel = '';
+        }
+        return '<input type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
     }
 
 
@@ -280,7 +311,6 @@ class Question
         $correct = array();
         foreach ($this->Answers as $a_id => $ans) {
             if ($ans['correct']) {
-                return $a_id;
                 $correct[] = $a_id;
             }
         }
@@ -309,28 +339,6 @@ class Question
         $T = new \Template(QUIZ_PI_PATH. '/templates/admin');
         $T->set_file('editform', 'editquestion.thtml');
  
-/*        // Create the selection list for the "Position After" dropdown.
-        // Include all options *except* the current one
-        $sql = "SELECT orderby, name
-                FROM {$_TABLES['quizzer_questions']}
-                WHERE q_id <> '{$this->q_id}'
-                AND quiz_id = '{$this->quiz_id}'
-                ORDER BY orderby ASC";
-        $res1 = DB_query($sql, 1);
-        $orderby_list = '';
-        $count = DB_numRows($res1);
-        for ($i = 0; $i < $count; $i++) {
-            $B = DB_fetchArray($res1, false);
-            if (!$B) break;
-            $orderby = (int)$B['orderby'] + 1;
-            if ($this->isNew && $i == ($count - 1)) {
-                $sel =  'selected="selected"';
-            } else {
-                $sel = '';
-            }
-            $orderby_list .= "<option value=\"$orderby\" $sel>{$B['name']}</option>\n";
-        }*/
-
         $T->set_var(array(
             'quiz_name' => DB_getItem($_TABLES['quizzer_quizzes'], 'name',
                             "id='" . DB_escapeString($this->quiz_id) . "'"),
@@ -338,13 +346,11 @@ class Question
             'q_id'      => $this->q_id,
             'question'      => $this->question,
             'type'      => $this->type,
-  //          'prompt'    => $this->prompt,
             'ena_chk'   => $this->enabled == 1 ? 'checked="checked"' : '',
             'doc_url'   => QUIZ_getDocURL('field_def.html'),
- //           'orderby'   => $this->orderby,
             'editing'   => $this->isNew ? '' : 'true',
-//            'orderby_selection' => $orderby_list,
             'help_msg'  => $this->help_msg,
+            'answer_msg' => $this->answer_msg,
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
@@ -389,9 +395,6 @@ class Question
             return 'Invalid form ID';
         }
 
-        // Sanitize the name, especially make sure there are no spaces
-        //$A['name'] = COM_sanitizeID($A['name'], false);
-        //if (empty($A['name']) || empty($A['type']))
         if (empty($A['type']))
             return;
 
@@ -410,21 +413,16 @@ class Question
                 type = '" . DB_escapeString($this->type) . "',
                 enabled = '{$this->enabled}',
                 help_msg = '" . DB_escapeString($this->help_msg) . "',
-                question = '" . DB_escapeString($this->question) . "'";
-/*
-                options = '" . DB_escapeString(@serialize($this->options)) . "',
-                fill_gid = '{$this->fill_gid}',
-                results_gid = '{$this->results_gid}'";
-                //name = '" . DB_escapeString($this->name) . "',
-                //access = '{$this->access}',
-        //orderby = '{$this->orderby}',
-*/
+                question = '" . DB_escapeString($this->question) . "',
+                answer_msg = '" . DB_escapeString($this->answer_msg) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
-
         if (DB_error()) {
             return 5;
+        }
+        if ($q_id == 0) {
+            $q_id = DB_insertID();
         }
 
         // Now save the answers
@@ -438,19 +436,19 @@ class Question
                     $correct = isset($A['correct'][$i]) && $A['correct'][$i] == 1 ? 1 : 0;
                 }
                 $sql = "INSERT INTO {$_TABLES['quizzer_answers']} SET
-                        q_id = '{$this->q_id}',
+                        q_id = '{$q_id}',
                         a_id = '$i',
                         value = '$question',
                         correct = '$correct'
                     ON DUPLICATE KEY UPDATE
                         value = '$question',
                         correct = '$correct'";
-//echo $sql;die;
                 DB_query($sql);
                 if (DB_error()) {
                     return 6;
                 }
             } else {
+                // Answer left blank to remove
                 DB_delete($_TABLES['quizzer_answers'], array('q_id', 'a_id'), array($this->q_id, $i));
             }
         }
@@ -476,11 +474,11 @@ class Question
     *   Save this field to the database.
     *
     *   @uses   AutoGen()
-    *   @param  mixed   $newval Data value to save
+    *   @param  mixed   $value  Data value to save
     *   @param  integer $res_id Result ID associated with this field
     *   @return boolean     True on success, False on failure
     */
-    public function SaveData($newval, $res_id)
+    public function SaveData($value, $res_id)
     {
         global $_TABLES;
 
@@ -488,244 +486,27 @@ class Question
         if ($res_id == 0)
             return false;
 
-        if (isset($this->options['autogen']) &&
-            $this->options['autogen'] == QUIZ_AUTOGEN_SAVE) {
-            $newval = self::AutoGen($this->properties, 'save');
-        }
-
-        // Put the new value back into the array after sanitizing
-        $this->value = $newval;
-        $db_value = $this->prepareForDB($newval);
-
-        //$this->name = $name;
-        $sql = "INSERT INTO {$_TABLES['quizzer_values']}
-                    (results_id, q_id, value)
-                VALUES (
-                    '$res_id',
-                    '{$this->q_id}',
-                    '$db_value'
-                )
-                ON DUPLICATE KEY
-                    UPDATE value = '$db_value'";
-        COM_errorLog($sql);
-        DB_query($sql, 1);
-        $status = DB_error();
-        return $status ? false : true;
+        return Value::Save($res_id, $this->q_id, $value);
     }
 
 
     /**
-    *   Rudimentary date display function to mimic strftime()
-    *   Timestamps don't handle dates far in the past or future.  This function
-    *   does a str_replace using a subset of PHP's date variables.  Only the
-    *   numeric variables with leading zeroes are used.
+    *   Copy this question to another quiz.
     *
-    *   @return string  Date formatted for display
-    */
-    public function DateDisplay()
-    {
-        if ($this->type != 'date')
-            return $this->value_text;
-
-        $dt_tm = explode(' ', $this->value);
-        if (strpos($dt_tm[0], '-')) {
-            list($year, $month, $day) = explode('-', $dt_tm[0]);
-        } else {
-            $year = '0000';
-            $month = '01';
-            $day = '01';
-        }
-        if (isset($dt_tm[1]) && strpos($dt_tm[1], ':')) {
-            list($hour, $minute, $second) = explode(':', $dt_tm[1]);
-        } else {
-            $hour = '00';
-            $minute = '00';
-            $second = '00';
-        }
-
-        switch ($this->options['input_format']) {
-        case 2:
-            $retval = sprintf('%02d/%02d/%04d', $day, $month, $year);
-            break;
-        case 1:
-        default:
-            $retval = sprintf('%02d/%02d/%04d', $month, $day, $year);
-            break;
-        }
-        if ($this->options['showtime'] == 1) {
-            if ($this->options['timeformat'] == '12') {
-                list($hour, $ampm) = $this->hour24to12($hour);
-                $retval .= sprintf(' %02d:%02d %s', $hour, $minute, $ampm);
-            } else {
-                $retval .= sprintf(' %02d:%02d', $hour, $minute);
-            }
-        }
-
-        /*if (empty($this->options['format']))
-            return $this->value;
-
-        $formats = array('%Y', '%d', '%m', '%H', '%i', '%s');
-        $values = array($year, $day, $month, $hour, $minute, $second);
-        $retval = str_replace($formats, $values, $this->options['format']);*/
-
-        return $retval;
-    }
-
-
-    /**
-    *   Get the defined date formats into an array.
-    *   Static for now, maybe allow more user-defined options in the future.
-    *
-    *   return  array   Array of date formats
-    */
-    public function DateFormats()
-    {
-        global $LANG_FORMS;
-        $_formats = array(
-            1 => $LANG_FORMS['month'].' '.$LANG_FORMS['day'].' '.$LANG_FORMS['year'],
-            2 => $LANG_FORMS['day'].' '.$LANG_FORMS['month'].' '.$LANG_FORMS['year'],
-        );
-        return $_formats;
-    }
-
-
-    /**
-    *   Provide a dropdown selection of date formats
-    *
-    *   @param  integer $cur    Option to be selected by default
-    *   @return string          HTML for selection, without select tags
-    */
-    public function DateFormatSelect($cur=0)
-    {
-        $retval = '';
-        $_formats = self::DateFormats();
-        foreach ($_formats as $key => $string) {
-            $sel = $cur == $key ? 'selected="selected"' : '';
-            $retval .= "<option value=\"$key\" $sel>$string</option>\n";
-        }
-        return $retval;
-    }
-
-
-    /**
-    *   Validate the submitted field value(s)
-    *
-    *   @param  array   $vals  All form values
-    *   @return string      Empty string for success, or error message
-    */
-    public function Validate(&$vals)
-    {
-        global $LANG_FORMS;
-
-        $msg = '';
-        if (!$this->enabled) return $msg;   // not enabled
-        if (($this->access & QUIZ_FIELD_REQUIRED) != QUIZ_FIELD_REQUIRED)
-            return $msg;        // not required
-
-        switch ($this->type) {
-        case 'date':
-            if (empty($vals[$this->name . '_month']) ||
-                empty($vals[$this->name . '_day']) ||
-                empty($vals[$this->name . '_year'])) {
-                $msg = $this->prompt . ' ' . $LANG_FORMS['is_required'];
-            }
-            break;
-        case 'time':
-            if (empty($vals[$this->name . '_hour']) ||
-                empty($vals[$this->name . '_minute'])) {
-                $msg = $this->prompt . ' ' . $LANG_FORMS['is_required'];
-            }
-            break;
-        case 'radio':
-            if (empty($vals[$this->name])) {
-                $msg = $this->prompt . ' ' . $LANG_FORMS['is_required'];
-            }
-            break;
-        default:
-            if (empty($vals[$this->name])) {
-                $msg = $this->prompt . ' ' . $LANG_FORMS['is_required'];
-            }
-            break;
-        }
-        return $msg;
-    }
-
-
-    /**
-    *   Copy this field to another form.
-    *
-    *   @see    Form::Duplicate()
+    *   @see    Quiz::Duplicate()
     */
     public function Duplicate()
     {
         global $_TABLES;
 
-        if (is_array($this->options)) {
-            $options = serialize($this->options);
-        } else {
-            $options = $this->options;
-        }
-
         $sql .= "INSERT INTO {$_TABLES['quizzer_questions']} SET
                 quiz_id = '" . DB_escapeString($this->quiz_id) . "',
-                name = '" . DB_escapeString($this->name) . "',
                 type = '" . DB_escapeString($this->type) . "',
                 enabled = {$this->enabled},
-                access = {$this->access},
-                prompt = '" . DB_escapeString($this->prompt) . "',
-                options = '" . DB_escapeString($options) . "',
-                help_msg = '" . DB_escapeString($this->help_msg) . "',
-                fill_gid = {$this->fill_gid},
-                results_gid = {$this->results_gid},
-                orderby = '" . (int)$this->orderby . "'";
+                help_msg = '" . DB_escapeString($this->help_msg) . "'";
         DB_query($sql, 1);
         $msg = DB_error() ? 5 : '';
         return $msg;
-    }
-
-
-    /**
-    *   Get the default value for a field.
-    *   Normally this will be the configured default retuned verbatim.
-    *   It could also be a value from the $_USER array (more maybe to follow).
-    *
-    *   @uses   AutoGen()
-    *   @param  string  $def    Defined default value
-    *   @return string          Actual text to use as the field value.
-    */
-    public function GetDefault($def = '')
-    {
-        global $_USER;
-
-        if (empty($def) &&
-                isset($this->options['autogen']) &&
-                $this->options['autogen'] == QUIZ_AUTOGEN_FILL) {
-            return self::AutoGen($this->name, 'fill');
-        }
-
-        $value = $def;      // by default just return the given value
-        if (isset($def[0]) && $def[0] == '$') {
-            // Look for something like "$_USER:fullname"
-            $A = explode(':', $def);
-            $var = $A[0];
-            $valname = isset($A[1]) ? $A[1] : false;
-            switch (strtoupper($var)) {
-            case '$_USER':
-                if ($valname && isset($_USER[$valname]))
-                    $value = $_USER[$valname];
-                else
-                    $value = '';    // Empty if not available
-                break;
-            case '$NOW':
-                if ($this->type == 'time') {
-                    $value = date('H:i:s');
-                } else {
-                    $value = date('Y-m-d H:i:s');
-                }
-                break;
-            }
-        }
-        return $value;
     }
 
 
@@ -759,127 +540,49 @@ class Question
 
 
     /**
-    *   Get the HTML element ID based on the form and field ID.
-    *   This is for ajax fields that store values in session variables
-    *   instead of result sets.
-    *   Also uses the field value if available and needed, such as for
-    *   multi-checkboxes.
-    *
-    *   @param  string  $val    Optional field value
-    *   @return string          ID string for the field element
-    */
-    public function _elemID($val = '')
-    {
-        $name  = str_replace(' ', '', $this->name);
-        $id = 'quizzer_' . $this->quiz_id . '_' . $name;
-        if (!empty($val)) {
-            $id .= '_' . str_replace(' ', '', $val);
-        }
-        return $id;
-    }
-
-
-    /**
-    *   Default function to get the field value from the form
-    *   Just returns the form value
-    *   @param  array   $A      Array of form values, e.g. $_POST
-    *   @return mixed           Question value
-    */
-    public function valueFromForm($A)
-    {
-        return isset($A[$this->name]) ? $A[$this->name] : '';
-    }
-
-
-    /**
-    *   Get the value from the database.
-    *   Typically this is just copying the "value" field, but
-    *   some field types may need to unserialize values.
-    *
-    *   @param  array   $A      Array of all DB fields
-    *   @return mixed           Value field used by the object
-    */
-    public function valueFromDB($A)
-    {
-        return $A['value'];
-    }
-
-
-    /**
-    *   Default function to get the display value for a field
-    *   Just returns the raw value
-    *
-    *   @param  array   $fields     Array of all field objects (for calc-type)
-    *   @return string      Display value
-    */
-    public function displayValue($fields)
-    {
-        global $_GROUPS;
-
-        if (!$this->canViewResults()) return NULL;
-        return htmlspecialchars($this->value);
-    }
-
-
-    /**
-    *   Default function to get the field prompt.
-    *   Gets the user-defined prompt, if any, or falls back to the field name.
-    *
-    *   @return string  Question prompt
-    */
-    public function displayPrompt()
-    {
-        return $this->prompt == '' ? $this->name : $this->prompt;
-    }
-
-
-    public function setValue($value)
-    {
-        return trim($value);
-    }
-
-
-    /**
-    *   Get the value to be rendered in the form
-    *
-    *   @param  integer $res_id     Result set ID
-    *   @param  string  $mode       View mode, e.g. "preview"
-    *   @return mixed               Question value used to populate form
-    */
-    protected function renderValue($res_id, $mode, $valname = '')
-    {
-        $value = '';
-
-        if (isset($_POST[$this->name])) {
-            // First, check for a POSTed value. The form is being redisplayed.
-            $value = $_POST[$this->name];
-        } elseif ($this->getSubType() == 'ajax' && SESS_isSet($this->_elemID($valname))) {
-            // Second, if this is an AJAX form check the session variable.
-            $value = SESS_getVar($this->_elemID());
-        } elseif ($res_id == 0 || $mode == 'preview') {
-            // Finally, use the default value if defined.
-            if (isset($this->options['default'])) {
-                $value = $this->GetDefault($this->options['default']);
-            }
-        } else {
-            $value = $this->value;
-        }
-        return $value;
-    }
-
-
-    public static function getQuestions($max = 0)
+     * Get all the questions to show for a quiz.
+     *
+     * @param   integer $quiz_id    Quiz ID
+     * @param   integer $max        Max questions, default to all
+     * @return  array       Array of question data
+     */
+    public static function getQuestions($quiz_id, $max = 0)
     {
         global $_TABLES;
-        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']} ORDER BY RAND()";
+
+        $quiz_id = (int)$quiz_id;
         $max = (int)$max;
+        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
+                WHERE quiz_id = $quiz_id
+                ORDER BY RAND()";
         if ($max > 0) $sql .= " LIMIT $max";
         $res = DB_query($sql);
+
+        // Question #0 indicates the start of the quiz, so index actual
+        // questions starting at #1
         $questions = array();
         $i = 1;
         while ($A = DB_fetchArray($res, false)) {
             $questions[$i] = $A;
             $i++;
+        }
+        return $questions;
+    }
+
+
+    /**
+     * Get all the questions for a result set
+     *
+     * @param   array   $ids    Array of question ids, from the resultset
+     * @return  array       Array of question objects
+     */
+    public static function getByIds($ids)
+    {
+        global $_TABLES;
+
+        $questions = array();
+        foreach ($ids as $id) {
+            $questons[] = new self($id);
         }
         return $questions;
     }

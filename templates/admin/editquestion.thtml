@@ -50,6 +50,14 @@
     </div>
 
     <div class="uk-form-row">
+      <label class="uk-form-label">{$LANG_QUIZ['answer_msg']}</label>
+      <div class="uk-form-controls">
+        <span id="hlp_fld_name" class="tooltip_cfg tooltipstered"></span>
+        <textarea rows="3" cols="60" name="answer_msg">{answer_msg}</textarea>
+      </div>
+    </div>
+
+    <div class="uk-form-row">
       <label for="f_enabled" class="uk-form-label">{$LANG_QUIZ['enabled']}</label>
       <div class="uk-form-controls">
         <span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
