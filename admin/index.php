@@ -538,7 +538,7 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
         }
         $retval = "<input name=\"{$fieldname}_{$A['id']}\" " .
                 "type=\"checkbox\" $chk " .
-                "onclick='QUIZtoggleEnabled(this, \"{$A['id']}\", \"form\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' " .
+                "onclick='QUIZtoggleEnabled(this, \"{$A['id']}\", \"quiz\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' " .
                 "/>\n";
     break;
 
@@ -630,7 +630,7 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
         }
         $retval = "<input name=\"{$fieldname}_{$A['q_id']}\" " .
                 "type=\"checkbox\" $chk " .
-                "onclick='QUIZtoggleEnabled(this, \"{$A['q_id']}\", \"field\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' ".
+                "onclick='QUIZtoggleEnabled(this, \"{$A['q_id']}\", \"question\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' ".
                 "/>\n";
     break;
 

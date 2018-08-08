@@ -1,6 +1,6 @@
 /*  Toggle DB fields based on checkbox actions.
 */
-var FRMtoggleEnabled = function(cbox, id, type, component) {
+var QUIZtoggleEnabled = function(cbox, id, type, component) {
     oldval = cbox.checked ? 0 : 1;
     var dataS = {
         "action" : "toggleEnabled",
@@ -13,7 +13,7 @@ var FRMtoggleEnabled = function(cbox, id, type, component) {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: site_admin_url + "/plugins/forms/ajax.php",
+        url: site_admin_url + "/plugins/quizzer/ajax.php",
         data: data,
         success: function(result) {
             cbox.checked = result.newval == 1 ? true : false;
