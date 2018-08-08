@@ -32,6 +32,11 @@ var QUIZ_submit = function(frm_id)
                     }
                     document.getElementById("btn_save").style.display = "none";
                     document.getElementById("btn_next").style.display = "";
+                    if (result.answer_msg != "") {
+                        ans_div = document.getElementById('answer_msg');
+                        ans_div.innerHTML = result.answer_msg;
+                        ans_div.style.display = "";
+                    }
                 }
             } catch(err) {
             }
