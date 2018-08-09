@@ -108,6 +108,22 @@ function plugin_cclabel_quizzer()
 
 
 /**
+* Returns the items for this plugin that should appear on the main menu
+*
+* NOTE: this MUST return the url/value pairs in the following format
+* $<arrayname>[<label>] = <url>
+*
+* @return    array   Associative array of menu items to be added to menu
+*/
+function plugin_getmenuitems_quizzer()
+{
+    global $LANG_QUIZ;
+
+    return array($LANG_QUIZ['start_quiz'] => QUIZ_PI_URL);
+}
+
+
+/**
 *   Check if the current user is a plugin admin
 *
 *   @see    SEC_hasRights()
@@ -423,6 +439,19 @@ function plugin_user_move_quizzer($origUID, $destUID)
 
 
 /**
+*   Select group for "default user group" config variable
+*
+*   @uses   QUIZ_GetGroups()
+*   @return array Array of groups
+*/
+function plugin_configmanager_select_fill_gid_quizzer()
+{
+    global $_CONF_QUIZ;
+    return FRM_GetGroups($_CONF_QUIZ['fill_gid']);
+}
+
+
+/**
 *   Create an array of groups.
 *
 *   @param  boolean $nogroup    True if "No Group" is an option.
@@ -484,8 +513,49 @@ function QUIZ_getTemplate($name, $id='', $path='')
     return $T;
 }
 
-// Temporary until glFusion 1.6.0
-isset($_SYSTEM['framework']) || $_SYSTEM['framework'] = 'legacy';
+
+/**
+*   Get an array variable, first checking whether it's set
+*
+*   @param  array   $A          Array where var should be
+*   @param  string  $varname    Name of array element
+*   @param  string  $type       Type of return value
+*   @param  mixed   $default    Default value, if any
+*   @return     Array element or NULL, cast to $type
+*/
+function QUIZ_getVar($A, $varname, $type = 'string', $default = NULL)
+{
+    if (!isset($A[$varname])) {
+        return $default;
+    } else {
+        $val = $A[$varname];
+    }
+    switch ($type) {
+    case 'int':
+    case 'integer':
+        return (int)$val;
+        break;
+    case 'bool':
+        return (bool)$val;
+        break;
+    case 'float':
+        return (float)$val;
+        break;
+    case 'array':
+        if ($val === NULL) {
+            $val = array();
+        } elseif (!is_array($val)) {
+            $val = array($val);
+        }
+        return $val;
+        break;
+    case 'string':
+    default:
+        return (string)$val;
+        break;
+    }
+}
+
 $_CONF_QUIZ['_is_uikit'] = $_SYSTEM['framework'] == 'uikit' ? true : false;
 $_CONF_QUIZ['_iconset'] = $_CONF_QUIZ['_is_uikit'] ? 'uk-icon' : 'fa fa';
 
