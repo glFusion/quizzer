@@ -69,4 +69,7 @@ $_SQL = array(
 ) ENGINE=MyISAM",
 );
 
+$_QUIZ_UPGRADE_SQL = array(
+);
+
 ?>

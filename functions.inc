@@ -5,7 +5,7 @@
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
 *   @package    quizzer
-*   @version    0.0.1
+*   @version    0.0.2
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
@@ -156,31 +156,6 @@ function plugin_getadminoption_quizzer()
         return false;
     }
 }
-
-
-/**
-*   Get the user menu option for this plugin.
-*   Returns an option to administer the user's quizzer, if they own any.
-*
-*   @return array   Array of menu items or blank if user has no quizzer
-*/
-/*function plugin_getuseroption_quizzer()
-{
-    global $LANG_QUIZ, $_CONF, $_CONF_QUIZ, $_USER, $_GROUPS, $_TABLES;
-
-    $uid = (int)$_USER['uid'];
-    if ($uid < 2) return '';
-    $groups = implode(',', $_GROUPS);
-
-    $form_cnt = (int)DB_getItem($_TABLES['quizzer_quizzes'], 'COUNT(*)',
-                    "owner_id='{$uid}' OR group_id IN ({$groups})");
-    if ($form_cnt < 1) return '';
-
-    $menu = array($LANG_QUIZ['menu_title'],
-            QUIZ_ADMIN_URL . '/index.php?view=listquizzer',
-            $form_cnt);
-    return $menu;
-}*/
 
 
 /**
