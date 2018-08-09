@@ -50,6 +50,10 @@ $INSTALL_plugin['quizzer'] = array(
             'table'     => $_TABLES['quizzer_results'],
             'sql'       => $_SQL['quizzer_results']),
 
+    array('type' => 'table',
+            'table'     => $_TABLES['quizzer_values'],
+            'sql'       => $_SQL['quizzer_values']),
+
    array('type' => 'group',
             'group' => 'quizzer Admin',
             'desc' => 'Users in this group can administer the Quizzer plugin',
@@ -93,7 +97,7 @@ function plugin_install_quizzer()
 *
 *   @return   boolean     true = proceed with install, false = an error occured
 */
-function Xplugin_load_configuration_quizzer()
+function plugin_load_configuration_quizzer()
 {
     global $_CONF, $_CONF_QUIZ, $_TABLES;
 
