@@ -3,9 +3,9 @@
 *   Public API functions for the Quizzer plugin for glFusion.
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2010-2017 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
 *   @package    quizzer
-*   @version    0.3.1
+*   @version    0.0.1
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
@@ -447,7 +447,7 @@ function plugin_user_move_quizzer($origUID, $destUID)
 function plugin_configmanager_select_fill_gid_quizzer()
 {
     global $_CONF_QUIZ;
-    return FRM_GetGroups($_CONF_QUIZ['fill_gid']);
+    return QUIZ_GetGroups($_CONF_QUIZ['fill_gid']);
 }
 
 
