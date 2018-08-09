@@ -58,7 +58,6 @@
         <span id="hlp_answer_msg" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <span id="hlp_fld_name" class="tooltip_cfg tooltipstered"></span>
         <textarea rows="3" cols="60" name="answer_msg">{answer_msg}</textarea>
       </div>
     </div>
