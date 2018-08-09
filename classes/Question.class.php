@@ -255,9 +255,9 @@ class Question
 
             // If the question has been answered, show the answer and score.
             // Don't allow updates.
+            $cls = 'qz-unanswered';
             if ($this->have_answer > 0) {
                 $correct = $this->getCorrectAnswers();
-                $cls = '';
                 $icon = '';
                 if ($this->have_answer == $A['a_id'] && !in_array($this->have_answer, $correct)) {
                     $cls = 'qz-incorrect';
@@ -270,10 +270,12 @@ class Question
                     }
                 }
                 $T->set_var(array(
-                    'border_class' => $cls,
                     'icon' => $icon,
                 ) );
             }
+            $T->set_var(array(
+                'border_class' => $cls,
+            ) );
             $T->parse('Answer', 'AnswerRow', true);
         }
         $T->parse('output', 'question');
@@ -282,38 +284,42 @@ class Question
     }
 
 
+    /**
+     * Create the input selection for one answer.
+     * Does not display the text for the answer, only the input element.
+     * Must be overridden by the actual question class (radio, etc.)
+     *
+     * @param   integer $a_id   Answer ID
+     * @return  string          HTML for input element
+     */
     protected function makeSelection($a_id)
     {
-        if ($this->have_answer > 0) {
-            $disabled = 'disabled="disabled"';
-            $sel = $this->have_answer == $a_id ? 'checked="checked"' : '';
-        } else {
-            $disabled = '';
-            $sel = '';
-        }
-        return '<input id="ans_id_' . $a_id . '" type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+        return '';
     }
 
 
+    /**
+     * Check whether the supplied answer ID is correct for this question.
+     *
+     * @param   integer $a_id   Answer ID
+     * @return  boolean         True if correct, False if incorrect
+     */
     public function Verify($a_id)
     {
-        if ($this->Answers[$a_id]['correct'] == 1) {
-            return true;
-        } else {
-            return false;
-        }
+        return false;
     }
 
 
+    /**
+     * Get the ID of the correct answer.
+     * Returns an array regardless of the actuall numbrer of possibilities
+     * to ensure uniform handling by the caller.
+     *
+     * @return   array      Array of correct answer IDs
+     */
     public function getCorrectAnswers()
     {
-        $correct = array();
-        foreach ($this->Answers as $a_id => $ans) {
-            if ($ans['correct']) {
-                $correct[] = $a_id;
-            }
-        }
-        return $correct;
+        return array();
     }
 
 

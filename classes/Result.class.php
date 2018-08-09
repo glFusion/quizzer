@@ -90,7 +90,7 @@ class Result
             $this->Values = Value::getByResult($this->res_id);
             $this->Questions = array();
             foreach ($this->Values as $val) {
-                $this->Questions[$val->q_id] = new Question($val->q_id);
+                $this->Questions[$val->q_id] = Question::getInstance($val->q_id);
             }
         }
     }

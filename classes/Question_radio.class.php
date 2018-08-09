@@ -18,75 +18,58 @@ namespace Quizzer;
 class Question_radio extends Question
 {
     /**
-    *   Create a single form field for data entry.
-    *
-    *   @param  integer $res_id Results ID, zero for new form
-    *   @param  string  $mode   Mode, e.g. "preview"
-    *   @return string      HTML for this field, including prompt
-    */
-    public function displayQuestion($res_id = 0, $mode = NULL)
-    {
-        $values = QUIZ_getOpts($this->options['values']);
-        if (!is_array($values)) {
-            // Have to have some values for multiple checkboxes
-            return '';
-        }
-        // If no current value, use the defined default
-        if (is_null($this->value)) {
-            $this->value = $this->options['default'];
-        }
-        $elem_id = $this->_elemID();
-        $js = $this->renderJS($mode);
-        $access = $this->renderAccess();
-        $fld = '';
-        foreach ($values as $id=>$value) {
-            $sel = $this->value == $value ? 'checked="checked"' : '';
-            $fld .= "<input $access type=\"radio\" name=\"{$this->name}\"
-                        id=\"" . $elem_id . '_' . $value . "\"
-                        value=\"$value\" $sel $js>&nbsp;$value&nbsp;\n";
-        }
-        return $fld;
-    }
-
-
-    /**
-    *   Get the field options when the definition form is submitted.
-    *
-    *   @param  array   $A  Array of all form fields
-    *   @return array       Array of options for this field type
-    */
-    public function optsFromQuiz($A)
-    {
-        // Call the parent to get default options
-        $options = parent::optsFromQuiz($A);
-        // Add in options specific to this field type
-        $newvals = array();
-        foreach ($A['selvalues'] as $val) {
-            if (!empty($val)) {
-                $newvals[] = $val;
-            }
-        }
-        $options['default'] = '';
-        if (isset($A['sel_default'])) {
-            $default = (int)$A['sel_default'];
-            if (isset($A['selvalues'][$default])) {
-                $options['default'] = $A['selvalues'][$default];
-            }
-        }
-        $options['values'] = $newvals;
-        return $options;
-    }
-
-
-    /**
-     * Verify an answer
+     * Create the input selection for one answer.
+     * Does not display the text for the answer, only the input element.
      *
-     * @param   integer     Number of selection
-     * @return  integer     Number of correct selection
+     * @param   integer $a_id   Answer ID
+     * @return  string          HTML for input element
      */
-    public function checkAnswer($answer = 0)
+    protected function makeSelection($a_id)
     {
-        return $this->correctAnswer;
+        // Show the answer as disabled and checked if the answer has already
+        // been submitted.
+        if ($this->have_answer > 0) {
+            $disabled = 'disabled="disabled"';
+            $sel = $this->have_answer == $a_id ? 'checked="checked"' : '';
+        } else {
+            $disabled = '';
+            $sel = '';
+        }
+        return '<input id="ans_id_' . $a_id . '" type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+    }
+
+
+    /**
+     * Verify the supplied answer ID against the correct value
+     *
+     * @param   integer $a_id   Answer ID
+     * @return  boolean         True if correct, False if incorrect
+     */
+    public function Verify($a_id)
+    {
+        if ($this->Answers[$a_id]['correct'] == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Get the ID of the correct answer.
+     * Returns an array, even though only one radio button is correct,
+     * to ensure uniform handling by the caller.
+     *
+     * @return   array      Array of correct answer IDs
+     */
+    public function getCorrectAnswers()
+    {
+        foreach ($this->Answers as $a_id => $ans) {
+            if ($ans['correct']) {
+                return array($a_id);
+            }
+        }
+        return array(0);   // Failsafe, but should not happen
     }
 
 }
