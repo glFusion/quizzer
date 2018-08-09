@@ -14,18 +14,11 @@
   <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
     <div id="row_{a_id}" class="qz-answerrow {border_class}">
-      <div style="width:80%;display:inline-block;">
-        <label for="ans_id_{a_id}">{answer}</label>
-      </div>
-      <div style="width:5px; display:inline-block;">
-        {answer_select}
-      </div>
-      <div style="width:10%; display:inline-block; float:right;" id="stat_{a_id}">{icon}</div>
-<!--        <td style="width: 80%">{answer}</td>
-        <td>&nbsp;&nbsp;{answer_select}</td>
-        <td style="width:10%" id="stat_{a_id}">{icon}</td>
-    </tr>
-    </table>-->
+      <label>
+      <span class="qz-answerrow-question">{answer}</span>
+      <span class="qz-answerrow-select">{answer_select}</span>
+      </label>
+      <span class="qz-answerrow-icon" id="stat_{a_id}">{icon}</span>
     </div>
 <!-- END AnswerRow -->
   </div>

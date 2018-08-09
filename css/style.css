@@ -17,13 +17,14 @@
 div.qz-question-wrapper {
     width: 90%;
 }
+div.qz-unanswered {
+    border: 3px solid transparent;
+}
 div.qz-incorrect {
-    border-width: 3px;
-    border: red solid;
+    border: 3px solid red;
 }
 div.qz-correct {
-    border-width: 3px;
-    border: lightgreen solid;
+    border: 3px solid lightgreen;
 }
 .qz-color-incorrect {
     color: red;
@@ -45,8 +46,9 @@ div.qz-answers {
 }
 div.qz-answers div {
     clear: both;
-    line-height: 1.5rem;
+    min-height: 2rem;
     margin-bottom: 10px;
+    padding: 5px;
 }
 div.qz-name {
     font-size: xx-large;
@@ -66,4 +68,19 @@ div.qz-answermsg {
 }
 div.qz-answerrow label {
     font-weight: normal;
+}
+.qz-answerrow-question {
+    width: 80%;
+    display: inline-block;
+    vertical-align: top;
+}
+.qz-answerrow-select {
+    width: 5px;
+    display: inline-block;
+    vertical-align: top;
+}
+.qz-answerrow-icon {
+    width: 10%;
+    display: inline-block;
+    float:right;
 }
