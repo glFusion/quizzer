@@ -20,11 +20,11 @@ class Result
 {
     /** Questions, with answers
     *   @var array */
-    var $Questions = array();
+    public $Questions = array();
 
     /** Values
      * @var array */
-    var $Values = array();
+    public $Values = array();
 
     /** Result record ID
     *   @var integer */
@@ -67,7 +67,7 @@ class Result
     {
         if (is_array($res_id)) {
             // Already read from the DB, just load the values
-            $this->SetVars($id);
+            $this->SetVars($res_id);
             $this->isNew = false;
         } elseif ($res_id > 0) {
             // Result ID supplied, read it
@@ -340,6 +340,28 @@ class Result
         ) );
         $T->parse('output', 'result');
         return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Find a particular quiz
+     *
+     * @param   string  $quiz_id    Quiz ID
+     * @return  object      Quiz object
+     */
+    public static function findQuiz($quiz_id)
+    {
+        global $_TABLES;
+
+        $results = array();
+        $quiz_id = DB_escapeString($quiz_id);
+        $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
+                WHERE quiz_id = '$quiz_id'";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $results[] = new self($A);
+        }
+        return $results;
     }
 
 }

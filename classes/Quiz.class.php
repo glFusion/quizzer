@@ -72,7 +72,7 @@ class Quiz
             }
         } else {
             $this->isNew = true;
-            $this->fill_gid = 0;
+            $this->fill_gid = $_CONF_QUIZ['fill_gid'];
             $this->group_id = $def_group;
             $this->enabled = 1;
             $this->id = COM_makeSid();
@@ -81,6 +81,7 @@ class Quiz
             $this->name = '';
             $this->onetime = 0;
             $this->num_q = 0;
+            $this->levels = 0;
         }
     }
 
@@ -137,6 +138,7 @@ class Quiz
         case 'introtext':
         case 'introfields':
         case 'name':
+        case 'levels':
             $this->properties[$name] = trim($value);
             break;
 
@@ -234,6 +236,7 @@ class Quiz
         $this->fill_gid = $A['fill_gid'];
         $this->onetime = $A['onetime'];
         $this->num_q = $A['num_q'];
+        $this->levels = $A['levels'];
 
         if ($fromdb) {
             // Coming from the database
@@ -242,7 +245,6 @@ class Quiz
         } else {
             // This is coming from the quiz edit form
             $this->enabled = isset($A['enabled']) ? 1 : 0;
-
             $this->old_id = $A['old_id'];
         }
     }
@@ -283,6 +285,7 @@ class Quiz
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
             'one_chk_' . $this->onetime => 'selected="selected"',
             'num_q'     => (int)$this->num_q,
+            'levels'    => $this->levels,
             'iconset'   => $_CONF_QUIZ['_iconset'],
         ) );
         if (!$this->isNew) {
@@ -404,7 +407,9 @@ class Quiz
             introfields= '" . DB_escapeString($this->introfields) . "',
             enabled = '{$this->enabled}',
             fill_gid = '{$this->fill_gid}',
-            onetime = '{$this->onetime}'";
+            onetime = '{$this->onetime}',
+            num_q = {$this->num_q},
+            levels = '" . DB_escapeString($this->levels) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         DB_query($sql, 1);
 
@@ -423,15 +428,6 @@ class Quiz
             $msg = '';              // no error message if successful
         } else {
             $msg = 5;
-        }
-
-        // Finally, if the option is selected, update each field's permission
-        // with the quiz's.
-        if (isset($A['reset_fld_perm'])) {
-            DB_query("UPDATE {$_TABLES['quizzer_flddef']} SET
-                    fill_gid = '{$this->fill_gid}',
-                    results_gid = '{$this->results_gid}'
-                WHERE id = '{$this->id}'", 1);
         }
         return $msg;
     }
@@ -650,6 +646,137 @@ class Quiz
             $Q = new self();
         }
         return $Q;
+    }
+
+
+    /**
+     * Get the class to use for the scoring progress bars
+     *
+     * @param   float   $pct    Percentage of correct answers
+     * @return  string          Class to use
+     */
+    private function _getGrade($pct)
+    {
+        static $scores = NULL;
+        if ($scores === NULL) $scores = explode('|', $this->levels);
+        $levels = array('success', 'warning', 'danger');
+        $max_i = min(count($scores), 3);
+        $grade = 'danger';
+        for ($i = 0; $i < $max_i; $i++) {
+            if ($pct >= (float)$scores[$i]) {
+                $grade = $levels[$i];
+                break;
+            }
+        }
+        return $grade;
+    }
+
+
+    /**
+     * Display a summary of results by question.
+     * Shows each question and the average score for that question.
+     *
+     * @return  string  HTML for display
+     */
+    public function resultByQuestion()
+    {
+        global $_TABLES;
+
+        $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
+        $T->set_file('results', 'resultsbyq.thtml');
+        $T->set_var('quiz_name', $this->name);
+        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
+                WHERE quiz_id = '{$this->id}'";
+        $res = DB_query($sql);
+        $questions = array();
+        while ($A = DB_fetchArray($res, false)) {
+            $questions[] = new Question($A);
+        }
+        $T->set_block('results', 'DataRows', 'dRow');
+        foreach ($questions as $Q) {
+            $total = 0;
+            $correct = 0;
+            $vals = Value::getByQuestion($Q->q_id);
+            foreach ($vals as $Val) {
+                $total++;
+                if ($Q->Verify($Val->value)) {
+                    $correct++;
+                }
+            }
+            if ($total > 0) {
+                $pct = (int)(($correct / $total) * 100);
+            } else {
+                $pct = 0;
+            }
+            $prog_status = $this->_getGrade($pct);
+            $T->set_var(array(
+                'question' => $Q->question,
+                'pct' => $pct,
+                'correct' => $correct,
+                'total' => $total,
+                'prog_status' => $total > 0 ? $prog_status : false,
+            ) );
+            $T->parse('dRow', 'DataRows', true);
+        }
+        $T->parse('output', 'results');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Display a summary of results by submitter.
+     * Shows intro field data and overall score.
+     *
+     * @return  string  HTML for display
+     */
+    public function resultSummary()
+    {
+        $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
+        $T->set_file('results', 'results.thtml');
+        $T->set_var('quiz_name', $this->name);
+        $intro = explode('|', $this->introfields);
+        $keys = array();
+        $T->set_block('results', 'hdrIntroFields', 'hdrIntro');
+        foreach ($intro as $key) {
+            $T->set_var('introfield_value', $key);
+            $T->parse('hdrIntro', 'hdrIntroFields', true);
+            $keys[] = COM_sanitizeId($key);
+        }
+        $results = Result::findQuiz($this->id);
+        $T->set_block('results', 'DataRows', 'dRow');
+        foreach ($results as $R) {
+            $introfields = @unserialize($R->introfields);
+            $T->set_block('results', 'dataIntroFields', 'dataIntro');
+            $T->clear_var('dataIntro');
+            foreach ($keys as $key) {
+                $T->set_var('introfield_value', QUIZ_getVar($introfields, $key));
+                $T->parse('dataIntro', 'dataIntroFields', true);
+            }
+            $correct = 0;
+            $total_q = 0;
+            foreach ($R->Values as $V) {
+                $total_q++;
+                $Q = Question::getInstance($V->q_id);
+                if ($Q->Verify($V->value)) {
+                    $correct++;
+                }
+            }
+            if ($total_q > 0) {
+                $pct = (int)(($correct / $total_q) * 100);
+            } else {
+                $pct = 0;
+            }
+            $prog_status = $this->_getGrade($pct);
+            $T->set_var(array(
+                'pct' => $pct,
+                'correct' => $correct,
+                'total' => $total_q,
+                'prog_status' => $prog_status,
+            ) );
+            $T->parse('dRow', 'DataRows', true);
+        }
+        $T->parse('output', 'results');
+        return $T->finish($T->get_var('output'));
     }
 
 }

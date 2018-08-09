@@ -25,9 +25,15 @@ $LANG_QUIZ = array(
 'question'  => 'Question',
 'answers'   => 'Answers',
 'num_q'     => 'Number of Questions',
+'scoring_levels' => 'Scoring Levels',
 'begin'     => 'Begin Quiz',
 'answer_msg' => 'Post-Answer Message',
 'start_over' => 'Start Over',
+'start_quiz' => 'Start Quiz',
+'back_to_home' => 'Back to Home',
+'new_quiz'  => 'New Quiz',
+'next_q'    => 'Next Question',
+'finish'    => 'Finish Quiz',
 'your_score' => 'Your Score',
 'action'    => 'Action',
 'introtext' => 'Intro Text',
@@ -53,9 +59,13 @@ $LANG_QUIZ = array(
 'pul_mult' => 'Multiple Entries',
 'onetime'  => 'Per-User Submission Limit',
 'submissions' => 'Submissions',
-'form_results' => 'form_results',
+//'results' => 'View Submissions',
+'results' => 'Results by Submitter',
+'resultsbyq' => 'Results by Question',
+'reset' => 'Reset',
 'preview' => 'preview',
 'select' => 'select',
+'score' => 'Score',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Thank you for your submission.';
@@ -81,18 +91,8 @@ $LANG_fs['quizzer'] = array(
 );
 
 $LANG_confignames['quizzer'] = array(
-    'displayblocks'  => 'Display glFusion Blocks',
-    'default_permissions' => 'Default Permissions',
-    'defgroup' => 'Default Group',
+    'centerblock'  => 'Make Centerblock?',
     'fill_gid'  => 'Default group to fill quizzer',
-    'results_gid' => 'Default group to view results',
-
-    'def_text_size' => 'Default Text Field Size',
-    'def_text_maxlen' => 'Default "maxlen" for Text Fields',
-    'def_textarea_rows' => 'Default textarea "rows" value',
-    'def_textarea_cols' => 'Default textarea "cols" value',
-    'def_date_format'   => 'Default date format string',
-    'def_calc_format'   => 'Default format for calculated fields',
 );
 
 // Note: entries 0, 1, and 12 are the same as in $LANG_configselects['Core']

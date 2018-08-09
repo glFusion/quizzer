@@ -81,6 +81,15 @@ function confirmDelete()
       </div>
     </div>
 
+    <div class="uk-form-row">
+      <label class="uk-form-label">{$LANG_QUIZ['scoring_levels']}
+        <span id="hlp_levels" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <input id="f_levels" type="text" value="{levels}" name="levels" size="15" />
+      </div>
+    </div>
+
   </fieldset>
 
   <fieldset>

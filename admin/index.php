@@ -38,7 +38,7 @@ $expected = array('edit','updateform','editquestion', 'updatequestion',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
-    'results',
+    'results', 'resultsbyq',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -174,10 +174,9 @@ case 'delQuiz':
 case 'deleteQuestion':
     if (!$isAdmin) COM_404();
     // Delete a field definition.  Also deletes user values.
-    $msg = Field::Delete($_GET['q_id']);
+    $msg = Question::Delete($q_id);
     $view = 'editquiz';
     break;
-
 }
 
 // Select the page to display
@@ -244,6 +243,16 @@ case 'editquestion':
 case 'resetpermform':
     if (!$isAdmin) COM_404();
     $content .= QUIZ_permResetForm();
+    break;
+
+case 'results':
+    $content .= adminMenu('', '');
+    $content .= Quiz::getInstance($quiz_id)->resultSummary();
+    break;
+
+case 'resultsbyq':
+    $content .= adminMenu('', '');
+    $content .= Quiz::getInstance($quiz_id)->resultByQuestion();
     break;
 
 case 'none':
@@ -313,8 +322,8 @@ function listQuizzes()
             'sort' => false,
             'align' => 'center',
         ),
-        array('text' => $LANG_QUIZ['export'],
-            'field' => 'export',
+        array('text' => $LANG_QUIZ['action'],
+            'field' => 'action',
             'sort' => true,
             'align' => 'center',
         ),
@@ -476,7 +485,7 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
         $retval = COM_createLink($txt, $url,
             array(
                 'class' => 'tooltip',
-                'title' => $LANG_QUIZ['form_results'],
+                'title' => $LANG_QUIZ['results'],
             )
         );
         break;
@@ -493,8 +502,8 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
             QUIZ_ADMIN_URL . '/index.php?quiz_id=' . $A['id'] .
             '&action=\'+this.options[this.selectedIndex].value">'. "\n";
         $retval .= '<option value="">--' . $LANG_QUIZ['select'] . '--</option>'. "\n";
-        $retval .= '<option value="preview">' . $LANG_QUIZ['preview'] . '</option>'. "\n";
-        $retval .= '<option value="results">' . $LANG_QUIZ['form_results'] . '</option>'. "\n";
+        $retval .= '<option value="resultsbyq">' . $LANG_QUIZ['resultsbyq'] . '</option>'. "\n";
+        $retval .= '<option value="results">' . $LANG_QUIZ['results'] . '</option>'. "\n";
         $retval .= '<option value="export">' . $LANG_QUIZ['export'] . '</option>'. "\n";
         $retval .= "</select>\n";
         break;

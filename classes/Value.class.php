@@ -177,6 +177,13 @@ class Value
     }
 
 
+    /**
+     * Get all submitted values by resultset.
+     * Used for scoring overall results by submitter
+     *
+     * @param   integer $res_id Resultset ID
+     * @return  objecdt         Value object
+     */
     public static function getByResult($res_id)
     {
         global $_TABLES;
@@ -190,6 +197,30 @@ class Value
         }
         return $vals;
     }
+
+
+    /**
+     * Get all submitted values by question.
+     * Used for scoring overall results by question.
+     *
+     * @param   integer $q_id   Question ID
+     * @return  objecdt         Value object
+     */
+    public static function getByQuestion($q_id)
+    {
+        global $_TABLES;
+
+        $vals = array();
+        $q_id = (int)$q_id;
+        $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
+                WHERE q_id = $q_id";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $vals[] = new self($A);
+        }
+        return $vals;
+    }
+
 }
 
 ?>
