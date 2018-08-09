@@ -90,7 +90,6 @@ class Question
         } elseif (is_numeric($question)) {
             // Received a field ID, have to look up the record to get the type
             $q_id = (int)$question;
-            COM_errorLog("reading $q_id");
             $question = self::Read($q_id);
             if (DB_error() || empty($question)) return NULL;
         }
@@ -292,7 +291,7 @@ class Question
             $disabled = '';
             $sel = '';
         }
-        return '<input type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+        return '<input id="ans_id_' . $a_id . '" type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
     }
 
 

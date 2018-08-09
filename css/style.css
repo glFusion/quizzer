@@ -64,3 +64,6 @@ div.qz-answermsg {
     margin-top: 15px;
     font-size: large;
 }
+div.qz-answerrow label {
+    font-weight: normal;
+}

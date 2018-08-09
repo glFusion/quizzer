@@ -7,30 +7,36 @@
 {!if quiz_name}
   <div class="qz-name">{quiz_name}</div>
 {!endif}
-<div class="uk-progress tooltip">
+<div class="uk-progress">
     <div class="uk-progress-bar" style="width:{pct}%">{$LANG_QUIZ['question']} {q_num} of {num_q}</div>
 </div>
   <div class="qz-question">{question}</div>
   <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
     <div id="row_{a_id}" class="qz-answerrow {border_class}">
-    <table width="100%">
-        <td style="width: 80%">{answer}</td>
+      <div style="width:80%;display:inline-block;">
+        <label for="ans_id_{a_id}">{answer}</label>
+      </div>
+      <div style="width:5px; display:inline-block;">
+        {answer_select}
+      </div>
+      <div style="width:10%; display:inline-block; float:right;" id="stat_{a_id}">{icon}</div>
+<!--        <td style="width: 80%">{answer}</td>
         <td>&nbsp;&nbsp;{answer_select}</td>
         <td style="width:10%" id="stat_{a_id}">{icon}</td>
     </tr>
-    </table>
+    </table>-->
     </div>
 <!-- END AnswerRow -->
   </div>
 </div>
 <div id="answer_msg" class="qz-answermsg" style="display:{answer_vis};">{answer_msg}</div>
 <div class="qz-buttons">
-<button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');" style="display:{sub_btn_vis};">Submit</button>
+<button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');" style="display:{sub_btn_vis};">{$LANG_ADMIN['submit']}</button>
 {!if is_last}
-<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="finishquiz" style="display:{next_btn_vis};">Finish Quiz</button>
+<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="finishquiz" style="display:{next_btn_vis};">{$LANG_QUIZ['finish']}</button>
 {!else}
-<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="next_q" style="display:{next_btn_vis};">Next question</button>
+<button type="submit" class="uk-button uk-button-primary" id="btn_next" name="next_q" style="display:{next_btn_vis};">{$LANG_QUIZ['next_q']}</button>
 {!endif}
 </div>
 </form>
