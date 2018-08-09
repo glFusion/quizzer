@@ -250,6 +250,20 @@ class Result
 
 
     /**
+     * Delete all results for a quiz
+     *
+     * @param   string  $quiz_id    
+     */
+    public static function ResetQuiz($quiz_id)
+    {
+        $results = self::findQuiz($quiz_id);
+        foreach ($results as $R) {
+            self::Delete($R->res_id);
+        }
+    }
+
+
+    /**
     *   Delete a single result set
     *
     *   @param  integer $res_id     Database ID of result to delete
@@ -262,7 +276,7 @@ class Result
         $res_id = (int)$res_id;
         if ($res_id == 0) return false;
         self::DeleteValues($res_id);
-        DB_delete($_TABLES['quizzer_results'], 'id', $res_id);
+        DB_delete($_TABLES['quizzer_results'], 'res_id', $res_id);
         return true;
     }
 

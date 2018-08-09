@@ -47,6 +47,7 @@ $LANG_QUIZ = array(
 'permissions'   => 'Permissions',
 'user_group'    => 'Group that can fill out',
 'confirm_quiz_delete' => 'Are you sure you want to delete this quiz?  All associated fields and data will be removed.',
+'confirm_quiz_reset' => 'Are you sure you want to delete all of the results for this quiz?',
 'confirm_delete' => 'Are you sure you want to delete this item?',
 'checkbox'  => 'Checkbox',
 'radio'     => 'Radio',

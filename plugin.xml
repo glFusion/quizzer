@@ -2,7 +2,7 @@
     <id>quizzer</id>
     <name>Quizzer</name>
     <description>Provides the ability to create custom quizzes to collect data from users.</description>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <glfusionversion>1.7.0</glfusionversion>
     <phpversion>7.0.0</phpversion>
     <url>http://www.leegarner.com</url>

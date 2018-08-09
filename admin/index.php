@@ -34,7 +34,7 @@ USES_quizzer_functions();
 
 $action = 'listquizzes';      // Default view
 $expected = array('edit','updateform','editquestion', 'updatequestion',
-    'save', 'print', 'editresult', 'updateresult',
+    'save', 'print', 'editresult', 'updateresult', 'resetquiz',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
@@ -169,6 +169,11 @@ case 'delQuiz':
     $id = $_REQUEST['quiz_id'];
     $msg = Quiz::DeleteDef($id);
     $view = 'listquizzes';
+    break;
+
+case 'resetquiz':
+    Result::ResetQuiz($quiz_id);
+    echo COM_refresh(QUIZ_ADMIN_URL);
     break;
 
 case 'deleteQuestion':
@@ -327,6 +332,11 @@ function listQuizzes()
             'sort' => true,
             'align' => 'center',
         ),
+        array('text' => $LANG_QUIZ['reset'],
+            'field' => 'reset',
+            'sort' => false,
+            'align' => 'center',
+        ),
         array('text' => $LANG_ADMIN['delete'],
             'field' => 'delete',
             'sort' => false,
@@ -344,7 +354,7 @@ function listQuizzes()
     );
     $defsort_arr = array('field' => 'name', 'direction' => 'ASC');
     $form_arr = array();
-    $retval .= ADMIN_list('quizzer', __NAMESPACE__ . '\getField_form', $header_arr,
+    $retval .= ADMIN_list('quizzer', __NAMESPACE__ . '\getField_quiz', $header_arr,
                     $text_arr, $query_arr, $defsort_arr, '', '', '', $form_arr);
 
     return $retval;
@@ -426,7 +436,7 @@ function listQuestions($quiz_id = '')
 *   @param  array   $icon_arr   Array of system icons
 *   @return string              HTML for the field cell
 */
-function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
+function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $LANG_ACCESS, $LANG_QUIZ, $_TABLES, $_CONF_QUIZ, $_LANG_ADMIN;
 
@@ -460,6 +470,16 @@ function getField_form($fieldname, $fieldvalue, $A, $icon_arr)
         $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
                 '-trash-o qz-icon-danger" ' .
                 'onclick="return confirm(\'' .$LANG_QUIZ['confirm_delete'] .
+                    '?\');"',
+                $url
+        );
+        break;
+
+    case 'reset':
+        $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quiz_id={$A['id']}";
+        $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
+                '-close qz-icon-danger" ' .
+                'onclick="return confirm(\'' .$LANG_QUIZ['confirm_quiz_reset'] .
                     '?\');"',
                 $url
         );
