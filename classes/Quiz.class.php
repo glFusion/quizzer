@@ -640,7 +640,7 @@ class Quiz
      * @param   float   $pct    Percentage of correct answers
      * @return  string          Class to use
      */
-    private function _getGrade($pct)
+    public function getGrade($pct)
     {
         static $scores = NULL;
         if ($scores === NULL) $scores = explode('|', $this->levels);
@@ -693,7 +693,7 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->_getGrade($pct);
+            $prog_status = $this->getGrade($pct);
             $T->set_var(array(
                 'question' => $Q->question,
                 'pct' => $pct,
@@ -727,7 +727,7 @@ class Quiz
             $T->parse('hdrIntro', 'hdrIntroFields', true);
             $keys[] = COM_sanitizeId($key);
         }
-        $results = Result::findQuiz($this->id);
+        $results = Result::findByQuiz($this->id);
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($results as $R) {
             $introfields = @unserialize($R->introfields);
@@ -751,7 +751,7 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->_getGrade($pct);
+            $prog_status = $this->getGrade($pct);
             $T->set_var(array(
                 'pct' => $pct,
                 'correct' => $correct,

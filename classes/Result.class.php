@@ -256,7 +256,7 @@ class Result
      */
     public static function ResetQuiz($quiz_id)
     {
-        $results = self::findQuiz($quiz_id);
+        $results = self::findByQuiz($quiz_id);
         foreach ($results as $R) {
             self::Delete($R->res_id);
         }
@@ -319,6 +319,11 @@ class Result
     }
 
 
+    /**
+     * Display the final score and progress bar to the user
+     *
+     * @return  string      HTML for score page
+     */
     public function showScore()
     {
         $total_q = 0;
@@ -334,15 +339,14 @@ class Result
         if ($total_q > 0) {
             $pct = (int)(($correct / $total_q) * 100);
         } else {
-            $pct = 100;
+            $pct = 0;
         }
-        if ($pct > 75) {
-            $prog_status = 'success';
-        } elseif ($pct < 50) {
-            $prog_status = 'danger';
+        $prog_status = $Q->getGrade($pct);
+        if ($prog_status == 'success') {
+            $msg = $Q->pass_msg;
         } else {
-            $prog_status = 'warning';
-        } 
+            $msg = '';
+        }
         $T = new \Template(QUIZ_PI_PATH . '/templates');
         $T->set_file('result', 'finish.thtml');
         $T->set_var(array(
@@ -351,7 +355,7 @@ class Result
             'correct' => $correct,
             'total' => $total_q,
             'prog_status' => $prog_status,
-            'finish_msg' => $Q->pass_msg,
+            'finish_msg' => $msg,
         ) );
         $T->parse('output', 'result');
         return $T->finish($T->get_var('output'));
@@ -359,12 +363,12 @@ class Result
 
 
     /**
-     * Find a particular quiz
+     * Find all results for a particular quiz
      *
      * @param   string  $quiz_id    Quiz ID
-     * @return  object      Quiz object
+     * @return  array       Array of Result objects
      */
-    public static function findQuiz($quiz_id)
+    public static function findByQuiz($quiz_id)
     {
         global $_TABLES;
 
