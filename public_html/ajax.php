@@ -24,7 +24,6 @@ case 'saveresponse':
     $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : '';
     $a_id = isset($_POST['a_id']) ? (int)$_POST['a_id'] : '';
     $Q = Quizzer\Question::getInstance($q_id);
-    COM_errorLog(print_r($Q,true));
     $correct = $Q->getCorrectAnswers();
     $retval = array(
         'submitted_ans' => $a_id,
