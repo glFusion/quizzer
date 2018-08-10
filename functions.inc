@@ -57,7 +57,6 @@ if (file_exists("$langpath/custom/$langfile")) {
 spl_autoload_register(function($class)
 {
     if (strpos($class, 'Quizzer\\') === 0) {
-        COM_errorLog("Loading class $class");
         $class = str_replace('Quizzer\\', '', $class);
         $path = __DIR__ . '/classes/' . $class . '.class.php';
         if (file_exists($path)) {
