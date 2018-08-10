@@ -13,12 +13,14 @@
   <div class="qz-question">{question}</div>
   <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
-    <div id="row_{a_id}" class="qz-answerrow {border_class}">
-      <label>
-      <span class="qz-answerrow-question">{answer}</span>
-      <span class="qz-answerrow-select">{answer_select}</span>
-      </label>
-      <span class="qz-answerrow-icon" id="stat_{a_id}">{icon}</span>
+    <div class="qz-answer-wrapper">
+      <div id="row_{a_id}" class="qz-answerrow {border_class}">
+        <label>
+          <span class="qz-answerrow qz-question">{answer}</span>
+          <span class="qz-answerrow qz-select">{answer_select}</span>
+        </label>
+      </div>
+      <div class="qz-answerrow qz-icon" id="stat_{a_id}">{icon}</div>
     </div>
 <!-- END AnswerRow -->
   </div>

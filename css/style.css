@@ -18,7 +18,7 @@ div.qz-question-wrapper {
     width: 90%;
 }
 div.qz-unanswered {
-    border: 3px solid transparent;
+    border: 3px solid #ddd;
 }
 div.qz-incorrect {
     border: 3px solid red;
@@ -44,10 +44,10 @@ div.qz-answers {
     margin-bottom: 20px;
     margin: auto;
 }
-div.qz-answers div {
+div.qz-answer-wrapper {
     clear: both;
     min-height: 2rem;
-    margin-bottom: 10px;
+    margin-bottom: 25px;
     padding: 5px;
 }
 div.qz-name {
@@ -60,27 +60,40 @@ div.qz-introtext {
     margin-bottom: 10px;
 }
 div.qz-buttons {
-    margin-top: 20px;
+    padding-top: 20px;
+    clear:both;
 }
 div.qz-answermsg {
-    margin-top: 15px;
+    padding-top: 15px;
     font-size: large;
+}
+div.qz-answerrow {
+    width: 80%;
+    float: left;
+    min-height: 2rem;
+    padding: 10px;
 }
 div.qz-answerrow label {
     font-weight: normal;
 }
-.qz-answerrow-question {
-    width: 80%;
+.qz-answerrow.qz-question {
+    width: 90%;
     display: inline-block;
     vertical-align: top;
 }
-.qz-answerrow-select {
+.qz-answerrow.qz-select {
     width: 5px;
     display: inline-block;
     vertical-align: top;
 }
-.qz-answerrow-icon {
+.qz-answerrow.qz-icon {
     width: 10%;
     display: inline-block;
     float:right;
+}
+.qz-finish-msg {
+    font-size: large;
+    clear: both;
+    width: 80%;
+    margin: 20px auto 20px auto;
 }

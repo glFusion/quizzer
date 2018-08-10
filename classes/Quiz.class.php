@@ -77,6 +77,7 @@ class Quiz
             $this->enabled = 1;
             $this->id = COM_makeSid();
             $this->introtext = '';
+            $this->pass_msg = '';
             $this->introfields = '';
             $this->name = '';
             $this->onetime = 0;
@@ -137,6 +138,7 @@ class Quiz
 
         case 'introtext':
         case 'introfields':
+        case 'pass_msg':
         case 'name':
         case 'levels':
             $this->properties[$name] = trim($value);
@@ -232,6 +234,7 @@ class Quiz
         $this->id = $A['id'];
         $this->name = $A['name'];
         $this->introtext = $A['introtext'];
+        $this->pass_msg = $A['pass_msg'];
         $this->introfields = $A['introfields'];
         $this->fill_gid = $A['fill_gid'];
         $this->onetime = $A['onetime'];
@@ -275,6 +278,7 @@ class Quiz
             'old_id' => $this->old_id,
             'name'  => $this->name,
             'introtext' => $this->introtext,
+            'pass_msg' => $this->introtext,
             'introfields' => $this->introfields,
             'ena_chk' => $this->enabled == 1 ? 'checked="checked"' : '',
             'email' => $this->email,
@@ -405,12 +409,14 @@ class Quiz
             name = '" . DB_escapeString($this->name) . "',
             introtext = '" . DB_escapeString($this->introtext) . "',
             introfields= '" . DB_escapeString($this->introfields) . "',
+            pass_msg= '" . DB_escapeString($this->pass_msg) . "',
             enabled = '{$this->enabled}',
             fill_gid = '{$this->fill_gid}',
             onetime = '{$this->onetime}',
             num_q = {$this->num_q},
             levels = '" . DB_escapeString($this->levels) . "'";
         $sql = $sql1 . $sql2 . $sql3;
+        //echo $sql;die;
         DB_query($sql, 1);
 
         if (!DB_error()) {

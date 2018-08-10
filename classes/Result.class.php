@@ -351,6 +351,7 @@ class Result
             'correct' => $correct,
             'total' => $total_q,
             'prog_status' => $prog_status,
+            'finish_msg' => $Q->pass_msg,
         ) );
         $T->parse('output', 'result');
         return $T->finish($T->get_var('output'));
