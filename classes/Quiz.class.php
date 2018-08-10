@@ -113,20 +113,13 @@ class Quiz
     */
     public function __set($name, $value)
     {
-        global $LANG_QUIZ;
-
         switch ($name) {
         case 'id':
         case 'old_id':
             $this->properties[$name] = COM_sanitizeID($value);
             break;
 
-/*        case 'owner_id':
-        case 'group_id':
-        case 'onsubmit':*/
         case 'fill_gid':
-//        case 'results_gid':
-//        case 'filled_by':
         case 'onetime':
         case 'num_q':
             $this->properties[$name] = (int)$value;
@@ -262,7 +255,7 @@ class Quiz
     */
     public function editQuiz($type = 'edit')
     {
-        global $_CONF, $_CONF_QUIZ, $_USER, $_TABLES, $LANG_QUIZ;
+        global $_CONF_QUIZ, $_USER, $LANG_QUIZ;
 
         if (isset($_POST['referrer'])) {
             $referrer = $_POST['referrer'];
@@ -278,7 +271,7 @@ class Quiz
             'old_id' => $this->old_id,
             'name'  => $this->name,
             'introtext' => $this->introtext,
-            'pass_msg' => $this->introtext,
+            'pass_msg' => $this->pass_msg,
             'introfields' => $this->introfields,
             'ena_chk' => $this->enabled == 1 ? 'checked="checked"' : '',
             'email' => $this->email,
@@ -310,7 +303,7 @@ class Quiz
     */
     public function SaveData($vals)
     {
-        global $LANG_QUIZ, $_CONF, $_TABLES;
+        global $_TABLES;
 
         // Check that $vals is an array; should be from $_POST;
         if (!is_array($vals)) return false;
@@ -449,8 +442,6 @@ class Quiz
     */
     public function Render($question = 0)
     {
-        global $_CONF, $_TABLES, $LANG_QUIZ, $_GROUPS, $_CONF_QUIZ;
-
         $retval = '';
         $isAdmin = false;
 
@@ -575,18 +566,6 @@ class Quiz
             if (!empty($msg)) return $msg;
         }
         return '';
-    }
-
-
-    /**
-    *   Get the number of responses (result sets) for this quiz.
-    *
-    *   @return integer     Response count.
-    */
-    public function Responses()
-    {
-        global $_TABLES;
-        return DB_count($_TABLES['quizzer_results'], 'quiz_id', $this->id);
     }
 
 

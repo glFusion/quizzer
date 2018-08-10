@@ -12,10 +12,10 @@
         <div class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}">
             <div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
         </div>
-      </td>
 {!else}
-      <td></td>
+      {$LANG_QUIZ['no_answers']}
 {!endif}
+      </td>
     </tr>
 <!-- END DataRows -->
   </table>

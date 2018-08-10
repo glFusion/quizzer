@@ -83,7 +83,6 @@ class Value
     */
     public function __set($name, $value)
     {
-        global $LANG_FORMS;
         switch ($name) {
         case 'res_id':
         case 'q_id':

@@ -39,6 +39,7 @@ $LANG_QUIZ = array(
 'introtext' => 'Intro Text',
 'introfields' => 'Text Fields',
 'pass_msg' => 'Message if Passed',
+'no_answers' => 'No Submissions',
 'export'    => 'Export CSV',
 'submitter' => 'Submitter',
 'submitted' => 'Submitted',

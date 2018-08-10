@@ -33,7 +33,7 @@ class Question
     */
     public function __construct($id = 0, $quiz_id=NULL)
     {
-        global $_USER, $_CONF_QUIZ, $_TABLES;
+        global $_USER, $_TABLES;
 
         $this->isNew = true;
         if ($id == 0) {
@@ -131,7 +131,6 @@ class Question
     */
     public function __set($name, $value)
     {
-        global $LANG_FORMS;
         switch ($name) {
         case 'quiz_id':
             $this->properties[$name] = COM_sanitizeID($value);
@@ -201,8 +200,6 @@ class Question
     */
     public function Render($q_num, $num_q)
     {
-        global $_CONF, $_TABLES, $LANG_QUIZ, $_GROUPS, $_CONF_QUIZ;
-
         $retval = '';
         $saveaction = 'savedata';
         $allow_submit = true;
@@ -331,7 +328,7 @@ class Question
     */
     public function EditDef()
     {
-        global $_TABLES, $_CONF, $LANG_FORMS, $LANG_ADMIN, $_CONF_QUIZ;
+        global $_TABLES;
 
         $retval = '';
         $format_str = '';
@@ -392,7 +389,7 @@ class Question
     */
     public function SaveDef($A = '')
     {
-        global $_TABLES, $_CONF_QUIZ;
+        global $_TABLES;
 
         $q_id = isset($A['q_id']) ? (int)$A['q_id'] : 0;
         $quiz_id = isset($A['quiz_id']) ? COM_sanitizeID($A['quiz_id']) : '';
