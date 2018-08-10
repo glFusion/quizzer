@@ -24,6 +24,8 @@ Select whether or not one person can submit the quiz multiple times. To accept a
 ### Number of Questions
 Enter the number of questions to appear on the quiz. Up to this number of questions will be shown in random order. If there are fewer than this number in the pool then all questions will be shown.
 
+When a quiz is started the pool of questions is set in the user's session variable.
+
 ### Scoring Levels
 (optional) Up to three levels are available, based on Uikit styles: Good (green), Warning (yello/orange) and Fail (red). You can enter up to three percentage values here separated by the pipe (|) character.
 
