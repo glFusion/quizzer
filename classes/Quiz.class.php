@@ -696,7 +696,7 @@ class Quiz
         $res = DB_query($sql);
         $questions = array();
         while ($A = DB_fetchArray($res, false)) {
-            $questions[] = new Question($A);
+            $questions[] = Question::getInstance($A);
         }
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($questions as $Q) {
