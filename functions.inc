@@ -67,13 +67,6 @@ spl_autoload_register(function($class)
 });
 
 
-// Import plugin-specific functions
-function USES_quizzer_functions()
-{
-    require_once __DIR__ . '/quizzer_functions.inc.php';
-}
-
-
 /**
 *   Called by the plugin Editor to display the current plugin code version.
 *   This may be different than the version installed and registered currently.
