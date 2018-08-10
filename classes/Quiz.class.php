@@ -765,9 +765,88 @@ class Quiz
     }
 
 
-    public static function csvByQuestion($quiz_id)
+    /**
+     * Export user responses as a CSV
+     *
+     * @return  string  CSV file contents
+     */
+    public function csvBySubmitter()
     {
+        global $LANG_QUIZ;
 
+        $questions = Question::getQuestions($this->id, 0, false);
+        $intro = explode('|', $this->introfields);
+        $total_q = count($questions);
+        $headers = array();
+        foreach ($intro as $key) {
+            $headers[COM_sanitizeId($key, false)] = $key;
+        }
+        for ($i = 1; $i <= $total_q; $i++) {
+            $headers['q_' . $i] = $LANG_QUIZ['question'] . ' ' . $i;
+        }
+        $retval = '"' . implode('","', $headers) . '"' . "\n";
+        $results = Result::findByQuiz($this->id);
+        foreach ($results as $R) {
+            $result_arr = $headers;
+            foreach ($result_arr as $key=>$val) $result_arr[$key] = '';
+
+            $introfields = @unserialize($R->introfields);
+            foreach ($introfields as $key=>$val) {
+                $result_arr[$key] = str_replace('"', "'", $val);
+            }
+            $correct = 0;
+            foreach ($R->Values as $V) {
+                $Q = Question::getInstance($V->q_id);
+                if ($Q->Verify($V->value)) {
+                    $correct = 1;
+                } else {
+                    $correct = 0;
+                }
+                $result_arr['q_' . $Q->q_id] = $correct;
+            }
+            $retval .= '"' . implode('","', $result_arr) . '"' . "\n";
+        }
+        return $retval;
+    }
+
+
+
+    /**
+     * Export questions, total responses and correct responses as a sCSV
+     *
+     * @return  string  CSV file contents
+     */
+    public function csvByQuestion()
+    {
+        global $_TABLES, $LANG_QUIZ;
+
+        $questions = Question::getQuestions($this->id, 0, false);
+        var_dump($questions);die;
+        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
+                WHERE quiz_id = '{$this->id}'";
+        $res = DB_query($sql);
+        $questions = array();
+        while ($A = DB_fetchArray($res, false)) {
+            $questions[] = Question::getInstance($A);
+        }
+        $retval = '"' . $LANG_QUIZ['question'] . '","' .
+                    $LANG_QUIZ['answers'] . '","' .
+                    $LANG_QUIZ['correct'] . '"'. "\n";
+        foreach ($questions as $Q) {
+            $total = 0;
+            $correct = 0;
+            $vals = Value::getByQuestion($Q->q_id);
+            foreach ($vals as $Val) {
+                $total++;
+                if ($Q->Verify($Val->value)) {
+                    $correct++;
+                }
+            }
+            // Make sure there are no embedded quotes
+            $question = str_replace('"', "'", $Q->question);
+            $retval .= '"' . $Q->question . '",' . $total . ',' . $correct . "\n";
+        }
+        return $retval;
     }
 
 

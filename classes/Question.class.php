@@ -546,17 +546,18 @@ class Question
      *
      * @param   integer $quiz_id    Quiz ID
      * @param   integer $max        Max questions, default to all
+     * @param   boolean $rand       True to randomize the return array
      * @return  array       Array of question data
      */
-    public static function getQuestions($quiz_id, $max = 0)
+    public static function getQuestions($quiz_id, $max = 0, $rand = true)
     {
         global $_TABLES;
 
         $quiz_id = (int)$quiz_id;
         $max = (int)$max;
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quiz_id = $quiz_id
-                ORDER BY RAND()";
+                WHERE quiz_id = $quiz_id";
+        if ($rand) $sql .= ' ORDER BY RAND()';
         if ($max > 0) $sql .= " LIMIT $max";
         $res = DB_query($sql);
 

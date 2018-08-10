@@ -30,7 +30,6 @@ $isAdmin = plugin_isadmin_quizzer();
 
 // Import administration functions
 USES_lib_admin();
-USES_quizzer_functions();
 
 $action = 'listquizzes';      // Default view
 $expected = array('edit','updateform','editquestion', 'updatequestion',
@@ -38,7 +37,7 @@ $expected = array('edit','updateform','editquestion', 'updatequestion',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
-    'results', 'resultsbyq',
+    'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -223,6 +222,22 @@ case 'export':
     echo $retval;
     exit;
     break;
+
+case 'csvbyq':
+    $Q = new Quiz($quiz_id);
+    // initiate the download
+    header('Content-type: text/csv');
+    header('Content-Disposition: attachment; filename="quiz-summary-'.$quiz_id.'.csv"');
+    echo $Q->csvByQuestion();
+    exit;
+
+case 'csvbysubmitter':
+    $Q = new Quiz($quiz_id);
+    // initiate the download
+    header('Content-type: text/csv');
+    header('Content-Disposition: attachment; filename="quiz-detail-'.$quiz_id.'.csv"');
+    echo $Q->csvBySubmitter();
+    exit;
 
 case 'editquiz':
     // Edit a single definition
@@ -524,7 +539,8 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
         $retval .= '<option value="">--' . $LANG_QUIZ['select'] . '--</option>'. "\n";
         $retval .= '<option value="resultsbyq">' . $LANG_QUIZ['resultsbyq'] . '</option>'. "\n";
         $retval .= '<option value="results">' . $LANG_QUIZ['results'] . '</option>'. "\n";
-        $retval .= '<option value="export">' . $LANG_QUIZ['export'] . '</option>'. "\n";
+        $retval .= '<option value="csvbyq">' . $LANG_QUIZ['csvbyq'] . '</option>'. "\n";
+        $retval .= '<option value="csvbysubmitter">' . $LANG_QUIZ['csvbysubmitter'] . '</option>'. "\n";
         $retval .= "</select>\n";
         break;
 
