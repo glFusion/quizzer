@@ -276,7 +276,7 @@ class Quiz
             'ena_chk' => $this->enabled == 1 ? 'checked="checked"' : '',
             'email' => $this->email,
             'user_group_dropdown' =>
-                    QUIZ_GroupDropdown($this->fill_gid, 3),
+                    $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
@@ -762,6 +762,33 @@ class Quiz
         }
         $T->parse('output', 'results');
         return $T->finish($T->get_var('output'));
+    }
+
+
+    public static function csvByQuestion($quiz_id)
+    {
+
+    }
+
+
+    /**
+     * Get a dropdown of user groups to set the fill_gid field.
+     * Sets the current fill_gid as selected if not empty.
+     *
+     * @return  string  Options for group dropdown
+     */
+    private function _groupDropdown()
+    {
+        $retval = '';
+        $usergroups = SEC_getUserGroups();
+        foreach ($usergroups as $ug_name => $ug_id) {
+            $retval .= '<option value="' . $ug_id . '"';
+            if ($this->fill_gid == $ug_id) {
+                $retval .= ' selected="selected"';
+            }
+            $retval .= '>' . $ug_name . '</option>' . LB;
+        }
+        return $retval;
     }
 
 }

@@ -81,38 +81,4 @@ echo $content;
 echo COM_siteFooter();
 exit;
 
-/**
-*   Display a form
-*
-*   @param  integer $quiz_id     Form ID
-*   @return string              HTML for the displayed form
-*/
-function QUIZ_showForm($quiz_id, $modal = false)
-{
-    global $_CONF_QUIZ, $_CONF;
-
-    // Instantiate the form and make sure the current user has access
-    // to fill it out
-    $F = new \Quizzer\Form($quiz_id, QUIZ_ACCESS_FILL);
-
-    $blocks = $modal ? 0 : -1;
-    echo \Quizzer\QUIZ_siteHeader($F->name, '', $blocks);
-    if (isset($_GET['msg']) && !empty($_GET['msg'])) {
-        echo COM_showMessage(
-                COM_applyFilter($_GET['msg'], true), $_CONF_QUIZ['pi_name']);
-    }
-    if ($F->id != '' && $F->access && $F->enabled) {
-        echo $F->Render();
-    } else {
-        $msg = $F->noaccess_msg;
-        if (!empty($msg)) {
-            echo $msg;
-        } else {
-            echo COM_refresh($_CONF['site_url']);
-        }
-    }
-    $blocks = $modal ? 0 : -1;
-    echo \Quizzer\QUIZ_siteFooter($blocks);
-}
-
 ?>
