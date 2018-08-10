@@ -18,7 +18,7 @@ div.qz-question-wrapper {
     width: 90%;
 }
 div.qz-unanswered {
-    border: 3px solid #ddd;
+    border: 3px solid #eee;
 }
 div.qz-incorrect {
     border: 3px solid red;
