@@ -171,16 +171,6 @@ class Value
                 ON DUPLICATE KEY
                     UPDATE value = '$value'";
         DB_query($sql, 1);
-        if (DB_error()) return false;
-
-        // Update the counter in the resultset if the answer is correct
-        $Q = Question::getInstance($q_id);
-        if ($Q->Verify($value)) {
-            $sql = "UPDATE {$_TABLES['quizzer_results']}
-                    SET correct = correct + 1
-                    WHERE res_id = {$res_id}";
-            DB_query($sql);
-        }
         $status = DB_error();
         return $status ? false : true;
     }

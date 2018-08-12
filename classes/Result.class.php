@@ -54,7 +54,6 @@ class Result
      *  @var string */
     var $introfields;
 
-    public $correct = 0;    // counts correct responses
     public $asked = 0;      // number of questions asked.
 
     /**
@@ -86,7 +85,6 @@ class Result
             $this->ip = '';
             $this->token = '';
             $this->introfields = '';
-            $this->correct = 0;
             $this->asked = 0;
         }
 
@@ -156,7 +154,6 @@ class Result
         $this->ip = $A['ip'];
         $this->token = $A['token'];
         $this->introfields = $A['introfields'];
-        $this->correct = (int)$A['correct'];
         $this->asked = (int)$A['asked'];
     }
 
@@ -245,7 +242,6 @@ class Result
                 dt='{$this->dt}',
                 ip = '$ip',
                 introfields = '" . DB_escapeString(@serialize($introfields)) . "',
-                correct = 0,
                 asked = {$Q->num_q},
                 token = '{$this->token}'";
         DB_query($sql, 1);
@@ -336,7 +332,13 @@ class Result
     public function showScore()
     {
         $total_q = $this->asked;
-        $correct = $this->correct;
+        $correct = 0;
+
+        foreach ($this->Values as $V) {
+            if ($this->Questions[$V->q_id]->Verify($V->value)) {
+                $correct++;
+            }
+        }
 
         $Q = Quiz::getInstance($this->quiz_id);
         if ($total_q > 0) {

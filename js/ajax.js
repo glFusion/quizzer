@@ -14,7 +14,7 @@ var QUIZ_submit = function(frm_id)
         data: data,
         success: function(result) {
             try {
-                if (result.correct_ans != '') {
+                if (result.isvalid == 1) {
                     correct_ans = result.correct_ans;
                     submitted_ans = result.submitted_ans;
                     correct_div = document.getElementById("row_" + correct_ans);
@@ -37,6 +37,8 @@ var QUIZ_submit = function(frm_id)
                         ans_div.innerHTML = result.answer_msg;
                         ans_div.style.display = "";
                     }
+                } else {
+                    window.location.replace(glfusionSiteUrl + '/quizzer/index.php?plugin=quizzer&msg=1');
                 }
             } catch(err) {
             }

@@ -484,7 +484,7 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
         $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quiz_id={$A['id']}";
         $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
                 '-trash-o qz-icon-danger" ' .
-                'onclick="return confirm(\'' .$LANG_QUIZ['confirm_delete'] .
+                'onclick="return confirm(\'' .$LANG_QUIZ['confirm_quiz_delete'] .
                     '?\');"',
                 $url
         );

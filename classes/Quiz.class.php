@@ -442,6 +442,8 @@ class Quiz
     */
     public function Render($question = 0)
     {
+        global $LANG_QUIZ;
+
         $retval = '';
         $isAdmin = false;
 
@@ -475,6 +477,10 @@ class Quiz
                 $retval .= $T->finish($T->get_var('output'));
         } else {
             $questions = SESS_getVar('quizzer_questions');
+            if ($questions == 0) {
+                COM_setMsg($LANG_QUIZ['msg_no_questions']);
+                echo COM_refresh(QUIZ_PI_URL);
+            }
             $total_q = count($questions);
             if (isset($questions[$question])) {
                 $Q = Question::getInstance($questions[$question]);

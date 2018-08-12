@@ -39,7 +39,6 @@ $_SQL = array(
   `ip` varchar(16) DEFAULT NULL,
   `token` varchar(40) NOT NULL DEFAULT '',
   `introfields` text,
-  `correct` int(3) unsigned NOT NULL DEFAULT '0',
   `asked` int(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`res_id`)
 ) ENGINE=MyISAM",
@@ -79,7 +78,6 @@ $_QUIZ_UPGRADE_SQL = array(
         ),
     '0.0.3' => array(
         "ALTER TABLE {$_TABLES['quizzer_results']}
-            ADD `correct` int(3) unsigned NOT NULL DEFAULT '0',
             ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
         ),
 );

@@ -14,23 +14,32 @@
 /** Include required glFusion common functions */
 require_once '../lib-common.php';
 
-switch ($_GET['action']) {
+switch ($_POST['action']) {
 case 'saveresponse':
     $result_id = SESS_getVar('quizzer_resultset');
-    if (!$result_id) {
-        exit;
-    }
     $quiz_id = isset($_POST['quiz_id']) ? $_POST['quiz_id'] : '';
-    $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : '';
-    $a_id = isset($_POST['a_id']) ? (int)$_POST['a_id'] : '';
-    $Q = Quizzer\Question::getInstance($q_id);
-    $correct = $Q->getCorrectAnswers();
-    $retval = array(
-        'submitted_ans' => $a_id,
-        'correct_ans' => $correct,
-        'answer_msg' => $Q->answer_msg,
-    );
-    Quizzer\Value::Save($result_id, $q_id, $a_id);
+    $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
+    $a_id = isset($_POST['a_id']) ? (int)$_POST['a_id'] : 0;
+    if ($result_id == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
+        $retval = array(
+            'isvalid' => 0,
+        );
+    } else {
+        $Q = Quizzer\Question::getInstance($q_id);
+        $isvalid = $Q->isNew ? 0 : 1;
+        $correct = 0;   // so there's something for $retval
+        if ($isvalid) {
+            $correct = $Q->getCorrectAnswers();
+            Quizzer\Value::Save($result_id, $q_id, $a_id);
+        }
+        $retval = array(
+            'isvalid' => $isvalid,
+            'submitted_ans' => $a_id,
+            'correct_ans' => $correct,
+            'answer_msg' => $Q->answer_msg,
+        );
+    }
+    COM_errorLog(print_r($retval,true));
 }
 
 header('Content-Type: application/json; charset=utf-8');

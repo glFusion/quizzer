@@ -50,7 +50,7 @@ $LANG_QUIZ = array(
 'enabled'   => 'Enabled',
 'permissions'   => 'Permissions',
 'user_group'    => 'Group that can fill out',
-'confirm_quiz_delete' => 'Are you sure you want to delete this quiz?  All associated fields and data will be removed.',
+'confirm_quiz_delete' => 'Are you sure you want to delete this quiz? All associated results and data will be removed.',
 'confirm_quiz_reset' => 'Are you sure you want to delete all of the results for this quiz?',
 'confirm_delete' => 'Are you sure you want to delete this item?',
 'checkbox'  => 'Checkbox',
@@ -71,9 +71,10 @@ $LANG_QUIZ = array(
 'preview' => 'preview',
 'select' => 'select',
 'score' => 'Score',
+'msg_no_questions' => 'No questions were found, resetting the quiz.',
 );
 
-$PLG_quizzer_MESSAGE1 = 'Thank you for your submission.';
+$PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';
 $PLG_quizzer_MESSAGE2 = 'The form contains missing or invalid fields.';
 $PLG_quizzer_MESSAGE3 = 'The form has been updated.';
 $PLG_quizzer_MESSAGE4 = 'Error updating the Quizzer plugin version.';

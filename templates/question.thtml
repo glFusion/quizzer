@@ -3,6 +3,7 @@
   <input type="hidden" name="quiz_id" value="{quiz_id}" />
   <input type="hidden" name="q_id" value="{q_id}" />
   <input type="hidden" name="next_q_id" value="{next_q_id}" />
+  <input type="hidden" name="action" value="saveresponse" />
 <div class="qz-question-wrapper">
 {!if quiz_name}
   <div class="qz-name">{quiz_name}</div>
