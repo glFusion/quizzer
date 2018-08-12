@@ -46,6 +46,7 @@ class Question
             $this->quiz_id = $quiz_id;
         } elseif (is_array($id)) {
             $this->SetVars($id, true);
+            $this->isNew = false;
         } else {
             $q = self::Read($id);
             if ($q) {

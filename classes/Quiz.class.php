@@ -62,6 +62,7 @@ class Quiz
 
         if (is_array($id)) {
             $this->SetVars($id, true);
+            $this->isNew = false;
         } elseif (!empty($id)) {
             $id = COM_sanitizeID($id);
             $this->id = $id;
