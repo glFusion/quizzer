@@ -88,16 +88,18 @@ class Question
             if (!isset($question['type']) || !isset($question['q_id'])) {
                 return NULL;
             }
+            $q_id = (int)$question['q_id'];
         } elseif (is_numeric($question)) {
             // Received a field ID, have to look up the record to get the type
             $q_id = (int)$question;
-            $question = self::Read($q_id);
-            if (DB_error() || empty($question)) return NULL;
+            if (!array_key_exists($q_id, $_fields)) {
+                $question = self::Read($q_id);
+                if (DB_error() || empty($question)) return NULL;
+            }
         }
 
-        $q_id = (int)$question['q_id'];
         if (!array_key_exists($q_id, $_fields)) {
-            $cls = __NAMESPACE__ . '\\Question_' . $question['type'];
+            $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
             $_fields[$q_id] = new $cls($question);
         }
         return $_fields[$q_id];
@@ -354,6 +356,7 @@ class Question
             'editing'   => $this->isNew ? '' : 'true',
             'help_msg'  => $this->help_msg,
             'answer_msg' => $this->answer_msg,
+            'can_delete' => $this->isNew || $this->_wasAnswered() ? false : true,
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
@@ -589,6 +592,40 @@ class Question
             $questons[] = new self($id);
         }
         return $questions;
+    }
+
+
+    /**
+     * Determine whether this questoin was ever answered.
+     * Used to see if the question may be deleted without affectinge existing
+     * results.
+     *
+     * @return  boolean     True if there is an answer, False if not
+     */
+    private function _wasAnswered()
+    {
+        global $_TABLES;
+
+        if (DB_count($_TABLES['quizzer_values'], 'q_id', $this->q_id) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Get a count of questions created for a quiz.
+     * Used to determine the number of questions to ask, if this number
+     * is less than the number assigned to the quiz.
+     *
+     * return   integer     Number of quiz questions in the database
+     */
+    public static function countQ($quiz_id)
+    {
+        global $_TABLES;
+
+        return DB_count($_TABLES['quizzer_questions'], 'quiz_id', $quiz_id);
     }
 
 }
