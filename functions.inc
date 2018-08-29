@@ -54,17 +54,34 @@ if (file_exists("$langpath/custom/$langfile")) {
     include_once "$langpath/custom/$langfile";
 }
 
-spl_autoload_register(function($class)
+spl_autoload_register(function ($class)
 {
-    if (strpos($class, 'Quizzer\\') === 0) {
-        $class = str_replace('Quizzer\\', '', $class);
-        $path = __DIR__ . '/classes/' . $class . '.class.php';
-        if (file_exists($path)) {
-            include $path;
-        }
+    // project-specific namespace prefix
+    $prefix = 'Quizzer\\';
+
+    // base directory for the namespace prefix
+    $base_dir = __DIR__ . '/classes/';
+
+    // does the class use the namespace prefix?
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        // no, move to the next registered autoloader
+        return;
+    }
+
+    // get the relative class name
+    $relative_class = substr($class, $len);
+
+    // replace the namespace prefix with the base directory, replace namespace
+    // separators with directory separators in the relative class name, append
+    // with .php
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
+
+    // if the file exists, require it
+    if (file_exists($file)) {
+        require $file;
     }
 });
-
 
 /**
 *   Called by the plugin Editor to display the current plugin code version.
@@ -274,7 +291,7 @@ function plugin_centerblock_quizzer($where, $page, $topic = '')
     }
 
     $content = '';
-    $Q = Quizzer\Quiz::getFirst();
+    $Q = \Quizzer\Quiz::getFirst();
     if (!$Q->isNew) {
         // If the quiz exists, render the question
         $content = COM_siteHeader();

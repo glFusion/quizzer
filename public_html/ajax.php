@@ -25,12 +25,12 @@ case 'saveresponse':
             'isvalid' => 0,
         );
     } else {
-        $Q = Quizzer\Question::getInstance($q_id);
+        $Q = \Quizzer\Question::getInstance($q_id);
         $isvalid = $Q->isNew ? 0 : 1;
         $correct = 0;   // so there's something for $retval
         if ($isvalid) {
             $correct = $Q->getCorrectAnswers();
-            Quizzer\Value::Save($result_id, $q_id, $a_id);
+            \Quizzer\Value::Save($result_id, $q_id, $a_id);
         }
         $retval = array(
             'isvalid' => $isvalid,
