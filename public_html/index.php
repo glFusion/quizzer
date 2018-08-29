@@ -38,30 +38,30 @@ foreach($expected as $provided) {
 
 if (empty($action)) {
     $action = 'startquiz';
-    COM_setArgNames(array('quiz_id'));
-    $quiz_id = COM_getArgument('quiz_id');
-} else {
-    $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
 }
+$quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
 if ($quiz_id == '') {
     // Missing quiz ID, get the first enabled one
-    $Q = Quizzer\Quiz::getFirst();
+    $Q = \Quizzer\Quiz::getFirst();
 } else {
     // Else get the specific quiz
-    $Q = Quizzer\Quiz::getInstance($quiz_id);
+    $Q = \Quizzer\Quiz::getInstance($quiz_id);
 }
 $q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
+$outputHandle = outputHandler::getInstance();
+$outputHandle->addRaw('<meta http-equiv="Pragma" content="no-cache">');
+$outputHandle->addRaw('<meta http-equiv="Expires" content="-1">');
 
 switch ($action) {
 case 'saveintro':
-    $R = new Quizzer\Result();
-    $R->Create($Q->id, $_POST['intro']);
-    SESS_setVar('quizzer_resultset', $R->id);
+    $intro = isset($_POST['intro']) ? $_POST['intro'] : '';
+    $R = new \Quizzer\Result();
+    $R->Create($Q->id, $intro);
     echo COM_refresh(QUIZ_PI_URL . '/index.php?startquiz=x&q_id=1');
     break;
 
 case 'finishquiz':
-    $R = Quizzer\Result::getResult();
+    $R = \Quizzer\Result::getResult();
     $content .= $R->showScore();
     break;
 
