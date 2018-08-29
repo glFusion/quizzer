@@ -6,7 +6,7 @@
 *   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
 *   @package    quizzer
 *   @version    0.0.2
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
+*   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
@@ -45,14 +45,12 @@ function QUIZ_do_upgrade()
     }
     $code_ver = plugin_chkVersion_quizzer();
 
-    /*
-     * For reference for the next non-code-only update
-     * if (!COM_checkVersion($current_ver, '0.3.1')) {
-        $current_ver = '0.3.1';
+    if (!COM_checkVersion($current_ver, '0.0.3')) {
+        $current_ver = '0.0.3';
         COM_errorLog("Updating Plugin to $current_ver");
         if (!QUIZ_do_upgrade_sql($current_ver)) return false;
         if (!QUIZ_do_set_version($current_ver)) return false;
-    }*/
+    }
 
     if (!COM_checkVersion($current_ver, $code_ver)) {
         if (!QUIZ_do_set_version($code_ver)) return false;
@@ -75,7 +73,7 @@ function QUIZ_do_upgrade_sql($version, $sql='')
     global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL;
 
     // If no sql statements passed in, return success
-    if (!isset($_QUIZ_UPGRADE_SQL[$version]) || 
+    if (!isset($_QUIZ_UPGRADE_SQL[$version]) ||
             !is_array($_QUIZ_UPGRADE_SQL[$version]))
         return true;
 
