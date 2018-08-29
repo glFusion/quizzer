@@ -14,12 +14,17 @@
 {!if prog_status}
       <td>
         <div class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}">
-            <div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
+            <div class="uk-progress-bar" style="width:{pct}%">{pct}% {msg}</div>
         </div>
       </td>
 {!else}
       <td></td>
 {!endif}
+      <td>
+        <a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
+            onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
+         <i class="uk-icon uk-icon-trash-o qz-color-incorrect"></i></a>
+      </td>
     </tr>
 <!-- END DataRows -->
   </table>
