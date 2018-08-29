@@ -109,8 +109,6 @@ class Result
 
     /**
     *   Read all quizzer variables into the $items array.
-    *   Set the $uid paramater to read another user's quizzer into
-    *   the current object instance.
     *
     *   @param  integer $id     Result set ID
     *   @return boolean         True on success, False on failure/not found
@@ -192,7 +190,7 @@ class Result
     *   @param  integer $uid        Optional user ID, default=$_USER['uid']
     *   @return mixed       False on failure/invalid, result ID on success
     */
-    function SaveData($quiz_id, $fields, $vals, $uid = 0)
+    public function SaveData($quiz_id, $fields, $vals, $uid = 0)
     {
         global $_USER;
 
@@ -225,17 +223,22 @@ class Result
     *   @param  integer $uid    Optional user ID, if not the current user
     *   @return integer         New result set ID
     */
-    function Create($quiz_id, $introfields = array())
+    public function Create($quiz_id, $introfields = array())
     {
         global $_TABLES, $_USER;
 
         $Q = Quiz::getInstance($quiz_id);
+        $questions = Question::getQuestions($Q->id, $Q->num_q);
+        SESS_unset('quizzer_resultset');
+        SESS_setVar('quizzer_questions', $questions);
+        $Q->num_q = count($questions);   // replace with actual number
+        //$num_q = min($Q->num_q, Question::countQ($quiz_id));
         $this->uid = $_USER['uid'];
         $this->quiz_id = COM_sanitizeID($quiz_id);
         $this->dt = time();
         $this->ip = $_SERVER['REMOTE_ADDR'];
         $ip = DB_escapeString($this->ip);
-        $this->token = md5(time() . rand(1,100));
+        $this->token = uniqid();
         $sql = "INSERT INTO {$_TABLES['quizzer_results']} SET
                 quiz_id='{$this->quiz_id}',
                 uid='{$this->uid}',
@@ -247,6 +250,7 @@ class Result
         DB_query($sql, 1);
         if (!DB_error()) {
             $this->id = DB_insertID();
+            SESS_setVar('quizzer_resultset', $this->id);
         } else {
             $this->id = 0;
         }
@@ -341,6 +345,7 @@ class Result
         }
 
         $Q = Quiz::getInstance($this->quiz_id);
+        $Q->Reset();
         if ($total_q > 0) {
             $pct = (int)(($correct / $total_q) * 100);
         } else {
@@ -381,6 +386,32 @@ class Result
         $quiz_id = DB_escapeString($quiz_id);
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
                 WHERE quiz_id = '$quiz_id'";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $results[] = new self($A);
+        }
+        return $results;
+    }
+
+    /**
+     * Find all results for a particular user.
+     * Used to check if a user has already filled out a onetime quiz.
+     *
+     * @param   string  $uid        User ID
+     * @param   string  $quiz_id    Quiz ID
+     * @return  array       Array of Result objects
+     */
+    public static function findByUser($uid, $quiz_id = '')
+    {
+        global $_TABLES;
+
+        $results = array();
+        $uid = (int)$uid;
+        $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
+                WHERE uid = '$uid'";
+        if ($quiz_id != '') {
+            $sql .= " AND quiz_id = '" . DB_escapeString($quiz_id) . "'";
+        }
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $results[] = new self($A);
