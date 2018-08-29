@@ -443,10 +443,20 @@ class Quiz
     */
     public function Render($question = 0)
     {
-        global $LANG_QUIZ;
+        global $LANG_QUIZ, $_CONF;
 
         $retval = '';
         $isAdmin = false;
+
+        // Don't allow another submission if the user has already filled out
+        // this quiz.
+        if ($this->onetime) {
+            $results = Result::findByUser($this->uid, $this->id);
+            if (count($results) > 0) {
+                COM_refresh($_CONF['site_url'] . '/index.php?plugin=quizzer&msg=7');
+                exit;
+            }
+        }
 
         // Check that the current user has access to fill out this quiz.
         if (!$this->hasAccess(QUIZ_ACCESS_FILL)) {
@@ -454,25 +464,33 @@ class Quiz
         }
 
         if ($question == 0) {
-            SESS_unset('quizzer_questions');
             SESS_unset('quizzer_resultset');
-            SESS_setVar('quizzer_questions', Question::getQuestions($this->id, $this->num_q));
+            $questions = Question::getQuestions($this->id, $this->num_q);
+            SESS_setVar('quizzer_questions', $questions);
+            $this->num_q = count($questions);   // replace with actual number
         }
 
+        // If starting the quiz, and there are intro fields to fill out, then
+        // display those. Otherwise start with the first question below.
         if ($question == 0 &&
             ($this->introtext != '' || $this->introfields != '') ) {
                 $T = new \Template(QUIZ_PI_PATH . '/templates');
                 $T->set_file('intro', 'intro.thtml');
-                $T->set_var('introtext', $this->introtext);
-                $T->set_var('quiz_name', $this->name);
-                $introfields = explode('|', $this->introfields);
-                $T->set_block('intro', 'introFields', 'iField');
-                foreach ($introfields as $fld) {
-                    $T->set_var(array(
-                        'if_prompt' => $fld,
-                        'if_name'   => COM_sanitizeId($fld),
-                    ) );
-                    $T->parse('iField', 'introFields', true);
+                $T->set_var(array(
+                    'introtext'     => $this->introtext,
+                    'quiz_name'     => $this->name,
+                    'quiz_id'       => $this->id,
+                ) );
+                if ($this->introfields != '') {
+                    $introfields = explode('|', $this->introfields);
+                    $T->set_block('intro', 'introFields', 'iField');
+                    foreach ($introfields as $fld) {
+                        $T->set_var(array(
+                            'if_prompt' => $fld,
+                            'if_name'   => COM_sanitizeId($fld),
+                        ) );
+                        $T->parse('iField', 'introFields', true);
+                    }
                 }
                 $T->parse('output', 'intro');
                 $retval .= $T->finish($T->get_var('output'));
@@ -493,7 +511,7 @@ class Quiz
 
 
     /**
-    *   Delete a quize definition.
+    *   Delete a quiz definition.
     *   Deletes a quiz, removes the questions, and deletes user data.
     *
     *   @uses   Result::Delete()
@@ -723,6 +741,8 @@ class Quiz
      */
     public function resultSummary()
     {
+        global $LANG_QUIZ;
+
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'results.thtml');
         $T->set_var('quiz_name', $this->name);
@@ -745,25 +765,33 @@ class Quiz
                 $T->parse('dataIntro', 'dataIntroFields', true);
             }
             $correct = 0;
-            $total_q = 0;
+            $total_a = 0;
             foreach ($R->Values as $V) {
-                $total_q++;
+                $total_a++;
                 $Q = Question::getInstance($V->q_id);
                 if ($Q->Verify($V->value)) {
                     $correct++;
                 }
             }
+            $total_q = $R->asked;
             if ($total_q > 0) {
                 $pct = (int)(($correct / $total_q) * 100);
             } else {
                 $pct = 0;
+            }
+            if ($total_a < $total_q) {
+                $msg = ' (' . sprintf($LANG_QUIZ['num_answered'], $total_a) . ')';
+            } else {
+                $msg = '';
             }
             $prog_status = $this->getGrade($pct);
             $T->set_var(array(
                 'pct' => $pct,
                 'correct' => $correct,
                 'total' => $total_q,
+                'not_all_answered' => $msg,
                 'prog_status' => $prog_status,
+                'res_id' => $R->res_id,
             ) );
             $T->parse('dRow', 'DataRows', true);
         }
@@ -828,7 +856,6 @@ class Quiz
         global $_TABLES, $LANG_QUIZ;
 
         $questions = Question::getQuestions($this->id, 0, false);
-        var_dump($questions);die;
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
                 WHERE quiz_id = '{$this->id}'";
         $res = DB_query($sql);
@@ -877,6 +904,9 @@ class Quiz
         return $retval;
     }
 
+
+    public function Reset()
+    {}
 }
 
 ?>
