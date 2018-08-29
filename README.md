@@ -19,7 +19,7 @@ This text is used as the title of the quiz.
 Check if this quiz is enabled or not. Disabled quizzes can't be viewed.
 
 ### Per-User Submission Limit
-Select whether or not one person can submit the quiz multiple times. To accept anonymous submissions this is effectively required.
+Select whether or not one person can submit the quiz multiple times. This must be set to `Multiple Entries` to accept anonymous submissions.
 
 ### Number of Questions
 Enter the number of questions to appear on the quiz. Up to this number of questions will be shown in random order. If there are fewer than this number in the pool then all questions will be shown.
@@ -27,11 +27,14 @@ Enter the number of questions to appear on the quiz. Up to this number of questi
 When a quiz is started the pool of questions is set in the user's session variable.
 
 ### Scoring Levels
-(optional) Up to three levels are available, based on Uikit styles: Good (green), Warning (yello/orange) and Fail (red). You can enter up to three percentage values here separated by the pipe (|) character.
+(optional) Up to three levels are available, based on Uikit styles: Good (green), Warning (yellow/orange) and Fail (red). You can enter one or two percentage values here separated by the pipe (|) character.
 
-Typically you would enter one or two values. For example "80" will show scores ov 80% and higher as "passing" and lower scores as "failing".
+Typically you would enter one or two values. For example:
+  - `80` will show scores of 80% and higher as "passing" and lower scores as "failing".
+  - `80|60` means that 80% and higer is "passing", 60% - 79% is "warning" and below 60% is "failing".
 
-If zero is entered then all scores are considered "passing".
+If zero is entered or the field is empty then all scores are considered "passing".
+
 ### Message if Passed
 (optional) Enter a message to be displayed on the final screen if the score is passing, such as "Congratulations"
 
