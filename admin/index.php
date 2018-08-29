@@ -32,12 +32,14 @@ $isAdmin = plugin_isadmin_quizzer();
 USES_lib_admin();
 
 $action = 'listquizzes';      // Default view
-$expected = array('edit','updateform','editquestion', 'updatequestion',
+$expected = array(
+    'edit','updateform','editquestion', 'updatequestion',
     'save', 'print', 'editresult', 'updateresult', 'resetquiz',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
     'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
+    'delresult',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -53,6 +55,7 @@ foreach($expected as $provided) {
 
 $view = isset($_REQUEST['view']) ? $_REQUEST['view'] : $action;
 $quiz_id = isset($_REQUEST['quiz_id']) ? COM_sanitizeID($_REQUEST['quiz_id']) : '';
+$q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
 $msg = isset($_GET['msg']) && !empty($_GET['msg']) ? $_GET['msg'] : '';
 $content = '';
 
@@ -115,6 +118,16 @@ case 'updateresult':
     $view = 'results';
     break;
 
+case 'delresult':
+    $res_id = (int)$actionval;
+    $R = new Result($res_id);       // to get the quiz id
+    if (!$R->isNew) {
+        Result::Delete($res_id);
+    }
+    echo COM_refresh(QUIZ_ADMIN_URL .
+        '/index.php?action=results&quiz_id=' . $R->quiz_id);
+    break;
+
 case 'updatequestion':
     $Q = Question::getInstance($_POST, $quiz_id);
     $msg = $Q->SaveDef($_POST);
@@ -175,7 +188,7 @@ case 'resetquiz':
     echo COM_refresh(QUIZ_ADMIN_URL);
     break;
 
-case 'deleteQuestion':
+case 'delQuestion':
     if (!$isAdmin) COM_404();
     // Delete a field definition.  Also deletes user values.
     $msg = Question::Delete($q_id);

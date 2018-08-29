@@ -76,7 +76,10 @@
 
   <button class="uk-button uk-button-success" name="updatequestion" type="submit" value="{$LANG_ADMIN['submit']}"/>{$LANG_ADMIN['submit']}</button>
   <button class="uk-button uk-button-primary" name="reset" type="reset" value="{$LANG_QUIZ['reset']}">{$LANG_QUIZ['reset']}</button>
-  <button class="uk-button" name="cancel" type="submit" value="{$LANG_ADMIN['cancel']}">{$LANG_ADMIN['cancel']}</button>
+  <button class="uk-button" name="editquiz" type="submit" value="{$LANG_ADMIN['cancel']}">{$LANG_ADMIN['cancel']}</button>
+{!if can_delete}
+  <button style="padding-right:8px;" class="uk-button uk-button-danger floatright" name="delQuestion" type="submit" value="{$LANG_ADMIN['delete']}">{$LANG_ADMIN['delete']}</button>
+{!endif}
 </form>
 
 <script type="text/javascript">
