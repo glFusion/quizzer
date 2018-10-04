@@ -25,10 +25,10 @@ require_once __DIR__ . "/sql/{$_DB_dbms}_install.php";
 /**
 *   Perform the upgrade starting at the current version.
 *
-*   @param  string  $current_ver    Current installed version to be upgraded
+*   @param  boolean $dvlp   True for development update
 *   @return integer                 Error code, 0 for success
 */
-function QUIZ_do_upgrade()
+function QUIZ_do_upgrade($dvlp=false)
 {
     global $_CONF_QUIZ, $_PLUGIN_INFO;
 
@@ -48,13 +48,16 @@ function QUIZ_do_upgrade()
     if (!COM_checkVersion($current_ver, '0.0.3')) {
         $current_ver = '0.0.3';
         COM_errorLog("Updating Plugin to $current_ver");
-        if (!QUIZ_do_upgrade_sql($current_ver)) return false;
+        if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!QUIZ_do_set_version($current_ver)) return false;
     }
 
     if (!COM_checkVersion($current_ver, $code_ver)) {
         if (!QUIZ_do_set_version($code_ver)) return false;
     }
+    include_once 'install_defaults.php';
+    plugin_updateconfig_quizzer();
+
     COM_errorLog('Successfully updated the Quizzer plugin');
     return true;
 }
@@ -65,10 +68,10 @@ function QUIZ_do_upgrade()
 *   If there are no SQL statements, then SUCCESS is returned.
 *
 *   @param  string  $version    Version being upgraded TO
-*   @param  array   $sql        Array of SQL statement(s) to execute
+*   @param  boolean $ignore_errors  True to ignore SQL errors and continue
 *   @return boolean     True for success, False for failure
 */
-function QUIZ_do_upgrade_sql($version, $sql='')
+function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
 {
     global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL;
 
@@ -78,13 +81,13 @@ function QUIZ_do_upgrade_sql($version, $sql='')
         return true;
 
     // Execute SQL now to perform the upgrade
-    COM_errorLOG("--Updating Quizzer to version $version");
+    COM_errorLog("--Updating Quizzer to version $version");
     foreach ($_QUIZ_UPGRADE_SQL[$version] as $sql) {
-        COM_errorLOG("Quizzer Plugin $version update: Executing SQL => $sql");
+        COM_errorLog("Quizzer Plugin $version update: Executing SQL => $sql");
         DB_query($sql, '1');
         if (DB_error()) {
             COM_errorLog("SQL Error during Quizzer plugin update",1);
-            return false;
+            if (!$ignore_errors) return false;
         }
     }
     return true;

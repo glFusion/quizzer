@@ -172,10 +172,10 @@ function plugin_getadminoption_quizzer()
 *
 *   @return integer Number of message to display (true = generic success msg)
 */
-function plugin_upgrade_quizzer()
+function plugin_upgrade_quizzer($dvlp=false)
 {
     require_once __DIR__ . '/upgrade.inc.php';
-    return QUIZ_do_upgrade();
+    return QUIZ_do_upgrade($dvlp);
 }
 
 

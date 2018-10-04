@@ -73,13 +73,11 @@ $_SQL = array(
 
 $_QUIZ_UPGRADE_SQL = array(
     '0.0.2' => array(
-        "ALTER TABLE {$_TABLES['quizzer_quizzes']}
-            ADD pass_msg TEXT",
-        ),
+        "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD pass_msg TEXT",
+    ),
     '0.0.3' => array(
-        "ALTER TABLE {$_TABLES['quizzer_results']}
-            ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
-        ),
+        "ALTER TABLE {$_TABLES['quizzer_results']} ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
+    ),
 );
 
 ?>

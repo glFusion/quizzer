@@ -30,34 +30,91 @@ $_QZ_DEFAULT = array(
     'fill_gid'      => 13,  // logged-in users
     'centerblock'   => 0,
 );
+/**
+*   @global array   $quizzerConfigData
+*   evList default settings
+*/
+global $quizzerConfigData;
+$quizzerConfigData = array(
+    array(
+        'name' => 'sg_main',
+        'default_value' => NULL,
+        'type' => 'subgroup',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => NULL,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'quizzer',
+    ),
+    array(
+        'name' => 'fs_main',
+        'default_value' => NULL,
+        'type' => 'fieldset',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => NULL,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'quizzer',
+    ),
+    array(
+        'name' => 'centerblock',
+        'default_value' => 0,
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 3,
+        'sort' => 10,
+        'set' => true,
+        'group' => 'quizzer',
+    ),
+    array(
+        'name' => 'fill_gid',
+        'default_value' => 13,
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,     // uses helper function
+        'sort' => 20,
+        'set' => true,
+        'group' => 'quizzer',
+    ),
+);
+
 
 /**
- *  Initialize Profile plugin configuration
+ *  Initialize Quizzer plugin configuration
  *
- *  Creates the database entries for the configuation if they don't already
- *  exist. Initial values will be taken from $_CONF_QUIZ if available (e.g. from
- *  an old config.php), uses $_QZ_DEFAULT otherwise.
+ *  Creates the database entries for the configuation if they don't exist.
  *
  *  @param  integer $group_id   Group ID to use as the plugin's admin group
  *  @return boolean             true: success; false: an error occurred
  */
 function plugin_initconfig_quizzer($group_id = 0)
 {
-    global $_CONF, $_CONF_QUIZ, $_QZ_DEFAULT;
+    global $quizzerConfigData;
 
     $c = config::get_instance();
-    if (!$c->group_exists($_CONF_QUIZ['pi_name'])) {
-
-        $c->add('sg_main', NULL, 'subgroup', 0, 0, NULL, 0, true, $_CONF_QUIZ['pi_name']);
-
-        $c->add('fs_main', NULL, 'fieldset', 0, 0, NULL, 0, true, $_CONF_QUIZ['pi_name']);
-        $c->add('centerblock', $_QZ_DEFAULT['centerblock'],
-                'select', 0, 0, 3, 10, true, $_CONF_QUIZ['pi_name']);
-        $c->add('fill_gid', $_QZ_DEFAULT['fill_gid'],
-                'select', 0, 0, 0, 20, true, $_CONF_QUIZ['pi_name']);
+    if (!$c->group_exists('quizzer')) {
+        USES_lib_install();
+        foreach ($quizzerConfigData AS $cfgItem) {
+            _addConfigItem($cfgItem);
+        }
     }
-
     return true;
+}
+
+
+/**
+ * Sync the configuration in the DB to the above configs
+ */
+function plugin_updateconfig_quizzer()
+{
+    global $quizzerConfigData;
+
+    USES_lib_install();
+    _update_config('quizzer', $quizzerConfigData);
 }
 
 ?>
