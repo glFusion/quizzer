@@ -22,18 +22,8 @@ if (!defined('GVERSION')) {
  *  records. These settings are only used during the initial installation
  *  and not referenced any more once the plugin is installed
  *
- *  @global array $_QZ_DEFAULT;
- *
+ *  @global array $quizzerConfigData;
  */
-global $_QZ_DEFAULT, $_CONF_QUIZ;
-$_QZ_DEFAULT = array(
-    'fill_gid'      => 13,  // logged-in users
-    'centerblock'   => 0,
-);
-/**
-*   @global array   $quizzerConfigData
-*   evList default settings
-*/
 global $quizzerConfigData;
 $quizzerConfigData = array(
     array(

@@ -32,7 +32,7 @@ if (!SEC_inGroup('Root')) {
 if (function_exists('CACHE_clear')) {
     CACHE_clear();
 }
-Quizzer\Cache::clear();
+\Quizzer\Cache::clear();
 
 $_PLUGIN_INFO['quizzer']['pi_version'] = '0.0.1';
 plugin_upgrade_quizzer(true);
