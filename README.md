@@ -14,6 +14,9 @@ This text is used as the title of the quiz.
 
 ### Text Fields
 (optional) Enter a few field prompts separated by the pipe (|) character to collect text values for each submitter. Examples might include the submitter's name, department, etc.
+```
+Your Name|Your Department|Your Phone Number
+```
 
 ### Enabled
 Check if this quiz is enabled or not. Disabled quizzes can't be viewed.
