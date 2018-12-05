@@ -1,15 +1,15 @@
 <?php
 /**
-*   Public API functions for the Quizzer plugin for glFusion.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.0.2
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Public API functions for the Quizzer plugin for glFusion.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.2
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
@@ -84,12 +84,12 @@ spl_autoload_register(function ($class)
 });
 
 /**
-*   Called by the plugin Editor to display the current plugin code version.
-*   This may be different than the version installed and registered currently.
-*   If newer then you may want to run the update.
-*
-*   @return   string  version number
-*/
+ * Called by the plugin Editor to display the current plugin code version.
+ * This may be different than the version installed and registered currently.
+ * If newer then you may want to run the update.
+ *
+ * @return  string  Version number
+ */
 function plugin_chkVersion_quizzer()
 {
     global $_CONF_QUIZ;
@@ -98,10 +98,10 @@ function plugin_chkVersion_quizzer()
 
 
 /**
-*   This will put an option for quizzer administration in the command
-*   and control area
-*   @return   mixed   array(title, url, icon), or false when not allowed
-*/
+ * This will put an option for quizzer administration in the command and control area.
+ *
+ * @return  mixed   array(title, url, icon), or false when not allowed
+ */
 function plugin_cclabel_quizzer()
 {
     global $LANG_QUIZ;
@@ -117,13 +117,13 @@ function plugin_cclabel_quizzer()
 
 
 /**
-* Returns the items for this plugin that should appear on the main menu
-*
-* NOTE: this MUST return the url/value pairs in the following format
-* $<arrayname>[<label>] = <url>
-*
-* @return    array   Associative array of menu items to be added to menu
-*/
+ * Returns the items for this plugin that should appear on the main menu.
+ *
+ * NOTE: this MUST return the url/value pairs in the following format
+ * $<arrayname>[<label>] = <url>
+ *
+ * @return  array   Associative array of menu items to be added to menu
+ */
 function plugin_getmenuitems_quizzer()
 {
     global $LANG_QUIZ;
@@ -133,11 +133,11 @@ function plugin_getmenuitems_quizzer()
 
 
 /**
-*   Check if the current user is a plugin admin
-*
-*   @see    SEC_hasRights()
-*   @return boolean     True if an admin, False if not
-*/
+ * Check if the current user is a plugin admin.
+ *
+ * @uses    SEC_hasRights()
+ * @return  boolean     True if an admin, False if not
+ */
 function plugin_isadmin_quizzer()
 {
     static $retval = NULL;
@@ -149,10 +149,10 @@ function plugin_isadmin_quizzer()
 
 
 /**
-*   Put an option for quizzer management on the admin-only menu.
-*
-*   @return   mixed   array(title, url, num. banner), or void when not allowed
-*/
+ * Put an option for quizzer management on the admin-only menu.
+ *
+ * @return  mixed   array(title, url, num. banner), or void when not allowed
+ */
 function plugin_getadminoption_quizzer()
 {
     global  $LANG_QUIZ;
@@ -168,10 +168,11 @@ function plugin_getadminoption_quizzer()
 
 
 /**
-*   Update the Quizzer plugin.
-*
-*   @return integer Number of message to display (true = generic success msg)
-*/
+ * Update the Quizzer plugin.
+ *
+ * @param   boolean $dvlp   True if errors should be ignored
+ * @return  boolean     True on success, False on failure
+ */
 function plugin_upgrade_quizzer($dvlp=false)
 {
     require_once __DIR__ . '/upgrade.inc.php';
@@ -180,10 +181,10 @@ function plugin_upgrade_quizzer($dvlp=false)
 
 
 /**
-*   Returns the URL of the plugin's icon
-*
-*   @return   string      URL of the icon
-*/
+ * Returns the URL of the plugin's icon.
+ *
+ * @return  string      URL of the icon
+ */
 function plugin_geticon_quizzer()
 {
     return QUIZ_PI_URL . '/images/quizzer.png';
@@ -191,16 +192,16 @@ function plugin_geticon_quizzer()
 
 
 /**
-*   Automatic uninstall function for plugins
-*
-*   This code is automatically uninstalling the plugin.
-*   It passes an array to the core code function that removes
-*   tables, groups, features and php blocks from the tables.
-*   Additionally, this code can perform special actions that cannot be
-*   foreseen by the core code (interactions with other plugins for example)
-*
-*   @return array       Elements to be removed
-*/
+ * Automatic uninstall function for plugins.
+ *
+ * This code is automatically uninstalling the plugin.
+ * It passes an array to the core code function that removes
+ * tables, groups, features and php blocks from the tables.
+ * Additionally, this code can perform special actions that cannot be
+ * foreseen by the core code (interactions with other plugins for example)
+ *
+ * @return  array       Elements to be removed
+ */
 function plugin_autouninstall_quizzer()
 {
     global $_CONF_QUIZ;
@@ -226,10 +227,10 @@ function plugin_autouninstall_quizzer()
 
 
 /**
-*   Get additional Javascript into the site header
-*
-*   @return array List of paths to Javascript files
-*/
+ * Get additional Javascript into the site header.
+ *
+ * @return  array   List of paths to Javascript files
+ */
 function plugin_getheaderjs_quizzer()
 {
     return array(
@@ -240,12 +241,12 @@ function plugin_getheaderjs_quizzer()
 
 
 /**
-*   Get additional CSS into the site header.
-*   Checks first for a layout-specific version, then a custom plugin version,
-*   and finally the default if nothing else found.
-*
-*   @return array   List of paths to Javascript files
-*/
+ * Get additional CSS into the site header.
+ * Checks first for a layout-specific version, then a custom plugin version,
+ * and finally the default if nothing else found.
+ *
+ * @return  array   List of paths to Javascript files
+ */
 function plugin_getheadercss_quizzer()
 {
     global $_CONF, $_CONF_QUIZ;
@@ -271,14 +272,13 @@ function plugin_getheadercss_quizzer()
 
 
 /**
-*   Create the centerblock.
-*
-*   @uses   EVLIST_cb_content()
-*   @param  string  $where  Position (top, etc.)
-*   @param  string  $page   Page currently being displayed
-*   @param  string  $topic  Topic currently being displayed
-*   @return string          HTML for centerblock
-*/
+ * Create the centerblock.
+ *
+ * @param   string  $where  Current position (top, etc.)
+ * @param   string  $page   Page currently being displayed
+ * @param   string  $topic  Topic currently being displayed
+ * @return  string          HTML for centerblock
+ */
 function plugin_centerblock_quizzer($where, $page, $topic = '')
 {
     global $_CONF_QUIZ;
@@ -303,11 +303,11 @@ function plugin_centerblock_quizzer($where, $page, $topic = '')
 
 
 /**
-*   Returns a name=>value array of options broken out from the given string.
-*
-*   @param  mixed   $str    Array, or serialized array, of options
-*   @return array           Associative array of option=>value pairs
-*/
+ * Returns a name=>value array of options broken out from the given string.
+ *
+ * @param   mixed   $str    Array, or serialized array, of options
+ * @return  array           Associative array of option=>value pairs
+ */
 function QUIZ_getOpts($str)
 {
     $A = array();
@@ -328,13 +328,13 @@ function QUIZ_getOpts($str)
 
 
 /**
-*   Serializes an array of options and returns the resulting string.
-*   An empty string is returned on error.
-*   Options must already be validated for the type of record to be saved.
-*
-*   @param  array   $A      Array of name=>value pairs
-*   @return string          Serialized string representing the array
-*/
+ * Serializes an array of options and returns the resulting string.
+ * An empty string is returned on error.
+ * Options must already be validated for the type of record to be saved.
+ *
+ * @param   array   $A      Array of name=>value pairs
+ * @return  string          Serialized string representing the array
+ */
 function QUIZ_setOpts($A)
 {
     $str = '';
@@ -347,10 +347,12 @@ function QUIZ_setOpts($A)
 
 
 /**
-*   Get the URL to the localized configuration help file.
-*
-*   @return array   Array of (url, window_type)
-*/
+ * Get the URL to the localized configuration help file.
+ *
+ * @param   string  $option     Config element ID to retrieve
+ * @param   string  $doclang    Language, default = English
+ * @return  array   Array of (url, window_type)
+ */
 function plugin_getconfigelementhelp_quizzer($option, $doclang='english')
 {
     if (version_compare(GVERSION, '1.6.0', '<')) {
@@ -371,14 +373,14 @@ function plugin_getconfigelementhelp_quizzer($option, $doclang='english')
 
 
 /**
-*   Get the link to a documentation file.
-*   Returns the URL to the file, or to the directory if no file requested.
-*
-*   @see    plugin_getconfigelementhelp_subscription()
-*   @param  string  $file       Optional HTML filename
-*   @param  string  $doclang    Documentation language, defaults to english
-*   @return string              URL to document directory or file
-*/
+ * Get the link to a documentation file.
+ * Returns the URL to the file, or to the directory if no file requested.
+ *
+ * @see     plugin_getconfigelementhelp_quizzer()
+ * @param   string  $file       Optional HTML filename
+ * @param   string  $doclang    Documentation language, defaults to english
+ * @return  string              URL to document directory or file
+ */
 function QUIZ_getDocURL($file = '', $doclang='')
 {
     global $_CONF, $_CONF_QUIZ;
@@ -405,11 +407,12 @@ function QUIZ_getDocURL($file = '', $doclang='')
 
 
 /**
-*   Support merging local accounts into remote accounts
-*
-*   @param  integer $origUID    Original (remote) user ID
-*   @param  integer $destUID    Merged (local) user ID
-*/
+ * Support merging local accounts into remote accounts.
+ * Chages the user ID in the results table.
+ *
+ * @param   integer $origUID    Original (remote) user ID
+ * @param   integer $destUID    Merged (local) user ID
+ */
 function plugin_user_move_quizzer($origUID, $destUID)
 {
     global $_TABLES;
@@ -423,11 +426,11 @@ function plugin_user_move_quizzer($origUID, $destUID)
 
 
 /**
-*   Select group for "default user group" config variable
-*
-*   @uses   QUIZ_GetGroups()
-*   @return array Array of groups
-*/
+ * Select group for "default user group" config variable.
+ *
+ * @uses    QUIZ_GetGroups()
+ * @return  array Array of groups
+ */
 function plugin_configmanager_select_fill_gid_quizzer()
 {
     global $_CONF_QUIZ;
@@ -436,11 +439,11 @@ function plugin_configmanager_select_fill_gid_quizzer()
 
 
 /**
-*   Create an array of groups.
-*
-*   @param  boolean $nogroup    True if "No Group" is an option.
-*   @return array               Array of groups as name=>ID
-*/
+ * Create an array of groups.
+ *
+ * @param   integer $selected   ID of selected group
+ * @return  array               Array of groups as name=>ID
+ */
 function QUIZ_GetGroups($selected=0)
 {
     global $_TABLES;
@@ -460,13 +463,13 @@ function QUIZ_GetGroups($selected=0)
 
 
 /**
-*   Helper function to get a template object.
-*
-*   @param  string  $name   Base name of template file, e.g. "editor"
-*   @param  string  $id     ID of template, e.g. "editform"
-*   @param  string  $path   Optional path if not "templates/"
-*   @return string      Full filename, e.g. "editor.uikit.thtml"
-*/
+ * Helper function to get a template object.
+ *
+ * @param   string  $name   Base name of template file, e.g. "editor"
+ * @param   string  $id     ID of template, e.g. "editform"
+ * @param   string  $path   Optional path if not "templates/"
+ * @return  string      Full filename, e.g. "editor.uikit.thtml"
+ */
 function QUIZ_getTemplate($name, $id='', $path='')
 {
     global $_SYSTEM;
@@ -499,14 +502,14 @@ function QUIZ_getTemplate($name, $id='', $path='')
 
 
 /**
-*   Get an array variable, first checking whether it's set
-*
-*   @param  array   $A          Array where var should be
-*   @param  string  $varname    Name of array element
-*   @param  string  $type       Type of return value
-*   @param  mixed   $default    Default value, if any
-*   @return     Array element or NULL, cast to $type
-*/
+ * Get an array variable, first checking whether it's set.
+ *
+ * @param   array   $A          Array where var should be
+ * @param   string  $varname    Name of array element
+ * @param   string  $type       Type of return value
+ * @param   mixed   $default    Default value, if any
+ * @return      Array element or NULL, cast to $type
+ */
 function QUIZ_getVar($A, $varname, $type = 'string', $default = NULL)
 {
     if (!isset($A[$varname])) {

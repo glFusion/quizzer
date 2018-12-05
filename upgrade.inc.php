@@ -1,21 +1,21 @@
 <?php
 /**
-*   Upgrade routines for the Quizzer plugin
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.0.2
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Upgrade routines for the Quizzer plugin.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.2
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 // Required to get the config values
 global $_CONF, $_CONF_QUIZ;
 
 /**
- *  Make the installation default values available to these functions.
+ * Make the installation default values available to these functions.
  */
 require_once __DIR__ . '/install_defaults.php';
 
@@ -23,11 +23,11 @@ global $_DB_dbms;
 require_once __DIR__ . "/sql/{$_DB_dbms}_install.php";
 
 /**
-*   Perform the upgrade starting at the current version.
-*
-*   @param  boolean $dvlp   True for development update
-*   @return integer                 Error code, 0 for success
-*/
+ * Perform the upgrade starting at the current version.
+ *
+ * @param   boolean $dvlp   True for development update
+ * @return  integer                 Error code, 0 for success
+ */
 function QUIZ_do_upgrade($dvlp=false)
 {
     global $_CONF_QUIZ, $_PLUGIN_INFO;
@@ -64,13 +64,13 @@ function QUIZ_do_upgrade($dvlp=false)
 
 
 /**
-*   Actually perform any sql updates.
-*   If there are no SQL statements, then SUCCESS is returned.
-*
-*   @param  string  $version    Version being upgraded TO
-*   @param  boolean $ignore_errors  True to ignore SQL errors and continue
-*   @return boolean     True for success, False for failure
-*/
+ * Actually perform any sql updates.
+ * If there are no SQL statements, then SUCCESS is returned.
+ *
+ * @param   string  $version    Version being upgraded TO
+ * @param   boolean $ignore_errors  True to ignore SQL errors and continue
+ * @return  boolean     True for success, False for failure
+ */
 function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
 {
     global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL;
@@ -95,13 +95,13 @@ function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
 
 
 /**
-*   Update the plugin version number in the database.
-*   Called at each version upgrade to keep up to date with
-*   successful upgrades.
-*
-*   @param  string  $ver    New version to set
-*   @return boolean         True on success, False on failure
-*/
+ * Update the plugin version number in the database.
+ * Called at each version upgrade to keep up to date with
+ * successful upgrades.
+ *
+ * @param   string  $ver    New version to set
+ * @return  boolean         True on success, False on failure
+ */
 function QUIZ_do_set_version($ver)
 {
     global $_TABLES, $_CONF_QUIZ;

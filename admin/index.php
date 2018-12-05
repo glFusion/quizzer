@@ -1,18 +1,18 @@
 <?php
 /**
-*   Entry point to administration functions for the Quizzer plugin.
-*   This module isn't exclusively for site admins.  Regular users may
-*   be given administrative privleges for certain quizzer, so they'll need
-*   access to this file.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.3.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Entry point to administration functions for the Quizzer plugin.
+ * This module isn't exclusively for site admins.  Regular users may
+ * be given administrative privleges for certain quizzer, so they'll need
+ * access to this file.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.3
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Quizzer;
 
 /** Import core glFusion libraries */
@@ -123,6 +123,7 @@ case 'delresult':
     $R = new Result($res_id);       // to get the quiz id
     if (!$R->isNew) {
         Result::Delete($res_id);
+        Cache::clear();
     }
     echo COM_refresh(QUIZ_ADMIN_URL .
         '/index.php?action=results&quiz_id=' . $R->quiz_id);
@@ -184,6 +185,7 @@ case 'delQuiz':
     break;
 
 case 'resetquiz':
+    // Removes all results for the quiz.
     Result::ResetQuiz($quiz_id);
     echo COM_refresh(QUIZ_ADMIN_URL);
     break;
@@ -268,7 +270,7 @@ case 'editquiz':
 case 'editquestion':
     if (!$isAdmin) COM_404();
     $q_id = isset($_GET['q_id']) ? (int)$_GET['q_id'] : 0;
-    $Q = new Question($q_id, $quiz_id);
+    $Q = Question::getInstance($q_id, $quiz_id);
     $content .= adminMenu($view, 'hlp_question_edit');
     $content .= $Q->EditDef();
     break;
@@ -316,10 +318,10 @@ exit;
 
 
 /**
-*   Uses lib-admin to list the quizzer definitions and allow updating.
-*
-*   @return string HTML for the list
-*/
+ * Uses lib-admin to list the quizzer definitions and allow updating.
+ *
+ * @return  string  HTML for the list
+ */
 function listQuizzes()
 {
     global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $perm_sql;
@@ -390,34 +392,40 @@ function listQuizzes()
 
 
 /**
-*   Uses lib-admin to list the field definitions and allow updating.
-*
-*   @return string HTML for the list
-*/
+ * Uses lib-admin to list the question definitions and allow updating.
+ *
+ * @param   string  $quiz_id    ID of quiz
+ * @return  string              HTML for the question list
+ */
 function listQuestions($quiz_id = '')
 {
     global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $_CONF_QUIZ;
 
     $header_arr = array(
-        array('text' => $LANG_ADMIN['edit'],
+        array(
+            'text' => $LANG_ADMIN['edit'],
             'field' => 'edit',
             'sort' => false,
             'align' => 'center',
         ),
-        array('text' => $LANG_QUIZ['question'],
+        array(
+            'text' => $LANG_QUIZ['question'],
             'field' => 'question',
             'sort' => false,
         ),
-        array('text' => $LANG_QUIZ['type'],
+        array(
+            'text' => $LANG_QUIZ['type'],
             'field' => 'type',
             'sort' => false,
         ),
-        array('text' => $LANG_QUIZ['enabled'],
+        array(
+            'text' => $LANG_QUIZ['enabled'],
             'field' => 'enabled',
             'sort' => false,
             'align' => 'center',
         ),
-        array('text' => $LANG_ADMIN['delete'],
+        array(
+            'text' => $LANG_ADMIN['delete'],
             'field' => 'delete',
             'sort' => false,
         ),
@@ -429,8 +437,9 @@ function listQuestions($quiz_id = '')
             'chkname' => 'delquestion',
             'chkfield' => 'q_id',
     );
-    $query_arr = array('table' => 'quizzer_questions',
-        'sql' => "SELECT * FROM {$_TABLES['quizzer_questions']}",
+    $query_arr = array(
+        'table' => 'quizzer_questions',
+        'sql'   => "SELECT * FROM {$_TABLES['quizzer_questions']}",
         'query_fields' => array('name', 'type', 'value'),
         'default_filter' => '',
     );
@@ -456,14 +465,14 @@ function listQuestions($quiz_id = '')
 
 
 /**
-*   Determine what to display in the admin list for each form.
-*
-*   @param  string  $fieldname  Name of the field, from database
-*   @param  mixed   $fieldvalue Value of the current field
-*   @param  array   $A          Array of all name/field pairs
-*   @param  array   $icon_arr   Array of system icons
-*   @return string              HTML for the field cell
-*/
+ * Determine what to display in the admin list for each form.
+ *
+ * @param   string  $fieldname  Name of the field, from database
+ * @param   mixed   $fieldvalue Value of the current field
+ * @param   array   $A          Array of all name/field pairs
+ * @param   array   $icon_arr   Array of system icons
+ * @return  string              HTML for the field cell
+ */
 function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $LANG_ACCESS, $LANG_QUIZ, $_TABLES, $_CONF_QUIZ, $_LANG_ADMIN;
@@ -568,14 +577,14 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
 
 
 /**
-*   Determine what to display in the admin list for each field.
-*
-*   @param  string  $fieldname  Name of the field, from database
-*   @param  mixed   $fieldvalue Value of the current field
-*   @param  array   $A          Array of all name/field pairs
-*   @param  array   $icon_arr   Array of system icons
-*   @return string              HTML for the field cell
-*/
+ * Determine what to display in the admin list for each field.
+ *
+ * @param   string  $fieldname  Name of the field, from database
+ * @param   mixed   $fieldvalue Value of the current field
+ * @param   array   $A          Array of all name/field pairs
+ * @param   array   $icon_arr   Array of system icons
+ * @return  string              HTML for the field cell
+ */
 function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $_CONF_QUIZ, $LANG_ACCESS, $LANG_QUIZ;
@@ -631,12 +640,13 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
 
 
 /**
-*   Create the admin menu at the top of the list and form pages.
-*
-*   @param  string  $view   Current view, used to select menu options
-*   @param  string  $help_text  Text to display below menu
-*   @return string      HTML for admin menu section
-*/
+ * Create the admin menu at the top of the list and form pages.
+ *
+ * @param   string  $view       Current view, used to select menu options
+ * @param   string  $help_text  Text to display below menu
+ * @param   string  $other_text Additional text to show in the header
+ * @return  string      HTML for admin menu section
+ */
 function adminMenu($view ='', $help_text = '', $other_text='')
 {
     global $_CONF, $LANG_QUIZ, $_CONF_QUIZ, $LANG01, $isAdmin;

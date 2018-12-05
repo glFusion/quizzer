@@ -1,26 +1,26 @@
 <?php
 /**
-*   Table definitions and other static config variables.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.0.3
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Table definitions and other static config variables.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.3
+ * @license     http://opensource.org/licenses/gpl-2.0.php 
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 /**
-*   Global array of table names from glFusion
-*   @global array $_TABLES
-*/
+ * Global array of table names from glFusion.
+ * @global  array   $_TABLES
+ */
 global $_TABLES;
 
 /**
-*   Global table name prefix
-*   @global string $_DB_table_prefix
-*/
+ * Global table name prefix.
+ * @global  string  $_DB_table_prefix
+ */
 global $_DB_table_prefix;
 
 $_TABLES['quizzer_quizzes']    = $_DB_table_prefix . 'quizzer_quizzes';
@@ -30,9 +30,9 @@ $_TABLES['quizzer_results']   = $_DB_table_prefix . 'quizzer_results';
 $_TABLES['quizzer_values']   = $_DB_table_prefix . 'quizzer_values';
 
 /**
-*   Global configuration array
-*   @global array $_CONF_QUIZ
-*/
+ * Global configuration array.
+ * @global  array   $_CONF_QUIZ
+ */
 global $_CONF_QUIZ;
 $_CONF_QUIZ['pi_name']           = 'quizzer';
 $_CONF_QUIZ['pi_version']        = '0.0.3';
