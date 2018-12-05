@@ -1,54 +1,65 @@
 <?php
 /**
-*   Class to handle all quizzer items.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.4.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Class to represent a quiz.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.4.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Quizzer;
 
 
 /**
-*   Class for a user's custom quizzer.
-*/
+ * Class for a single quiz.
+ */
 class Quiz
 {
-    const TAG = 'quiz';     // cache tag
+    /** Base tag for caching.
+     * @const string */
+    const TAG = 'quiz';
 
-    /** Local properties
-    *   @var array */
+    /** Local properties.
+    * @var array */
     var $properties = array();
 
-    /** Quiz fields, an array of objects
-    *   @var array */
+    /** Quiz fields, an array of objects.
+    * @var array */
     var $fields = array();
 
-    /** Result object for a user submission
-    *   @var object */
+    /** Result object for a user submission.
+    * @var object */
     var $Result;
 
-    /** Database ID of a result record
-    *   @var integer */
+    /** Database ID of a result record.
+    * @var integer */
     var $res_id;
 
-    var $allow_submit;  // Turn off the submit button when previewing
+    /** Flag to indicate that submission is allowed.
+     * Turns off the submit button when previewing.
+     * @var boolean */
+    var $allow_submit;
+
+    /** Flag to indicate that this is a new quic.
+     * @var boolean */
     var $isNew;
+
+    /** User ID.
+     * @var integer */
     var $uid;
 
 
     /**
-    *   Constructor.  Create a quizzer object for the specified user ID,
-    *   or the current user if none specified.  If a key is requested,
-    *   then just build the quizzer for that key (requires a $uid).
-    *
-    *   @param  integer $uid    Optional user ID
-    *   @param  string  $key    Optional key to retrieve
-    */
+     * Constructor.
+     * Create a quizzer object for the specified user ID, or the current
+     * user if none specified.
+     * If a key is requested, then just build the quizzer for that key (requires a $uid).
+     *
+     * @param   integer $id     Quiz ID, empty to create a new record
+     */
     function __construct($id = '')
     {
         global $_USER, $_CONF_QUIZ, $_TABLES;
@@ -107,11 +118,11 @@ class Quiz
 
 
     /**
-    *   Set a local property
-    *
-    *   @param  string  $name   Name of property to set
-    *   @param  mixed   $value  Value to set
-    */
+     * Set a local property.
+     *
+     * @param   string  $name   Name of property to set
+     * @param   mixed   $value  Value to set
+     */
     public function __set($name, $value)
     {
         switch ($name) {
@@ -146,11 +157,11 @@ class Quiz
 
 
     /**
-    *   Return a property, if it exists.
-    *
-    *   @param  string  $name   Name of property to get
-    *   @return mixed   Value of property identified as $name
-    */
+     * Return a property, if it exists.
+     *
+     * @param   string  $name   Name of property to get
+     * @return  mixed   Value of property identified as $name
+     */
     public function __get($name)
     {
         if (array_key_exists($name, $this->properties)) {
@@ -162,13 +173,10 @@ class Quiz
 
 
     /**
-    *   Read all quizzer variables into the $items array.
-    *   Set the $uid paramater to read another user's quizzer into
-    *   the current object instance.
-    *
-    *   @param  string  $key    Optional specific key to retrieve
-    *   @param  integer $uid    Optional user ID
-    */
+     * Read all auiz fields.
+     *
+     * @param  string  $id      Optional quiz ID.
+     */
     public function Read($id = '')
     {
         global $_TABLES;
@@ -193,13 +201,14 @@ class Quiz
 
 
     /**
-    *   Read a results set for this quiz.
-    *   If no results set ID is given, then find the first set for the
-    *   current user ID.
-    *
-    *   @param  integer $res_id     Results set to read
-    */
-    public function ReadData($res_id = 0, $token = '')
+     * Read a results set for this quiz.
+     * If no results set ID is given, then find the first set for the
+     * current user ID.
+     *
+     * @depreated
+     * @param   integer $res_id     Results set to read
+     */
+    public function ReadData($res_id = 0)
     {
         if ($res_id == 0) {
             $res_id = Result::FindResult($this->id, $this->uid);
@@ -215,11 +224,11 @@ class Quiz
 
 
     /**
-    *   Set all values for this quiz into local variables.
-    *
-    *   @param  array   $A          Array of values to use.
-    *   @param  boolean $fromdb     Indicate if $A is from the DB or a quiz.
-    */
+     * Set all values for this quiz into local variables.
+     *
+     * @param   array   $A          Array of values to use.
+     * @param   boolean $fromdb     Indicate if $A is from the DB or a quiz.
+     */
     function SetVars($A, $fromdb=false)
     {
         if (!is_array($A))
@@ -248,12 +257,12 @@ class Quiz
 
 
     /**
-    *   Create the edit quiz for all the quizzer variables.
-    *   Checks the type of edit being done to select the right template.
-    *
-    *   @param  string  $type   Type of editing- 'edit' or 'registration'
-    *   @return string          HTML for edit quiz
-    */
+     * Create the edit quiz for all the quizzer variables.
+     * Checks the type of edit being done to select the right template.
+     *
+     * @param   string  $type   Type of editing- 'edit' or 'registration'
+     * @return  string          HTML for edit quiz
+     */
     public function editQuiz($type = 'edit')
     {
         global $_CONF_QUIZ, $_USER, $LANG_QUIZ;
@@ -295,13 +304,13 @@ class Quiz
 
 
     /**
-    *   Save all quizzer items to the database.
-    *   Calls each field's Save() method iff there is a corresponding
-    *   value set in the $vals array.
-    *
-    *   @param  array   $vals   Values to save, from $_POST, normally
-    *   @return string      HTML error list, or empty for success
-    */
+     * Save all quizzer items to the database.
+     * Calls each field's Save() method iff there is a corresponding
+     * value set in the $vals array.
+     *
+     * @param   array   $vals   Values to save, from $_POST, normally
+     * @return  string      HTML error list, or empty for success
+     */
     public function SaveData($vals)
     {
         global $_TABLES;
@@ -363,11 +372,11 @@ class Quiz
 
 
     /**
-    *   Save a quiz definition.
-    *
-    *   @param  array   $A      Array of values (e.g. $_POST)
-    *   @return string      Error message, empty on success
-    */
+     * Save a quiz definition.
+     *
+     * @param   array   $A      Array of values (e.g. $_POST)
+     * @return  string      Error message, empty on success
+     */
     function SaveDef($A = '')
     {
         global $_TABLES, $LANG_QUIZ;
@@ -417,14 +426,14 @@ class Quiz
             // Now, if the ID was changed, update the field & results tables
             if ($changingID) {
                 DB_query("UPDATE {$_TABLES['quizzer_results']}
-                        SET frm_id = '{$this->id}'
-                        WHERE id = '{$this->old_id}'", 1);
-                DB_query("UPDATE {$_TABLES['quizzer_flddef']}
-                        SET frm_id = '{$this->id}'
-                        WHERE id = '{$this->old_id}'", 1);
+                        SET quiz_id = '{$this->id}'
+                        WHERE quiz_id = '{$this->old_id}'");
+                DB_query("UPDATE {$_TABLES['quizzer_questions']}
+                        SET quiz_id = '{$this->id}'
+                        WHERE quiz_id = '{$this->old_id}'");
             }
             CTL_clearCache();       // so autotags pick up changes
-            Cache::clear();      // Clear plugin cache
+            Cache::clear();         // Clear plugin cache
             $msg = '';              // no error message if successful
         } else {
             $msg = 5;
@@ -434,13 +443,13 @@ class Quiz
 
 
     /**
-    *   Render the quiz.
-    *   Set $mode to 'preview' to have the cancel button return to the admin
-    *   list.  Otherwise it might return and re-execute an action, like "copy".
-    *
-    *   @param  string  $mode   'preview' if this is an admin preview, or blank
-    *   @return string  HTML for the quiz
-    */
+     * Render a quiz question.
+     * Set $mode to 'preview' to have the cancel button return to the admin
+     * list.  Otherwise it might return and re-execute an action, like "copy".
+     *
+     * @param   string  $question   ID of question being rendered.
+     * @return  string      HTML for the quiz
+     */
     public function Render($question = 0)
     {
         global $LANG_QUIZ, $_CONF;
@@ -511,12 +520,12 @@ class Quiz
 
 
     /**
-    *   Delete a quiz definition.
-    *   Deletes a quiz, removes the questions, and deletes user data.
-    *
-    *   @uses   Result::Delete()
-    *   @param  integer $quiz_id     Optional quiz ID, current object if empty
-    */
+     * Delete a quiz definition.
+     * Deletes a quiz, removes the questions, and deletes user data.
+     *
+     * @uses    Result::Delete()
+     * @param   integer $quiz_id     Optional quiz ID, current object if empty
+     */
     public static function DeleteDef($quiz_id)
     {
         global $_TABLES;
@@ -537,16 +546,17 @@ class Quiz
                 Result::Delete($A['id']);
             }
         }
+        Cache::clear();
     }
 
 
     /**
-    *   Determine if a specific user has a given access level to the quiz
-    *
-    *   @param  integer $level  Requested access level
-    *   @param  integer $uid    Optional user ID, current user if omitted.
-    *   @return boolean     True if the user has access, false if not
-    */
+     * Determine if a specific user has a given access level to the quiz.
+     *
+     * @param   integer $level  Requested access level
+     * @param   integer $uid    Optional user ID, current user if omitted.
+     * @return  boolean     True if the user has access, false if not
+     */
     public function hasAccess($level, $uid = 0)
     {
         global $_USER;
@@ -572,12 +582,12 @@ class Quiz
 
 
     /**
-    *   Duplicate this quiz.
-    *   Creates a copy of this quiz with all its fields.
-    *
-    *   @uses   Field::Duplicate()
-    *   @return string      Error message, empty if successful
-    */
+     * Duplicate this quiz.
+     * Creates a copy of this quiz with all its fields.
+     *
+     * @uses    Question::Duplicate()
+     * @return  string      Error message, empty if successful
+     */
     public function Duplicate()
     {
         $this->name .= ' -Copy';
@@ -595,11 +605,11 @@ class Quiz
 
 
     /**
-    *   Remove HTML and convert other characters.
-    *
-    *   @param  string  $str    String to sanitize
-    *   @return string          String with no quotes or tags
-    */
+     * Remove HTML and convert other characters.
+     *
+     * @param   string  $str    String to sanitize
+     * @return  string          String with no quotes or tags
+     */
     private static function _stripHtml($str)
     {
         return htmlentities(strip_tags($str));
@@ -607,13 +617,13 @@ class Quiz
 
 
     /**
-    *   Toggle a boolean field in the database
-    *
-    *   @param  $id     Field def ID
-    *   @param  $fld    DB variable to change
-    *   @param  $oldval Original value
-    *   @return integer New value
-    */
+     * Toggle a boolean field in the database
+     *
+     * @param   string  $id     Field def ID
+     * @param   string  $fld    DB variable to change
+     * @param   integer $oldval Original value
+     * @return  integer New value
+     */
     public static function toggle($id, $fld, $oldval)
     {
         global $_TABLES;
@@ -801,7 +811,7 @@ class Quiz
 
 
     /**
-     * Export user responses as a CSV
+     * Export user responses as a CSV.
      *
      * @return  string  CSV file contents
      */
@@ -847,7 +857,7 @@ class Quiz
 
 
     /**
-     * Export questions, total responses and correct responses as a sCSV
+     * Export questions, total responses and correct responses as a CSV.
      *
      * @return  string  CSV file contents
      */
@@ -905,8 +915,13 @@ class Quiz
     }
 
 
+    /**
+     * Reset the quiz for the next taker.
+     * Currently a noop.
+     */
     public function Reset()
     {}
+
 }
 
 ?>

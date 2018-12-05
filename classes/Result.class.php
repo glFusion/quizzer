@@ -1,68 +1,70 @@
 <?php
 /**
-*   Class to handle the Quiz result sets.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Class to handle the Quiz result sets.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Quizzer;
 
 
 /**
-*   Class for a single form's result
-*/
+ * Class for a single result.
+ */
 class Result
 {
-    /** Questions, with answers
-    *   @var array */
+    /** Questions, with answers.
+    * @var array */
     public $Questions = array();
 
-    /** Values
+    /** Submission Values.
      * @var array */
     public $Values = array();
 
-    /** Result record ID
-    *   @var integer */
+    /** Result record ID.
+    * @var integer */
     var $res_id;
 
-    /** Quize ID
-    *   @var string */
+    /** Quize ID.
+    * @var string */
     var $quiz_id;
 
-    /** Submitting user ID
-    *   @var integer */
+    /** Submitting user ID.
+    * @var integer */
     var $uid;
 
-    /** Submission date
-    *   @var string */
+    /** Submission date.
+    * @var string */
     var $dt;
 
-    /** IP address of submitter
-    *   @var string */
+    /** IP address of submitter.
+    * @var string */
     var $ip;
 
-    /** Unique token for this submission
-    *   @var string */
+    /** Unique token for this submission.
+    * @var string */
     var $token;
 
-    /** Answers provided in intro fields
-     *  @var string */
+    /** Answers provided in intro fields.
+     * @var string */
     var $introfields;
 
-    public $asked = 0;      // number of questions asked.
+    /** Number of questions asked.
+     * @var integer */
+    public $asked = 0;
 
     /**
-    *   Constructor.
-    *   If a result set ID is specified, it is read. If an array is given
-    *   then the fields are simply copied from the array, e.g. when displaying
-    *   many results in a table.
+    * Constructor.
+    * If a result set ID is specified, it is read. If an array is given
+    * then the fields are simply copied from the array, e.g. when displaying
+    * many results in a table.
     *
-    *   @param  mixed   $res_id     Result set ID or array from DB
+    * @param    mixed   $res_id     Result set ID or array from DB
     */
     public function __construct($res_id=0)
     {
@@ -98,6 +100,13 @@ class Result
     }
 
 
+    /**
+     * Get a specific result set.
+     * Gets the value from the session if no ID is supplied.
+     *
+     * @param   integer $res_id     Optional result set ID
+     * @return  object      Instance of a Result object
+     */
     public static function getResult($res_id = 0)
     {
         if ($res_id == 0) {
@@ -108,11 +117,11 @@ class Result
 
 
     /**
-    *   Read all quizzer variables into the $items array.
-    *
-    *   @param  integer $id     Result set ID
-    *   @return boolean         True on success, False on failure/not found
-    */
+     * Read a result record into object variables.
+     *
+     * @param   integer $id     Result set ID
+     * @return  boolean         True on success, False on failure/not found
+     */
     public function Read($id = 0)
     {
         global $_TABLES;
@@ -136,10 +145,10 @@ class Result
 
 
     /**
-    *   Set all the variables from a form or when read from the DB
-    *
-    *   @param  array   $A      Array of values
-    */
+     * Set all the variables from a DB record.
+     *
+     * @param   array   $A      Array of values
+     */
     public function SetVars($A)
     {
         if (!is_array($A))
@@ -157,11 +166,11 @@ class Result
 
 
     /**
-    *   Retrieve all the values for this set into the supplied field objects.
-    *
-    *   @param  array   $fields     Array of Field objects
-    */
-    public function GetValues($fields)
+     * Retrieve all the values for this set into the supplied field objects.
+     *
+     * @param   array   $fields     Array of Field objects
+     */
+    public function getValues($fields)
     {
         global $_TABLES;
         $sql = "SELECT * from {$_TABLES['quizzer_values']}
@@ -182,14 +191,14 @@ class Result
 
 
     /**
-    *   Save the field results in a new result set
-    *
-    *   @param  string  $quiz_id     Form ID
-    *   @param  array   $fields     Array of Field objects
-    *   @param  array   $vals       Array of values ($_POST)
-    *   @param  integer $uid        Optional user ID, default=$_USER['uid']
-    *   @return mixed       False on failure/invalid, result ID on success
-    */
+     * Save the field results in a new result set.
+     *
+     * @param   string  $quiz_id     Form ID
+     * @param   array   $fields     Array of Field objects
+     * @param   array   $vals       Array of values ($_POST)
+     * @param   integer $uid        Optional user ID, default=$_USER['uid']
+     * @return  mixed       False on failure/invalid, result ID on success
+     */
     public function SaveData($quiz_id, $fields, $vals, $uid = 0)
     {
         global $_USER;
@@ -217,12 +226,12 @@ class Result
 
 
     /**
-    *   Creates a result set in the database.
-    *
-    *   @param  string  $quiz_id Form ID
-    *   @param  integer $uid    Optional user ID, if not the current user
-    *   @return integer         New result set ID
-    */
+     * Creates a result set in the database.
+     *
+     * @param   string  $quiz_id        Quiz ID
+     * @param   array   $introfields    Array of intro field prompts
+     * @return  integer         New result set ID
+     */
     public function Create($quiz_id, $introfields = array())
     {
         global $_TABLES, $_USER;
@@ -251,6 +260,7 @@ class Result
         if (!DB_error()) {
             $this->id = DB_insertID();
             SESS_setVar('quizzer_resultset', $this->id);
+            Cache::Clear();
         } else {
             $this->id = 0;
         }
@@ -259,9 +269,9 @@ class Result
 
 
     /**
-     * Delete all results for a quiz
+     * Delete all results for a quiz.
      *
-     * @param   string  $quiz_id    
+     * @param   string  $quiz_id
      */
     public static function ResetQuiz($quiz_id)
     {
@@ -269,15 +279,16 @@ class Result
         foreach ($results as $R) {
             self::Delete($R->res_id);
         }
+        Cache::Clear();
     }
 
 
     /**
-    *   Delete a single result set
-    *
-    *   @param  integer $res_id     Database ID of result to delete
-    *   @return boolean     True on success, false on failure
-    */
+     * Delete a single result set.
+     *
+     * @param   integer $res_id     Database ID of result to delete
+     * @return  boolean     True on success, false on failure
+     */
     public static function Delete($res_id=0)
     {
         global $_TABLES;
@@ -291,11 +302,11 @@ class Result
 
 
     /**
-    *   Delete the form values related to a result set.
-    *
-    *   @param  integer $res_id Required result ID
-    *   @param  integer $uid    Optional user ID
-    */
+     * Delete the form values related to a result set.
+     *
+     * @param   integer $res_id Required result ID
+     * @param   integer $uid    Optional user ID
+     */
     public static function DeleteValues($res_id, $uid=0)
     {
         global $_TABLES;
@@ -315,13 +326,13 @@ class Result
 
 
     /**
-    *   Returns this result set's token.
-    *   The token provides a very basic authentication mechanism when
-    *   the after-submission action is to display the results, to ensure
-    *   that only the newly-submitted result set is displayed.
-    *
-    *   @return string      Token saved with this result set
-    */
+     * Returns this result set's token.
+     * The token provides a very basic authentication mechanism when
+     * the after-submission action is to display the results, to ensure
+     * that only the newly-submitted result set is displayed.
+     *
+     * @return  string      Token saved with this result set
+     */
     public function Token()
     {
         return $this->token;
@@ -339,9 +350,7 @@ class Result
         $correct = 0;
 
         foreach ($this->Values as $V) {
-            if ($this->Questions[$V->q_id]->Verify($V->value)) {
-                $correct++;
-            }
+            $correct += $this->Questions[$V->q_id]->Verify($V->value);
         }
 
         $Q = Quiz::getInstance($this->quiz_id);

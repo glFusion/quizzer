@@ -73,6 +73,7 @@ $LANG_QUIZ = array(
 'select' => 'select',
 'score' => 'Score',
 'msg_no_questions' => 'No questions were found, resetting the quiz.',
+'partial_credit' => 'Partial Credit Allowed?',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

@@ -1,6 +1,6 @@
 <?php
 /**
- * Class to handle radio-button quiz questions.
+ * Class to handle checkbox quiz questions.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
@@ -13,9 +13,10 @@
 namespace Quizzer\Questions;
 
 /**
- * Class for radio button questions.
+ * Class for checkbox questions.
+ * Multiple answers are allowed.
  */
-class radio extends \Quizzer\Question
+class checkbox extends \Quizzer\Question
 {
     /**
      * Create the input selection for one answer.
@@ -35,7 +36,7 @@ class radio extends \Quizzer\Question
             $disabled = '';
             $sel = '';
         }
-        return '<input id="ans_id_' . $a_id . '" type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+        return '<input id="ans_id_' . $a_id . '" type="checkbox" name="a_id[]" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
     }
 
 
@@ -43,34 +44,61 @@ class radio extends \Quizzer\Question
      * Verify the supplied answer ID against the correct value
      *
      * @param   array   $submitted  Submitted answer IDs
-     * @return  float       Percentage of  options answered correctly
+     * @return  float       Numeric score
      */
     public function Verify($submitted)
     {
-        //var_dump($submitted);die;
-        if ($this->Answers[$submitted[0]]['correct'] == 1) {
-            return 1;
+        $correct = 0;
+        $possible = count($this->Answers);
+        foreach ($this->Answers as $id=>$ans) {
+            switch ($ans['correct']) {
+            case 1:
+                if (in_array($id, $submitted)) {
+                    $correct++;
+                }
+                break;
+            case 0:
+                if (!in_array($id, $submitted)) {
+                    $correct++;
+                }
+            }
+        }
+        if ($this->partial_credit) {
+            return ($correct / $possible);
         } else {
-            return 0;
+            return ($correct == $possible) ? 1 : 0;
         }
     }
 
 
     /**
-     * Get the ID of the correct answer.
-     * Returns an array, even though only one radio button is correct,
-     * to ensure uniform handling by the caller.
+     * Get an array of correct answer IDs
      *
      * @return   array      Array of correct answer IDs
      */
     public function getCorrectAnswers()
     {
+        $retval = array();
         foreach ($this->Answers as $a_id => $ans) {
             if ($ans['correct']) {
-                return array($a_id);
+                $retval[] = $a_id;
             }
         }
-        return array(0);   // Failsafe, but should not happen
+        if (empty($retval)) {
+            $retval = array(0);   // Failsafe, but should not happen
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Check if this question type allows partial credit.
+     *
+     * @return  boolean     True if partial credit is allowed
+     */
+    protected function allowPartial()
+    {
+        return true;
     }
 
 }

@@ -23,7 +23,7 @@
         <span id="hlp_type" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <select id="type" name="type">
+        <select id="type" name="type" onchange="QZADM_changeQType(this.value);">
           <option value="radio" {radio_sel}>{$LANG_QUIZ['radio']}</option>
           <option value="checkbox" {checkbox_sel}>{$LANG_QUIZ['checkbox']}</option>
         </select>
@@ -42,9 +42,9 @@
         <td><textarea rows="2" cols="60" name="opt[{ans_id}]">{ans_val}</textarea></td>
         <td style="text-align:center;">
 {!if isRadio}
-          <input type="radio" name="correct" value="{ans_id}" {ischecked} />
+          <input class="ans_corr" id="ans_corr_{ans_id}" type="radio" name="correct" value="{ans_id}" {ischecked} />
 {!else}
-          <input type="checkbox" name="correct[{ans_id}]" value="1" {ischecked} />
+          <input class="ans_corr" id="ans_corr_{ans_id}" type="checkbox" name="correct[{ans_id}]" value="1" {ischecked} />
 {!endif}
         </td>
         </tr>
@@ -67,8 +67,16 @@
         <span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
         <input id="f_enabled" type="checkbox" value="1" name="enabled" {ena_chk} />
+      </div>
+    </div>
+
+    <div class="uk-form-row" id="partial_credit_div" style="display:{pcred_vis}">
+      <label class="uk-form-label">{$LANG_QUIZ['partial_credit']}
+        <span id="hlp_pcredit" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <input type="checkbox" value="1" name="partial_credit" {pcred_chk} />
       </div>
     </div>
 

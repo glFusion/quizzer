@@ -1,36 +1,52 @@
 <?php
 /**
-*   Base class to handle quiz questions
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzes
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Base class to handle quiz questions.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @package     quizzes
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Quizzer;
 
 /**
-*   Class for form fields
-*/
+ * Base class for quiz questions.
+ */
 class Question
 {
+    /** Maximum answers allowed.
+     * @todo: Make this a per-quiz setting
+     * @var integer */
     const MAX_ANSWERS = 5;
+
+    /** Flag to indicate that this is a new question.
+     * @var boolean */
     public $isNew;
-    public $options = array();  // Form object needs access
-    public $Answers = array();  // Answer options
-    protected $properties = array();
-    protected $sub_type = 'regular';
-    protected $have_answer = 0;     // indicates the answer value
+
+    //public $options = array();  // Form object needs access
+    /** Answer options for this question
+     * @var array */
+    public $Answers = array();
+
+    /** Internal properties accessed via `__set()` and `__get()`
+     * @var array */
+    private $properties = array();
+
+    //protected $sub_type = 'regular';
+
+    /** Answer value.
+     * @var integer */ 
+    protected $have_answer = 0;
 
     /**
-    *   Constructor.  Sets the local properties using the array $item.
-    *
-    *   @param  integer $id     ID of the existing field, empty if new
-    *   @param  object  $Form   Form object to which this field belongs
-    */
+     * Constructor.
+     *
+     * @param   integer $id         ID of the existing question, empty if new
+     * @param   integer $quiz_id    ID of the related quiz
+     */
     public function __construct($id = 0, $quiz_id=NULL)
     {
         global $_USER, $_TABLES;
@@ -45,12 +61,12 @@ class Question
             $this->prompt = '';
             $this->quiz_id = $quiz_id;
         } elseif (is_array($id)) {
-            $this->SetVars($id, true);
+            $this->setVars($id, true);
             $this->isNew = false;
         } else {
             $q = self::Read($id);
             if ($q) {
-                $this->SetVars($q);
+                $this->setVars($q);
                 $this->isNew = false;
             }
         }
@@ -68,15 +84,15 @@ class Question
 
 
     /**
-    *   Get an instance of a field based on the field type.
-    *   If the "fld" parameter is an array it must include at least q_id
-    *   and type.
-    *   Only works to retrieve existing fields.
-    *
-    *   @param  mixed   $question   Question ID or record
-    *   @param  object  $quiz       Quiz object, or NULL
-    *   @return object          Question object
-    */
+     * Get an instance of a field based on the field type.
+     * If the "fld" parameter is an array it must include at least q_id
+     * and type.
+     * Only works to retrieve existing fields.
+     *
+     * @param   mixed   $question   Question ID or record
+     * @param   object  $quiz       Quiz object, or NULL
+     * @return  object          Question object
+     */
     public static function getInstance($question, $quiz = NULL)
     {
         global $_TABLES;
@@ -107,12 +123,12 @@ class Question
 
 
     /**
-    *   Read this field definition from the database and load the object
-    *
-    *   @see Question::SetVars
-    *   @param  integer $id     Record ID of question
-    *   @return array           DB record array
-    */
+     * Read this field definition from the database and load the object.
+     *
+     * @see     self::setVars()
+     * @param   integer $id     Record ID of question
+     * @return  array           DB record array
+     */
     public static function Read($id = 0)
     {
         global $_TABLES;
@@ -126,12 +142,11 @@ class Question
 
 
     /**
-    *   Set a value into a property
-    *
-    *   @uses   hour24to12()
-    *   @param  string  $name       Name of property
-    *   @param  mixed   $value      Value to set
-    */
+     * Set a value into a property.
+     *
+     * @param   string  $name       Name of property
+     * @param   mixed   $value      Value to set
+     */
     public function __set($name, $value)
     {
         switch ($name) {
@@ -144,6 +159,7 @@ class Question
             break;
 
         case 'enabled':
+        case 'partial_credit':
             $this->properties[$name] = $value == 0 ? 0 : 1;
             break;
 
@@ -160,11 +176,11 @@ class Question
 
 
     /**
-    *   Get a property's value
-    *
-    *   @param  string  $name       Name of property
-    *   @return mixed       Value of property, or empty string if undefined
-    */
+     * Get a property's value.
+     *
+     * @param   string  $name       Name of property
+     * @return  mixed       Value of property, or empty string if undefined
+     */
     public function __get($name)
     {
         if (array_key_exists($name, $this->properties)) {
@@ -176,16 +192,17 @@ class Question
 
 
     /**
-    *   Set all variables for this field.
-    *   Data is expected to be from $_POST or a database record
-    *
-    *   @param  array   $item   Array of fields for this item
-    *   @param  boolean $fromdb Indicate whether this is read from the DB
-    */
-    public function SetVars($A, $fromdb=false)
+     * Set all variables for this field.
+     * Data is expected to be from $_POST or a database record
+     *
+     * @param   array   $A      Array of name->value pairs
+     * @param   boolean $fromDB Indicate whether this is read from the DB
+     */
+    public function setVars($A, $fromDB=false)
     {
-        if (!is_array($A))
+        if (!is_array($A)) {
             return false;
+        }
 
         $this->q_id = $A['q_id'];
         $this->quiz_id = $A['quiz_id'];
@@ -193,14 +210,18 @@ class Question
         $this->question= $A['question'];
         $this->type = $A['type'];
         $this->answer_msg = $A['answer_msg'];
+        $this->partial_credit = isset($A['partial_credit']) && $A['partial_credit'] == 1 ? 1 : 0;
         return true;
     }
 
 
     /**
-    *   Render the question
-    *   @return string  HTML for the question form
-    */
+     * Render the question.
+     *
+     * @param   integer $q_num  Sequential question number, e.g. first=1, etc.
+     * @param   integer $num_q  Total number of questions for this quiz
+     * @return  string  HTML for the question form
+     */
     public function Render($q_num, $num_q)
     {
         $retval = '';
@@ -245,6 +266,7 @@ class Question
         ) );
 
         $T->set_block('question', 'AnswerRow', 'Answer');
+        $correct = $this->getCorrectAnswers();
         foreach ($this->Answers as $A) {
             $T->set_var(array(
                 'q_id'      => $A['q_id'],
@@ -257,7 +279,6 @@ class Question
             // Don't allow updates.
             $cls = 'qz-unanswered';
             if ($this->have_answer > 0) {
-                $correct = $this->getCorrectAnswers();
                 $icon = '';
                 if ($this->have_answer == $A['a_id'] && !in_array($this->have_answer, $correct)) {
                     $cls = 'qz-incorrect';
@@ -302,11 +323,11 @@ class Question
      * Check whether the supplied answer ID is correct for this question.
      *
      * @param   integer $a_id   Answer ID
-     * @return  boolean         True if correct, False if incorrect
+     * @return  float       Percentage of options correct.
      */
     public function Verify($a_id)
     {
-        return false;
+        return (float)0;
     }
 
 
@@ -324,11 +345,10 @@ class Question
 
 
     /**
-    *   Edit a field definition.
-    *
-    *   @uses   DateFormatSelect()
-    *   @return string      HTML for editing form
-    */
+     * Edit a question definition.
+     *
+     * @return  string      HTML for editing form
+     */
     public function EditDef()
     {
         global $_TABLES;
@@ -357,6 +377,8 @@ class Question
             'help_msg'  => $this->help_msg,
             'answer_msg' => $this->answer_msg,
             'can_delete' => $this->isNew || $this->_wasAnswered() ? false : true,
+            $this->type . '_sel' => 'selected="selected"',
+            'pcred_vis' => $this->allowPartial() ? '' : 'none',
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
@@ -386,11 +408,11 @@ class Question
 
 
     /**
-    *   Save the field definition to the database.
-    *
-    *   @param  mixed   $val    Value to save
-    *   @return string          Error message, or empty string for success
-    */
+     * Save the field definition to the database.
+     *
+     * @param   array   $A  Array of name->value pairs
+     * @return  string          Error message, or empty string for success
+     */
     public function SaveDef($A = '')
     {
         global $_TABLES;
@@ -404,7 +426,7 @@ class Question
         if (empty($A['type']))
             return;
 
-        $this->SetVars($A, false);
+        $this->setVars($A, false);
 
         if ($q_id > 0) {
             // Existing record, perform update
@@ -420,7 +442,8 @@ class Question
                 enabled = '{$this->enabled}',
                 help_msg = '" . DB_escapeString($this->help_msg) . "',
                 question = '" . DB_escapeString($this->question) . "',
-                answer_msg = '" . DB_escapeString($this->answer_msg) . "'";
+                answer_msg = '" . DB_escapeString($this->answer_msg) . "',
+                partial_credit = '{$this->partial_credit}'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -431,7 +454,7 @@ class Question
             $q_id = DB_insertID();
         }
 
-        // Now save the answers
+        // Now save the answer options
         $count = count($A['opt']);   // index into opt and correct arrays
         for ($i = 1; $i <= $count; $i++) {
             if (!empty($A['opt'][$i])) {
@@ -449,6 +472,7 @@ class Question
                     ON DUPLICATE KEY UPDATE
                         value = '$question',
                         correct = '$correct'";
+COM_errorLog($sql);
                 DB_query($sql);
                 if (DB_error()) {
                     return 6;
@@ -463,10 +487,10 @@ class Question
 
 
     /**
-    *   Delete the current field definition.
-    *
-    *   @param  integer $q_id     ID number of the field
-    */
+     * Delete the current question definition.
+     *
+     * @param  integer $q_id     ID number of the question
+     */
     public static function Delete($q_id=0)
     {
         global $_TABLES;
@@ -477,13 +501,12 @@ class Question
 
 
     /**
-    *   Save this field to the database.
-    *
-    *   @uses   AutoGen()
-    *   @param  mixed   $value  Data value to save
-    *   @param  integer $res_id Result ID associated with this field
-    *   @return boolean     True on success, False on failure
-    */
+     * Save a submitted answer to the database.
+     *
+     * @param   mixed   $value  Data value to save
+     * @param   integer $res_id Result ID associated with this field
+     * @return  boolean     True on success, False on failure
+     */
     public function SaveData($value, $res_id)
     {
         global $_TABLES;
@@ -497,10 +520,10 @@ class Question
 
 
     /**
-    *   Copy this question to another quiz.
-    *
-    *   @see    Quiz::Duplicate()
-    */
+     * Copy this question to another quiz.
+     *
+     * @see     Quiz::Duplicate()
+     */
     public function Duplicate()
     {
         global $_TABLES;
@@ -517,13 +540,13 @@ class Question
 
 
     /**
-    *   Toggle a boolean field in the database
-    *
-    *   @param  $id     Question def ID
-    *   @param  $fld    DB variable to change
-    *   @param  $oldval Original value
-    *   @return integer New value
-    */
+     * Toggle a boolean field in the database.
+     *
+     * @param   integer $id     Question def ID
+     * @param   string  $fld    DB field name to change
+     * @param   integer $oldval Original value
+     * @return  integer         New value
+     */
     public static function toggle($id, $fld, $oldval)
     {
         global $_TABLES;
@@ -547,6 +570,7 @@ class Question
 
     /**
      * Get all the questions to show for a quiz.
+     * This returns an array of question objects for a new quiz submission.
      *
      * @param   integer $quiz_id    Quiz ID
      * @param   integer $max        Max questions, default to all
@@ -557,10 +581,10 @@ class Question
     {
         global $_TABLES;
 
-        $quiz_id = (int)$quiz_id;
         $max = (int)$max;
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quiz_id = $quiz_id";
+                WHERE quiz_id = '" . DB_escapeString($quiz_id) . "'
+                AND enabled = 1";
         if ($rand) $sql .= ' ORDER BY RAND()';
         if ($max > 0) $sql .= " LIMIT $max";
         $res = DB_query($sql);
@@ -578,7 +602,7 @@ class Question
 
 
     /**
-     * Get all the questions for a result set
+     * Get all the questions for a result set.
      *
      * @param   array   $ids    Array of question ids, from the resultset
      * @return  array       Array of question objects
@@ -619,6 +643,7 @@ class Question
      * Used to determine the number of questions to ask, if this number
      * is less than the number assigned to the quiz.
      *
+     * @param   string  $quiz_id    ID of the quiz
      * return   integer     Number of quiz questions in the database
      */
     public static function countQ($quiz_id)
@@ -626,6 +651,17 @@ class Question
         global $_TABLES;
 
         return DB_count($_TABLES['quizzer_questions'], 'quiz_id', $quiz_id);
+    }
+
+
+    /**
+     * Check if this question type allows partial credit.
+     *
+     * @return  boolean     True if partial credit is allowed
+     */
+    protected function allowPartial()
+    {
+        return false;
     }
 
 }

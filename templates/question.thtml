@@ -26,7 +26,11 @@
 <!-- END AnswerRow -->
   </div>
 </div>
-<div id="answer_msg" class="qz-answermsg" style="display:{answer_vis};">{answer_msg}</div>
+{!if answer_msg}
+<div id="answer_msg" class="qz-answermsg uk-alert" style="display:{answer_vis};">{answer_msg}</div>
+{!else}
+<span id="answer_msg" style="display:none;"></span>
+{!endif}
 <div class="qz-buttons">
 <button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');" style="display:{sub_btn_vis};">{$LANG_ADMIN['submit']}</button>
 {!if is_last}
