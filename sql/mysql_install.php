@@ -28,6 +28,7 @@ $_SQL = array(
   `num_q` int(2) unsigned NOT NULL DEFAULT '0',
   `levels` varchar(255) NOT NULL DEFAULT '0',
   `pass_msg` text,
+  `fail_msg` text,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -77,6 +78,7 @@ $_QUIZ_UPGRADE_SQL = array(
     ),
     '0.0.3' => array(
         "ALTER TABLE {$_TABLES['quizzer_results']} ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
+        "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD fail_msg TEXT",
     ),
 );
 
