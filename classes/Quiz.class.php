@@ -377,6 +377,8 @@ class Quiz
 
     /**
      * Save a quiz definition.
+     * If creating a new quiz, or changing the Quiz ID of an existing one,
+     * then the DB is checked to ensure that the ID is unique.
      *
      * @param   array   $A      Array of values (e.g. $_POST)
      * @return  string      Error message, empty on success
@@ -394,11 +396,11 @@ class Quiz
             return $LANG_QUIZ['err_name_required'];
         }
 
+        // If saving a new record or changing the ID of an existing one,
+        // make sure the new quiz ID doesn't already exist.
         $changingID = false;
         if ($this->isNew || (!$this->isNew && $this->id != $this->old_id)) {
             if (!$this->isNew) $changingID = true;
-            // Saving a new record or changing the ID of an existing one.
-            // Make sure the new frm ID doesn't already exist.
             $x = DB_count($_TABLES['quizzer_quizzes'], 'id', $this->id);
             if ($x > 0) {
                 $this->id = COM_makeSid();
@@ -429,7 +431,7 @@ class Quiz
 
         if (!DB_error()) {
             // Now, if the ID was changed, update the field & results tables
-            if ($changingID) {
+            if (!$this->isNew && $changingID) {
                 DB_query("UPDATE {$_TABLES['quizzer_results']}
                         SET quiz_id = '{$this->id}'
                         WHERE quiz_id = '{$this->old_id}'");
@@ -488,26 +490,26 @@ class Quiz
         // display those. Otherwise start with the first question below.
         if ($question == 0 &&
             ($this->introtext != '' || $this->introfields != '') ) {
-                $T = new \Template(QUIZ_PI_PATH . '/templates');
-                $T->set_file('intro', 'intro.thtml');
-                $T->set_var(array(
-                    'introtext'     => $this->introtext,
-                    'quiz_name'     => $this->name,
-                    'quiz_id'       => $this->id,
+            $T = new \Template(QUIZ_PI_PATH . '/templates');
+            $T->set_file('intro', 'intro.thtml');
+            $T->set_var(array(
+                'introtext'     => $this->introtext,
+                'quiz_name'     => $this->name,
+                'quiz_id'       => $this->id,
+            ) );
+            if ($this->introfields != '') {
+                $introfields = explode('|', $this->introfields);
+                $T->set_block('intro', 'introFields', 'iField');
+                foreach ($introfields as $fld) {
+                    $T->set_var(array(
+                        'if_prompt' => $fld,
+                        'if_name'   => COM_sanitizeId($fld),
                 ) );
-                if ($this->introfields != '') {
-                    $introfields = explode('|', $this->introfields);
-                    $T->set_block('intro', 'introFields', 'iField');
-                    foreach ($introfields as $fld) {
-                        $T->set_var(array(
-                            'if_prompt' => $fld,
-                            'if_name'   => COM_sanitizeId($fld),
-                        ) );
-                        $T->parse('iField', 'introFields', true);
-                    }
+                $T->parse('iField', 'introFields', true);
                 }
-                $T->parse('output', 'intro');
-                $retval .= $T->finish($T->get_var('output'));
+            }
+            $T->parse('output', 'intro');
+            $retval .= $T->finish($T->get_var('output'));
         } else {
             $questions = SESS_getVar('quizzer_questions');
             if ($questions == 0) {
