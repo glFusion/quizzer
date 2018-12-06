@@ -191,41 +191,6 @@ class Result
 
 
     /**
-     * Save the field results in a new result set.
-     *
-     * @param   string  $quiz_id     Form ID
-     * @param   array   $fields     Array of Field objects
-     * @param   array   $vals       Array of values ($_POST)
-     * @param   integer $uid        Optional user ID, default=$_USER['uid']
-     * @return  mixed       False on failure/invalid, result ID on success
-     */
-    public function SaveData($quiz_id, $fields, $vals, $uid = 0)
-    {
-        global $_USER;
-
-        $this->uid = $uid == 0 ? (int)$_USER['uid'] : (int)$uid;
-        $this->quiz_id = COM_sanitizeID($quiz_id);
-
-        // Get the result set ID, creating a new one if needed
-        if ($this->isNew) {
-            $res_id = $this->Create($quiz_id, $this->uid);
-        } else {
-            $res_id = $this->id;
-        }
-        if (!$res_id)       // couldn't create a result set
-            return false;
-
-        foreach ($fields as $field) {
-            // Get the value to save and have the field save it
-            $newval = $field->valueFromForm($vals);
-            $field->SaveData($newval, $res_id);
-        }
-        Cache::clear(array('result_fields', 'result_' . $res_id));
-        return $res_id;
-    }
-
-
-    /**
      * Creates a result set in the database.
      *
      * @param   string  $quiz_id        Quiz ID
