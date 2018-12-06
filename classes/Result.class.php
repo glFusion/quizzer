@@ -364,7 +364,7 @@ class Result
         if ($prog_status == 'success') {
             $msg = $Q->pass_msg;
         } else {
-            $msg = '';
+            $msg = $Q->fail_msg;
         }
         $T = new \Template(QUIZ_PI_PATH . '/templates');
         $T->set_file('result', 'finish.thtml');

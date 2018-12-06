@@ -10,7 +10,7 @@
     <div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
   </div>
 {!if finish_msg}
-  <div class="qz-finish-msg">{finish_msg}</div>
+  <div class="qz-finish-msg {prog_status}">{finish_msg}</div>
 {!endif}
   <div class="uk-form-row">
       <label class="uk-form-label">{prompt}</label>

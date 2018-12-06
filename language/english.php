@@ -41,6 +41,7 @@ $LANG_QUIZ = array(
 'introtext' => 'Intro Text',
 'introfields' => 'Text Fields',
 'pass_msg' => 'Message if Passed',
+'fail_msg' => 'Message if Failed',
 'no_answers' => 'No Submissions',
 'csvbyq'    => 'Export CSV by Question',
 'csvbysubmitter' => 'Export CSV by Submitter',
@@ -73,6 +74,7 @@ $LANG_QUIZ = array(
 'select' => 'select',
 'score' => 'Score',
 'msg_no_questions' => 'No questions were found, resetting the quiz.',
+'partial_credit' => 'Partial Credit Allowed?',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

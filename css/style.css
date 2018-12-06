@@ -98,3 +98,8 @@ div.qz-answerrow label {
     width: 80%;
     margin: 20px auto 20px auto;
 }
+/* Add additional styling for final pass or failure messages */
+.qz-finish-msg.danger {
+}
+.qz-finish-msg.success {
+}
