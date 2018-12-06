@@ -41,7 +41,9 @@ class checkbox extends \Quizzer\Question
 
 
     /**
-     * Verify the supplied answer ID against the correct value
+     * Verify the supplied answer ID against the correct value.
+     * For this question type the return may be 1 or 0 or, if partial
+     * credit is allowed, the percentage of correct boxes selected.
      *
      * @param   array   $submitted  Submitted answer IDs
      * @return  float       Numeric score
@@ -93,6 +95,8 @@ class checkbox extends \Quizzer\Question
 
     /**
      * Check if this question type allows partial credit.
+     * Used to determine whether the partial credit option is shown on the
+     * question definition form.
      *
      * @return  boolean     True if partial credit is allowed
      */

@@ -40,15 +40,17 @@ class radio extends \Quizzer\Question
 
 
     /**
-     * Verify the supplied answer ID against the correct value
+     * Verify the supplied answer ID against the correct value.
+     * For this question type, the return is either 1 or 0.
      *
      * @param   array   $submitted  Submitted answer IDs
-     * @return  float       Percentage of  options answered correctly
+     * @return  float       Numeric score.
      */
     public function Verify($submitted)
     {
-        //var_dump($submitted);die;
-        if ($this->Answers[$submitted[0]]['correct'] == 1) {
+        if (isset($submitted[0]) &&
+            isset($this->Answers[$submitted[0]]) &&
+            $this->Answers[$submitted[0]]['correct'] == 1) {
             return 1;
         } else {
             return 0;
