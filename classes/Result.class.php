@@ -371,6 +371,7 @@ class Result
         $T->set_var(array(
             'pct' => $pct,
             'quiz_name' => $Q->name,
+            'quiz_id'   => $Q->id,
             'correct' => $correct,
             'total' => $total_q,
             'prog_status' => $prog_status,
