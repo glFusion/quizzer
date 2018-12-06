@@ -403,39 +403,45 @@ function listQuestions($quiz_id = '')
 
     $header_arr = array(
         array(
-            'text' => $LANG_ADMIN['edit'],
+            'text'  => $LANG_ADMIN['edit'],
             'field' => 'edit',
-            'sort' => false,
+            'sort'  => false,
             'align' => 'center',
         ),
         array(
-            'text' => $LANG_QUIZ['question'],
+            'text'  => $LANG_QUIZ['question'],
             'field' => 'question',
-            'sort' => false,
+            'sort'  => false,
         ),
         array(
-            'text' => $LANG_QUIZ['type'],
+            'text'  => $LANG_QUIZ['type'],
             'field' => 'type',
-            'sort' => false,
+            'sort'  => false,
         ),
         array(
-            'text' => $LANG_QUIZ['enabled'],
+            'text'  => $LANG_QUIZ['enabled'],
             'field' => 'enabled',
-            'sort' => false,
+            'sort'  => false,
             'align' => 'center',
         ),
         array(
-            'text' => $LANG_ADMIN['delete'],
+            'text'  => $LANG_ADMIN['delete'],
             'field' => 'delete',
-            'sort' => false,
+            'sort'  => false,
         ),
     );
 
-    $defsort_arr = array('field' => 'q_id');
-    $text_arr = array('form_url' => QUIZ_ADMIN_URL . '/index.php');
-    $options_arr = array('chkdelete' => true,
-            'chkname' => 'delquestion',
-            'chkfield' => 'q_id',
+    $defsort_arr = array(
+        'field'     => 'q_id',
+        'direction' => 'ASC',
+    );
+    $text_arr = array(
+        'form_url' => QUIZ_ADMIN_URL . '/index.php',
+    );
+    $options_arr = array(
+        'chkdelete' => true,
+        'chkname'   => 'delquestion',
+        'chkfield'  => 'q_id',
     );
     $query_arr = array(
         'table' => 'quizzer_questions',
@@ -452,7 +458,7 @@ function listQuestions($quiz_id = '')
     $T->set_var(array(
         'action_url'    => QUIZ_ADMIN_URL . '/index.php',
         'is_uikit'      => $_CONF_QUIZ['_is_uikit'],
-        'quiz_id'        => $quiz_id,
+        'quiz_id'       => $quiz_id,
         'pi_url'        => QUIZ_PI_URL,
         'question_adminlist' => ADMIN_list('quizzer',
                     __NAMESPACE__ . '\getField_field', $header_arr,
