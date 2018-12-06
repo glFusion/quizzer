@@ -52,7 +52,10 @@ $_SQL = array(
   `question` text,
   `help_msg` varchar(255) DEFAULT '',
   `answer_msg` text,
-  PRIMARY KEY (`q_id`)
+  `partial_credit` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `randomize` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`q_id`),
+  KEY `quiz_id` (`quiz_id`)
 ) ENGINE=MyISAM",
 
 'quizzer_answers' => "CREATE TABLE {$_TABLES['quizzer_answers']} (

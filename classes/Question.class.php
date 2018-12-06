@@ -26,7 +26,6 @@ class Question
      * @var boolean */
     public $isNew;
 
-    //public $options = array();  // Form object needs access
     /** Answer options for this question
      * @var array */
     public $Answers = array();
@@ -34,8 +33,6 @@ class Question
     /** Internal properties accessed via `__set()` and `__get()`
      * @var array */
     private $properties = array();
-
-    //protected $sub_type = 'regular';
 
     /** Answer value.
      * @var integer */ 
@@ -60,6 +57,7 @@ class Question
             $this->access = 0;
             $this->prompt = '';
             $this->quiz_id = $quiz_id;
+            $this->randomize = 0;
         } elseif (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
@@ -71,32 +69,38 @@ class Question
             }
         }
 
-        if ($this->q_id > 0) {      // get answers
-            $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
-                WHERE q_id = '{$this->q_id}'";
-            $res = DB_query($sql);
-            $this->Answers = array();
-            while ($A = DB_fetchArray($res, false)) {
-                $this->Answers[$A['a_id']] = $A;
+        if ($this->q_id > 0) {      // get answers if not a new record
+            $cache_key = 'answers_q_' . $this->q_id;
+            $this->Answers = Cache::get($cache_key);
+            if ($this->Answers == NULL) {
+                $this->Answers = array();
+                $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
+                    WHERE q_id = '{$this->q_id}'";
+                $res = DB_query($sql);
+                if ($res) {
+                    while ($A = DB_fetchArray($res, false)) {
+                        $this->Answers[$A['a_id']] = $A;
+                    }
+                }
+                Cache::set($cache_key, $this->Answers, array('answers', $this->q_id));
             }
         }
     }
 
 
     /**
-     * Get an instance of a field based on the field type.
-     * If the "fld" parameter is an array it must include at least q_id
+     * Get an instance of a question based on the question type.
+     * If the "question" parameter is an array it must include at least q_id
      * and type.
      * Only works to retrieve existing fields.
      *
      * @param   mixed   $question   Question ID or record
      * @param   object  $quiz       Quiz object, or NULL
-     * @return  object          Question object
+     * @return  object          Question object, NULL if not found
      */
     public static function getInstance($question, $quiz = NULL)
     {
         global $_TABLES;
-        static $_fields = array();
 
         if (is_array($question)) {
             // Received a field record, make sure required parameters
@@ -108,17 +112,18 @@ class Question
         } elseif (is_numeric($question)) {
             // Received a field ID, have to look up the record to get the type
             $q_id = (int)$question;
-            if (!array_key_exists($q_id, $_fields)) {
-                $question = self::Read($q_id);
-                if (DB_error() || empty($question)) return NULL;
-            }
+            $question = self::Read($q_id);
+            if (empty($question)) return NULL;
         }
 
-        if (!array_key_exists($q_id, $_fields)) {
-            $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
-            $_fields[$q_id] = new $cls($question);
+        // Instantiate the question object.
+        // The answers will be read from cache or DB by the constructor.
+        $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
+        if (class_exists($cls)) {
+            return new $cls($question);
+        } else {
+            return NULL;
         }
-        return $_fields[$q_id];
     }
 
 
@@ -133,11 +138,17 @@ class Question
     {
         global $_TABLES;
         $id = (int)$id;
-        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE q_id = $id";
-        $res = DB_query($sql, 1);
-        if (DB_error() || !$res) return false;
-        return DB_fetchArray($res, false);
+        $cache_key = 'question_' . $id;
+        $A = Cache::get($cache_key);
+        if ($A === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
+                    WHERE q_id = $id";
+            $res = DB_query($sql, 1);
+            if (DB_error() || !$res) return false;
+            $A = DB_fetchArray($res, false);
+            Cache::set($cache_key, $A, array('questions', $A['quiz_id']));
+        }
+        return $A;
     }
 
 
@@ -160,6 +171,7 @@ class Question
 
         case 'enabled':
         case 'partial_credit':
+        case 'randomize':
             $this->properties[$name] = $value == 0 ? 0 : 1;
             break;
 
@@ -211,6 +223,7 @@ class Question
         $this->type = $A['type'];
         $this->answer_msg = $A['answer_msg'];
         $this->partial_credit = isset($A['partial_credit']) && $A['partial_credit'] == 1 ? 1 : 0;
+        $this->randomize = isset($A['randomize']) && $A['randomize'] == 1 ? 1 : 0;
         return true;
     }
 
@@ -267,6 +280,10 @@ class Question
 
         $T->set_block('question', 'AnswerRow', 'Answer');
         $correct = $this->getCorrectAnswers();
+        if ($this->randomize) {
+            // Randomize the answers if so configured.
+            shuffle($this->Answers);
+        }
         foreach ($this->Answers as $A) {
             $T->set_var(array(
                 'q_id'      => $A['q_id'],
@@ -379,6 +396,7 @@ class Question
             'can_delete' => $this->isNew || $this->_wasAnswered() ? false : true,
             $this->type . '_sel' => 'selected="selected"',
             'pcred_vis' => $this->allowPartial() ? '' : 'none',
+            'random_chk' => $this->randomize ? 'checked="checked"' : '',
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
@@ -443,7 +461,8 @@ class Question
                 help_msg = '" . DB_escapeString($this->help_msg) . "',
                 question = '" . DB_escapeString($this->question) . "',
                 answer_msg = '" . DB_escapeString($this->answer_msg) . "',
-                partial_credit = '{$this->partial_credit}'";
+                partial_credit = '{$this->partial_credit}',
+                randomize = '{$this->randomize}'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -472,7 +491,6 @@ class Question
                     ON DUPLICATE KEY UPDATE
                         value = '$question',
                         correct = '$correct'";
-COM_errorLog($sql);
                 DB_query($sql);
                 if (DB_error()) {
                     return 6;
@@ -482,6 +500,8 @@ COM_errorLog($sql);
                 DB_delete($_TABLES['quizzer_answers'], array('q_id', 'a_id'), array($this->q_id, $i));
             }
         }
+        Cache::clear(array('questions', $this->quiz_id));
+        Cache::clear(array('answers', $this->q_id));
         return 0;
     }
 
@@ -656,6 +676,8 @@ COM_errorLog($sql);
 
     /**
      * Check if this question type allows partial credit.
+     * Used to determine whether the partial credit option is shown on the
+     * question definition form.
      *
      * @return  boolean     True if partial credit is allowed
      */
