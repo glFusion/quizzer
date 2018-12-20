@@ -103,26 +103,33 @@ class Question
         global $_TABLES;
 
         if (is_array($question)) {
-            // Received a field record, make sure required parameters
-            // are present
+            // Received a question record, make sure required parameters
+            // are present.
             if (!isset($question['type']) || !isset($question['q_id'])) {
                 return NULL;
             }
             $q_id = (int)$question['q_id'];
         } elseif (is_numeric($question)) {
-            // Received a field ID, have to look up the record to get the type
+            // Received a question ID, have to look up the record to get
+            // the type.
             $q_id = (int)$question;
-            $question = self::Read($q_id);
-            if (empty($question)) return NULL;
+            if ($q_id > 0) {
+                $question = self::Read($q_id);
+                if (empty($question)) return NULL;
+            }
         }
 
         // Instantiate the question object.
         // The answers will be read from cache or DB by the constructor.
-        $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
-        if (class_exists($cls)) {
-            return new $cls($question);
+        if ($q_id == 0) {
+            return new self();
         } else {
-            return NULL;
+            $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
+            if (class_exists($cls)) {
+                return new $cls($question);
+            } else {
+                return NULL;
+            }
         }
     }
 
