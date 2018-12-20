@@ -33,10 +33,12 @@ class Cache
      * @param   string  $key    Item key
      * @param   mixed   $data   Data, typically an array
      * @param   mixed   $tag    Single tag, or an array
+     * @return  boolean     True on success, False on error
      */
     public static function set($key, $data, $tag='')
     {
-        if (version_compare(GVERSION, self::MIN_GVERSION, '<')) return NULL;
+        // If caching not supported, just return OK
+        if (version_compare(GVERSION, self::MIN_GVERSION, '<')) return true;
 
         if ($tag == '')
             $tag = array(self::TAG);
@@ -45,7 +47,7 @@ class Cache
         else
             $tag = array($tag, self::TAG);
         $key = self::_makeKey($key);
-        \glFusion\Cache::getInstance()->set($key, $data, $tag, 86400);
+        return \glFusion\Cache\Cache::getInstance()->set($key, $data, $tag, 86400);
     }
 
 
@@ -53,14 +55,15 @@ class Cache
      * Delete a single item from the cache by key.
      *
      * @param   string  $key    Base key, e.g. item ID
+     * @return  boolean     True on success, False on error
      */
     public static function delete($key)
     {
         if (version_compare(GVERSION, self::MIN_GVERSION, '<')) {
-            return;     // glFusion version doesn't support caching
+            return true;     // glFusion version doesn't support caching
         }
         $key = self::_makeKey($key);
-        \glFusion\Cache::getInstance()->delete($key);
+        return\glFusion\Cache\Cache::getInstance()->delete($key);
     }
 
 
@@ -72,17 +75,18 @@ class Cache
      * Entries matching all tags, including default tag, are removed.
      *
      * @param   mixed   $tag    Single or array of tags
+     * @return  boolean     True on success, False on error
      */
     public static function clear($tag = '')
     {
-        if (version_compare(GVERSION, self::MIN_GVERSION, '<')) return NULL;
+        if (version_compare(GVERSION, self::MIN_GVERSION, '<')) return true;
 
         $tags = array(self::TAG);
         if (!empty($tag)) {
             if (!is_array($tag)) $tag = array($tag);
             $tags = array_merge($tags, $tag);
         }
-        \glFusion\Cache::getInstance()->deleteItemsByTagsAll($tags);
+        return \glFusion\Cache\Cache::getInstance()->deleteItemsByTagsAll($tags);
     }
 
 
@@ -94,7 +98,7 @@ class Cache
      */
     private static function _makeKey($key)
     {
-        return \glFusion\Cache::getInstance()
+        return \glFusion\Cache\Cache::getInstance()
             ->createKey(self::TAG . '_' . $key);
     }
 
@@ -110,8 +114,8 @@ class Cache
         if (version_compare(GVERSION, self::MIN_GVERSION, '<')) return NULL;
 
         $key = self::_makeKey($key);
-        if (\glFusion\Cache::getInstance()->has($key)) {
-            return \glFusion\Cache::getInstance()->get($key);
+        if (\glFusion\Cache\Cache::getInstance()->has($key)) {
+            return \glFusion\Cache\Cache::getInstance()->get($key);
         } else {
             return NULL;
         }
