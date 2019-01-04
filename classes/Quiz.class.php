@@ -278,7 +278,8 @@ class Quiz
             $referrer = '';
         }
 
-        $T = QUIZ_getTemplate('editquiz', 'editquiz', 'admin');
+        $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
+        $T->set_file('editquiz', 'editquiz.thtml');
         $T->set_var(array(
             'id'    => $this->id,
             'old_id' => $this->old_id,
@@ -297,7 +298,6 @@ class Quiz
             'one_chk_' . $this->onetime => 'selected="selected"',
             'num_q'     => (int)$this->num_q,
             'levels'    => $this->levels,
-            'iconset'   => $_CONF_QUIZ['_iconset'],
         ) );
         if (!$this->isNew) {
             $T->set_var('candelete', 'true');

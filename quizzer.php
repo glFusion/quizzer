@@ -40,4 +40,15 @@ $_CONF_QUIZ['gl_version']        = '1.7.0';
 $_CONF_QUIZ['pi_url']            = 'http://www.leegarner.com';
 $_CONF_QUIZ['pi_display_name']   = 'Quizzer';
 
+$_CONF_QUIZ['icons'] = array(
+    'delete'    => '<i class="uk-icon uk-icon-trash-o uk-text-danger"></i>',
+    'copy'      => '<i class="uk-icon uk-icon-clone"></i>',
+    'edit'      => '<i class="uk-icon uk-icon-edit"></i>',
+    'arrow-up'  => '<i class="uk-icon uk-icon-arrow-up"></i>',
+    'arrow-down'=> '<i class="uk-icon uk-icon-arrow-down"></i>',
+    'reset'     => '<i class="uk-icon uk-icon-close uk-text-danger"></i>',
+    'regen'     => '<i class="uk-icon uk-icon-cogs"></i>',
+);
+
+
 ?>

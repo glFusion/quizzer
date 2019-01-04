@@ -267,7 +267,8 @@ class Question
         }
 
         $Q = Quiz::getInstance($this->quiz_id);
-        $T = QUIZ_getTemplate('question', 'question');
+        $T = new \Template(QUIZ_PI_PATH . '/templates');
+        $T->set_file('question', 'question.thtml');
         // Set template variables without allowing caching
         $T->set_var(array(
             'quiz_id'       => $this->quiz_id,

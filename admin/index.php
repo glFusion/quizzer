@@ -457,7 +457,6 @@ function listQuestions($quiz_id = '')
     $T->set_file('questions', 'questions.thtml');
     $T->set_var(array(
         'action_url'    => QUIZ_ADMIN_URL . '/index.php',
-        'is_uikit'      => $_CONF_QUIZ['_is_uikit'],
         'quiz_id'       => $quiz_id,
         'pi_url'        => QUIZ_PI_URL,
         'question_adminlist' => ADMIN_list('quizzer',
@@ -488,43 +487,47 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
     switch($fieldname) {
     case 'edit':
         $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quiz_id={$A['id']}";
-        $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-edit qz-icon-info"></i>',
-                $url
+        $retval = COM_createLink(
+            $_CONF_QUIZ['icons']['edit'],
+            $url
         );
         break;
 
     case 'copy':
         $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quiz_id={$A['id']}";
-        $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-copy qz-icon-info"></i>',
-                $url
+        $retval = COM_createLink(
+            $_CONF_QUIZ['icons']['copy'],
+            $url
         );
         break;
 
     case 'questions':
         $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quiz_id={$A['id']}";
         $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] . '-question qz-icon-info"></i>', $url);
+            $_CONF_QUIZ['icons']['question'],
+            $url
+        );
         break;
 
     case 'delete':
         $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quiz_id={$A['id']}";
-        $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
-                '-trash-o qz-icon-danger" ' .
-                'onclick="return confirm(\'' .$LANG_QUIZ['confirm_quiz_delete'] .
-                    '?\');"',
-                $url
+        $retval = COM_createLink(
+            $_CONF_QUIZ['icons']['delete'],
+            $url,
+            array(
+                'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_delete']}?');",
+            )
         );
         break;
 
     case 'reset':
         $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quiz_id={$A['id']}";
-        $retval = COM_createLink('<i class="'. $_CONF_QUIZ['_iconset'] .
-                '-close qz-icon-danger" ' .
-                'onclick="return confirm(\'' .$LANG_QUIZ['confirm_quiz_reset'] .
-                    '?\');"',
-                $url
+        $retval = COM_createLink(
+            $_CONF_QUIZ['icons']['reset'],
+            $url,
+            array(
+                'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_reset']}?');",
+            )
         );
         break;
 
@@ -556,7 +559,9 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
     case 'export':
         $url = QUIZ_ADMIN_URL . "/index.php?export=x&amp;quiz_id={$A['id']}";
         $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] . '-download qz-icon-info"></i>', $url);
+            $_CONF_QUIZ['icons']['download'],
+            $url
+        );
         break;
 
     case 'action':
@@ -599,15 +604,15 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
 
     switch($fieldname) {
     case 'edit':
-        $retval = COM_createLink('<i class="' . $_CONF_QUIZ['_iconset'] .
-                '-edit qz-icon-info"></i>',
+        $retval = COM_createLink(
+            $_CONF_QUIZ['icons']['edit'],
             QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;q_id={$A['q_id']}"
         );
         break;
 
     case 'delete':
         $retval = COM_createLink(
-            '<i class="' . $_CONF_QUIZ['_iconset'] . '-trash-o qz-icon-danger"></i>',
+            $_CONF_QUIZ['icons']['delete'],
             QUIZ_ADMIN_URL . '/index.php?delQuestion=x&q_id=' .
                     $A['q_id'] . '&quiz_id=' . $A['quiz_id'],
             array(
