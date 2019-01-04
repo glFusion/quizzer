@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<form autocomplete="off" class="uk-form uk-form-horizontal" id="quiz_form" action="{site_url}/quizzer/index.php" method="post">
+<form autocomplete="off" class="uk-form uk-form-horizontal" id="quiz_form" action="#!" method="post">
   <input type="hidden" name="quiz_id" value="{quiz_id}" />
   <input type="hidden" name="q_id" value="{q_id}" />
   <input type="hidden" name="next_q_id" value="{next_q_id}" />

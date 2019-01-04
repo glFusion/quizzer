@@ -23,6 +23,7 @@ case 'saveresponse':
     if ($result_id == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
         $retval = array(
             'isvalid' => 0,
+            'answer_msg' => $LANG_QUIZ['must_supply_answer'],
         );
     } else {
         if (!is_array($a_id)) $a_id = array($a_id);

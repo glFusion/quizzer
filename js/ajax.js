@@ -54,7 +54,7 @@ var QUIZ_submit = function(frm_id)
                         ans_div.style.display = "";
                     }
                 } else {
-                    window.location.replace(glfusionSiteUrl + '/quizzer/index.php?plugin=quizzer&msg=1');
+                    $.UIkit.notify("<i class='uk-icon uk-icon-close uk-text-danger'></i>&nbsp;" + result.answer_msg, {timeout: 5000,pos:'top-center'});
                 }
             } catch(err) {
             }

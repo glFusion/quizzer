@@ -76,6 +76,7 @@ $LANG_QUIZ = array(
 'msg_no_questions' => 'No questions were found, resetting the quiz.',
 'partial_credit' => 'Partial Credit Allowed?',
 'randomize' => 'Randomize Answers?',
+'must_supply_answer' => 'You must supply an answer to this question',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';
