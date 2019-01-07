@@ -27,7 +27,7 @@ function confirmDelete()
         <span id="hlp_quiz_name" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input required id="f_name" type="text" size="32" name="name" value="{name}" placeholder="{id}" />
+        <input required id="f_name" type="text" size="32" name="name" value="{name}" />
         <i class="uk-icon uk-icon-warning qz-color-incorrect tooltip" title="{$LANG_QUIZ['required']}"></i>
       </div>
     </div>
