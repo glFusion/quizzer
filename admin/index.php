@@ -26,7 +26,9 @@ if (!in_array('quizzer', $_PLUGINS)) {
 // Flag to indicate if this user is a "real" administrator for the plugin.
 // Some functions, like deleting definitions, are only available to
 // plugin admins.
-$isAdmin = plugin_isadmin_quizzer();
+if (!plugin_isadmin_quizzer()) {
+    COM_404();
+}
 
 // Import administration functions
 USES_lib_admin();
@@ -54,29 +56,15 @@ foreach($expected as $provided) {
 }
 
 $view = isset($_REQUEST['view']) ? $_REQUEST['view'] : $action;
-$quiz_id = isset($_REQUEST['quiz_id']) ? COM_sanitizeID($_REQUEST['quiz_id']) : '';
+$quiz_id = QUIZ_getVar($_REQUEST, 'quiz_id', 'string');
+if ($quiz_id == '') {
+    // Question update submissions have "id" as the id field name
+    $quiz_id = QUIZ_getVar($_REQUEST, 'id', 'string');
+}
+$quiz_id = COM_sanitizeID($quiz_id, false);
 $q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
 $msg = isset($_GET['msg']) && !empty($_GET['msg']) ? $_GET['msg'] : '';
 $content = '';
-
-// Get the permission SQL once, since it's used in a couple of places.
-// This determines if the current user is an admin for a particular form
-if ($isAdmin) {
-    $perm_sql = '';
-} else {
-    $perm_sql = " AND (owner_id='". (int)$_USER['uid'] . "'
-            OR group_id IN (" . implode(',', $_GROUPS). "))";
-}
-
-if ($quiz_id != '') {
-    // Check user's access, make sure they're admin for at least one form
-    $x = DB_fetchArray(DB_query("SELECT count(*) as c
-            FROM {$_TABLES['quizzer_quizzes']}
-            WHERE id='$quiz_id' $perm_sql"), false);
-    if (!$x || $x['c'] < 1) {
-        COM_404();
-    }
-}
 
 switch ($action) {
 case 'action':      // Got "?action=something".
@@ -178,7 +166,6 @@ case 'updateform':
 
 case 'delQuiz':
     // Delete a form definition.  Also deletes user values.
-    if (!$isAdmin) COM_404();
     $id = $_REQUEST['quiz_id'];
     $msg = Quiz::DeleteDef($id);
     $view = 'listquizzes';
@@ -191,7 +178,6 @@ case 'resetquiz':
     break;
 
 case 'delQuestion':
-    if (!$isAdmin) COM_404();
     // Delete a field definition.  Also deletes user values.
     $msg = Question::Delete($q_id);
     $view = 'editquiz';
@@ -268,7 +254,6 @@ case 'editquiz':
     break;
 
 case 'editquestion':
-    if (!$isAdmin) COM_404();
     $q_id = isset($_GET['q_id']) ? (int)$_GET['q_id'] : 0;
     $Q = Question::getInstance($q_id, $quiz_id);
     $content .= adminMenu($view, 'hlp_question_edit');
@@ -276,7 +261,6 @@ case 'editquestion':
     break;
 
 case 'resetpermform':
-    if (!$isAdmin) COM_404();
     $content .= QUIZ_permResetForm();
     break;
 
@@ -660,13 +644,13 @@ function getField_field($fieldname, $fieldvalue, $A, $icon_arr)
  */
 function adminMenu($view ='', $help_text = '', $other_text='')
 {
-    global $_CONF, $LANG_QUIZ, $_CONF_QUIZ, $LANG01, $isAdmin;
+    global $_CONF, $LANG_QUIZ, $_CONF_QUIZ, $LANG01;
 
     $menu_arr = array ();
     if ($help_text == '')
         $help_text = 'admin_text';
 
-    if ($view == 'listquizzes' && $isAdmin) {
+    if ($view == 'listquizzes') {
         $menu_arr[] = array('url' => QUIZ_ADMIN_URL . '/index.php?action=editquiz',
             'text' => $LANG_QUIZ['add_quiz']);
     } else {

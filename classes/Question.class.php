@@ -41,15 +41,15 @@ class Question
     /**
      * Constructor.
      *
-     * @param   integer $id         ID of the existing question, empty if new
+     * @param   integer $q_id       ID of the existing question, empty if new
      * @param   integer $quiz_id    ID of the related quiz
      */
-    public function __construct($id = 0, $quiz_id=NULL)
+    public function __construct($q_id = 0, $quiz_id=NULL)
     {
         global $_USER, $_TABLES;
 
         $this->isNew = true;
-        if ($id == 0) {
+        if ($q_id == 0) {
             $this->q_id = 0;
             $this->name = '';
             $this->type = 'radio';
@@ -58,11 +58,11 @@ class Question
             $this->prompt = '';
             $this->quiz_id = $quiz_id;
             $this->randomize = 0;
-        } elseif (is_array($id)) {
-            $this->setVars($id, true);
+        } elseif (is_array($q_id)) {
+            $this->setVars($q_id, true);
             $this->isNew = false;
         } else {
-            $q = self::Read($id);
+            $q = self::Read($q_id);
             if ($q) {
                 $this->setVars($q);
                 $this->isNew = false;
@@ -122,7 +122,7 @@ class Question
         // Instantiate the question object.
         // The answers will be read from cache or DB by the constructor.
         if ($q_id == 0) {
-            return new self();
+            return new self(0, $quiz);
         } else {
             $cls = __NAMESPACE__ . '\\Questions\\' . $question['type'];
             if (class_exists($cls)) {
