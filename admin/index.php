@@ -186,44 +186,6 @@ case 'delQuestion':
 
 // Select the page to display
 switch ($view) {
-case 'export':
-    $Frm = new Quiz($quiz_id);
-
-    // Get the form result sets
-    $sql = "SELECT r.* FROM {$_TABLES['quizzer_results']} r
-            LEFT JOIN {$_TABLES['quizzer_quizzes']} f
-            ON f.id = r.quiz_id
-            WHERE quiz_id='$quiz_id'
-            $perm_sql
-            ORDER BY dt ASC";
-    $res = DB_query($sql);
-
-    $R = new Result();
-    $fields = array('"UserID"', '"Submitted"');
-    foreach ($Frm->fields as $F) {
-        if (!$F->enabled) continue;     // ignore disabled fields
-        $fields[] = '"' . $F->name . '"';
-    }
-    $retval = join(',', $fields) . "\n";
-    while ($A = DB_fetchArray($res, false)) {
-        $R->Read($A['id']);
-        $fields = array(
-            COM_getDisplayName($R->uid),
-            strftime('%Y-%m-%d %H:%M', $R->dt),
-        );
-        foreach ($Frm->fields as $F) {
-            if (!$F->enabled) continue;     // ignore disabled fields
-            $F->GetValue($R->id);
-            $fields[] = '"' . str_replace('"', '""', $F->value_text) . '"';
-        }
-        $retval .= join(',', $fields) . "\n";
-    }
-    header('Content-type: text/csv');
-    header('Content-Disposition: attachment; filename="'.$quiz_id.'.csv"');
-    echo $retval;
-    exit;
-    break;
-
 case 'csvbyq':
     $Q = new Quiz($quiz_id);
     // initiate the download
@@ -537,14 +499,6 @@ function getField_quiz($fieldname, $fieldvalue, $A, $icon_arr)
                 'class' => 'tooltip',
                 'title' => $LANG_QUIZ['results'],
             )
-        );
-        break;
-
-    case 'export':
-        $url = QUIZ_ADMIN_URL . "/index.php?export=x&amp;quiz_id={$A['id']}";
-        $retval = COM_createLink(
-            $_CONF_QUIZ['icons']['download'],
-            $url
         );
         break;
 
