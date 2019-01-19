@@ -18,6 +18,14 @@ switch ($_POST['action']) {
 case 'saveresponse':
     $result_id = SESS_getVar('quizzer_resultset');
     $quiz_id = isset($_POST['quiz_id']) ? $_POST['quiz_id'] : '';
+    $Q = \Quizzer\Quiz::getInstance($quiz_id);
+    $isvalid = $Q->isNew ? 0 : 1;
+    if ($result_id == 0) {
+        // This happens if there are no intro questions already saved,
+        // which would have created a result set.
+        $R = new \Quizzer\Result();
+        $result_id = $R->Create($Q->id);
+    }
     $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
     $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
     if ($result_id == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
@@ -27,14 +35,14 @@ case 'saveresponse':
         );
     } else {
         if (!is_array($a_id)) $a_id = array($a_id);
-        $Q = \Quizzer\Question::getInstance($q_id);
-        $isvalid = $Q->isNew ? 0 : 1;
+        $Question = \Quizzer\Question::getInstance($q_id);
+        $isvalid = $Question->isNew ? 0 : 1;
         $correct = 0;   // so there's something for $retval
         if ($isvalid) {
-            $correct = $Q->getCorrectAnswers();
+            $correct = $Question->getCorrectAnswers();
             \Quizzer\Value::Save($result_id, $q_id, $a_id);
         }
-        $sub_answers = $Q->Answers;
+        $sub_answers = $Question->Answers;
         foreach ($sub_answers as $id=>$answer) {
             $sub_answers[$id]['submitted'] = (int)in_array($id, $a_id);
         }
