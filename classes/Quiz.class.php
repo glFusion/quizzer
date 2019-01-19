@@ -511,6 +511,9 @@ class Quiz
             $T->parse('output', 'intro');
             $retval .= $T->finish($T->get_var('output'));
         } else {
+            // If question is zero but there are no intro fields,
+            // jump to question 1.
+            if ($question == 0) $question++;
             $questions = SESS_getVar('quizzer_questions');
             if ($questions == 0) {
                 COM_setMsg($LANG_QUIZ['msg_no_questions']);
@@ -572,7 +575,6 @@ class Quiz
         //if ($uid == $this->owner_id) return true;
 
         $retval = false;
-
         switch ($level) {
         case QUIZ_ACCESS_VIEW:
             if (SEC_inGroup($this->results_gid, $uid)) $retval = true;
