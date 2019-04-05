@@ -208,10 +208,11 @@ function plugin_autouninstall_quizzer()
     $out = array (
         // give the name of the tables, without $_TABLES[]
         'tables' => array(
-                'quizzer_quizzes',
-                'quizzer_questions',
-                'quizzer_values',
-                'quizzer_results',
+            'quizzer_quizzes',
+            'quizzer_questions',
+            'quizzer_answers',
+            'quizzer_values',
+            'quizzer_results',
         ),
         // give the full name of the group, as in the db
         'groups' => array('quizzer Admin'),
