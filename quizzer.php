@@ -46,7 +46,7 @@ $_CONF_QUIZ['icons'] = array(
     'edit'      => '<i class="uk-icon uk-icon-edit"></i>',
     'arrow-up'  => '<i class="uk-icon uk-icon-arrow-up"></i>',
     'arrow-down'=> '<i class="uk-icon uk-icon-arrow-down"></i>',
-    'reset'     => '<i class="uk-icon uk-icon-close uk-text-danger"></i>',
+    'reset'     => '<i class="uk-icon uk-icon-undo uk-text-danger"></i>',
     'regen'     => '<i class="uk-icon uk-icon-cogs"></i>',
 );
 
