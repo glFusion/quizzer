@@ -317,6 +317,9 @@ class Result
         foreach ($this->Values as $V) {
             $correct += $this->Questions[$V->q_id]->Verify($V->value);
         }
+        if (!is_int($correct)) {
+            $correct = round($correct, 2);
+        }
 
         $Q = Quiz::getInstance($this->quiz_id);
         $Q->Reset();
@@ -328,6 +331,8 @@ class Result
         $prog_status = $Q->getGrade($pct);
         if ($prog_status == 'success') {
             $msg = $Q->pass_msg;
+            /////// TODO : testing gift card rewards
+            //$msg .= \Quizzer\Rewards\GiftCard::CreateReward();
         } else {
             $msg = $Q->fail_msg;
         }

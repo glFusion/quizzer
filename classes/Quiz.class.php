@@ -476,11 +476,16 @@ class Quiz
 
         // Check that the current user has access to fill out this quiz.
         if (!$this->hasAccess(QUIZ_ACCESS_FILL)) {
-            return $this->noaccess_msg;
+            return $this->noAccessMsg();
         }
 
         if ($question == 0) {
             SESS_unset('quizzer_resultset');
+            if ($this->num_q == 0) {
+                // If the number of questions is zero (forgot to fill in...)
+                // then ask all questions.
+                $this->num_q = Question::countQ($this->id);
+            }
             $questions = Question::getQuestions($this->id, $this->num_q);
             SESS_setVar('quizzer_questions', $questions);
             $this->num_q = count($questions);   // replace with actual number
@@ -489,7 +494,8 @@ class Quiz
         // If starting the quiz, and there are intro fields to fill out, then
         // display those. Otherwise start with the first question below.
         if ($question == 0 &&
-            ($this->introtext != '' || $this->introfields != '') ) {
+            ($this->introtext != '' || $this->introfields != '')
+        ) {
             $T = new \Template(QUIZ_PI_PATH . '/templates');
             $T->set_file('intro', 'intro.thtml');
             $T->set_var(array(
@@ -504,8 +510,8 @@ class Quiz
                     $T->set_var(array(
                         'if_prompt' => $fld,
                         'if_name'   => COM_sanitizeId($fld),
-                ) );
-                $T->parse('iField', 'introFields', true);
+                    ) );
+                    $T->parse('iField', 'introFields', true);
                 }
             }
             $T->parse('output', 'intro');
@@ -515,7 +521,8 @@ class Quiz
             // jump to question 1.
             if ($question == 0) $question++;
             $questions = SESS_getVar('quizzer_questions');
-            if ($questions == 0) {
+            if (!is_array($questions) || count($questions) == 0) {
+                // Missing session var or empty array
                 COM_setMsg($LANG_QUIZ['msg_no_questions']);
                 echo COM_refresh(QUIZ_PI_URL);
             }
@@ -769,9 +776,11 @@ class Quiz
         $keys = array();
         $T->set_block('results', 'hdrIntroFields', 'hdrIntro');
         foreach ($intro as $key) {
-            $T->set_var('introfield_value', $key);
-            $T->parse('hdrIntro', 'hdrIntroFields', true);
-            $keys[] = COM_sanitizeId($key);
+            if (!empty($key)) {
+                $T->set_var('introfield_value', $key);
+                $T->parse('hdrIntro', 'hdrIntroFields', true);
+                $keys[] = COM_sanitizeId($key);
+            }
         }
         $results = Result::findByQuiz($this->id);
         $T->set_block('results', 'DataRows', 'dRow');
@@ -788,11 +797,16 @@ class Quiz
             foreach ($R->Values as $V) {
                 $total_a++;
                 $Q = Question::getInstance($V->q_id);
-                if ($Q->Verify($V->value)) {
+                $correct += $Q->Verify($V->value);
+                /*if ($Q->Verify($V->value)) {
                     $correct++;
-                }
+                }*/
             }
             $total_q = $R->asked;
+            // Adjust correct number for cleaner presentation
+            if (!is_int($correct)) {
+                $correct = round($correct, 2);
+            }
             if ($total_q > 0) {
                 $pct = (int)(($correct / $total_q) * 100);
             } else {
@@ -805,6 +819,7 @@ class Quiz
             }
             $prog_status = $this->getGrade($pct);
             $T->set_var(array(
+                'username' => COM_getDisplayName($R->uid),
                 'pct' => $pct,
                 'correct' => $correct,
                 'total' => $total_q,
@@ -930,6 +945,25 @@ class Quiz
      */
     public function Reset()
     {}
+
+
+    /**
+     * Get the No Access message for unauthorized access.
+     * If a message is defined, return that. Otherwise return a default.
+     *
+     * @param   boolean $display    True to set the message up for display
+     * @return  string  Message to display
+     */
+    public function noAccessMsg($display=true)
+    {
+        global $LANG_QUIZ;
+
+        $msg = $this->noaccess_msg == '' ? $LANG_QUIZ['no_access_msg'] : $this->noaccess_msg;
+        if ($display) {
+            $msg = '<div class="uk-alert uk-alert-danger">' . $msg . '</div>';
+        }
+        return $msg;
+    }
 
 }
 

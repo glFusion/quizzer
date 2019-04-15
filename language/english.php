@@ -47,7 +47,7 @@ $LANG_QUIZ = array(
 'csvbysubmitter' => 'Export CSV by Submitter',
 'submitter' => 'Submitter',
 'submitted' => 'Submitted',
-//'name'      => 'Name',
+'name'      => 'Name',
 'type'      => 'Type',
 'enabled'   => 'Enabled',
 'permissions'   => 'Permissions',
@@ -77,6 +77,7 @@ $LANG_QUIZ = array(
 'partial_credit' => 'Partial Credit Allowed?',
 'randomize' => 'Randomize Answers?',
 'must_supply_answer' => 'You must supply an answer to this question',
+'no_access_msg' => 'There are no quizzes available.',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';
