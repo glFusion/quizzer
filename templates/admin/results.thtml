@@ -7,6 +7,7 @@
     <th style="text-align:left">{introfield_value}</th>
 <!-- END hdrIntroFields -->
     <th style="text-align:center;">{$LANG_QUIZ['score']}</th>
+    <th style="text=align:center;">{$LANG_ADMIN['delete']}</th>
 <!-- BEGIN DataRows -->
     <tr>
       <td>{username}</td>
@@ -22,7 +23,7 @@
 {!else}
       <td></td>
 {!endif}
-      <td style="width:20px;">
+      <td style="width:20px;text-align:center;">
         <a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
             onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
          <i class="uk-icon uk-icon-trash-o qz-color-incorrect tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
