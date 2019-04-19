@@ -42,7 +42,12 @@ if (empty($action)) {
 $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
 if ($quiz_id == '') {
     // Missing quiz ID, get the first enabled one
-    $Q = \Quizzer\Quiz::getFirst();
+    $quiz_id = SESS_getVar('quizzer_quizID');
+    if ($quiz_id !== 0) {
+        $Q = \Quizzer\Quiz::getInstance($quiz_id);
+    } else {
+        $Q = \Quizzer\Quiz::getFirst();
+    }
 } else {
     // Else get the specific quiz
     $Q = \Quizzer\Quiz::getInstance($quiz_id);
@@ -68,6 +73,9 @@ case 'finishquiz':
 case 'next_q':
     $q_id = isset($_REQUEST['next_q_id']) ? $_REQUEST['next_q_id'] : $q_id++;
 case 'startquiz':
+    if ($action == 'startquiz') {
+        SESS_setVar('quizzer_quizID', $Q->id);
+    }
 default:
     if (!$Q->isNew) {
         // If the quiz exists, render the question
