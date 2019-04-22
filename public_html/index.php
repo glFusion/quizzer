@@ -20,26 +20,30 @@ if (!in_array('quizzer', $_PLUGINS)) {
 
 $content = '';
 $action = '';
-$actionval = '';
+$quiz_id = '';
 $expected = array(
-    'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz', 'next_q', 'finishquiz',
+    'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz',
+    'next_q', 'finishquiz',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
         $action = $provided;
-        $actionval = $_POST[$provided];
         break;
     } elseif (isset($_GET[$provided])) {
         $action = $provided;
-        $actionval = $_GET[$provided];
         break;
     }
 }
 
 if (empty($action)) {
+    COM_setArgNames(array('quiz_id', 'action'));
+    $quiz_id = COM_getArgument('quiz_id');
     $action = 'startquiz';
 }
-$quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
+if (empty($quiz_id)) {
+    // Still no quiz ID? Get from POST or possibly from URL
+    $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
+}
 if ($quiz_id == '') {
     // Missing quiz ID, get the first enabled one
     $quiz_id = SESS_getVar('quizzer_quizID');
