@@ -648,8 +648,8 @@ class Question
 
 
     /**
-     * Determine whether this questoin was ever answered.
-     * Used to see if the question may be deleted without affectinge existing
+     * Determine whether this question was ever answered.
+     * Used to see if the question may be deleted without affecting existing
      * results.
      *
      * @return  boolean     True if there is an answer, False if not
