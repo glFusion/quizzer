@@ -705,6 +705,9 @@ class Question
     {
         global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $_CONF_QUIZ;
 
+        // Import administration functions
+        USES_lib_admin();
+
         $header_arr = array(
             array(
                 'text'  => $LANG_ADMIN['edit'],

@@ -975,6 +975,9 @@ class Quiz
     {
         global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $perm_sql;
 
+        // Import administration functions
+        USES_lib_admin();
+
         $retval = '';
 
         $header_arr = array(

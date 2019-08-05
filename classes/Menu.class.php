@@ -31,6 +31,9 @@ class Menu
     {
         global $_CONF, $LANG_QUIZ, $_CONF_QUIZ, $LANG01;
 
+        // Import administration functions
+        USES_lib_admin();
+
         $menu_arr = array ();
         if ($help_text == '') {
             $help_text = 'admin_text';
