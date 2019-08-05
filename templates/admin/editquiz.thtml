@@ -47,7 +47,7 @@ function confirmDelete()
         <span id="hlp_introfields" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input type="text id="f_introfields" name="introfields" size="80" maxlength="255" value="{introfields}" />
+        <input type="text" id="f_introfields" name="introfields" size="80" maxlength="255" value="{introfields}" />
       </div>
     </div>
 
