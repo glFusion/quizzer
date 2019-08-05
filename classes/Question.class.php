@@ -693,6 +693,148 @@ class Question
     {
         return false;
     }
+    
+    
+    /**
+     * Uses lib-admin to list the question definitions and allow updating.
+     *
+     * @param   string  $quiz_id    ID of quiz
+     * @return  string              HTML for the question list
+     */
+    public static function adminList($quiz_id = '')
+    {
+        global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $_CONF_QUIZ;
+
+        $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_QUIZ['question'],
+                'field' => 'question',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_QUIZ['type'],
+                'field' => 'type',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_QUIZ['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort'  => false,
+            ),
+        );
+
+        $defsort_arr = array(
+            'field'     => 'q_id',
+            'direction' => 'ASC',
+        );
+        $text_arr = array(
+            'form_url' => QUIZ_ADMIN_URL . '/index.php',
+        );
+        $options_arr = array(
+            'chkdelete' => true,
+            'chkname'   => 'delquestion',
+            'chkfield'  => 'q_id',
+        );
+        $query_arr = array(
+            'table' => 'quizzer_questions',
+            'sql'   => "SELECT * FROM {$_TABLES['quizzer_questions']}",
+            'query_fields' => array('name', 'type', 'value'),
+            'default_filter' => '',
+        );
+        if ($quiz_id != '') {
+            $query_arr['sql'] .= " WHERE quiz_id='" . DB_escapeString($quiz_id) . "'";
+        }
+        $form_arr = array();
+        $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
+        $T->set_file('questions', 'questions.thtml');
+        $T->set_var(array(
+            'action_url'    => QUIZ_ADMIN_URL . '/index.php',
+            'quiz_id'       => $quiz_id,
+            'pi_url'        => QUIZ_PI_URL,
+            'question_adminlist' => ADMIN_list(
+                'quizzer_questions',
+                array(__CLASS__, 'getAdminField'),
+                $header_arr,
+                $text_arr, $query_arr, $defsort_arr, '', '',
+                $options_arr, $form_arr
+            ),
+        ) );
+        $T->parse('output', 'questions');
+        return $T->finish($T->get_var('output'));
+    }
+
+    
+    /**
+     * Determine what to display in the admin list for each field.
+     *
+     * @param   string  $fieldname  Name of the field, from database
+     * @param   mixed   $fieldvalue Value of the current field
+     * @param   array   $A          Array of all name/field pairs
+     * @param   array   $icon_arr   Array of system icons
+     * @return  string              HTML for the field cell
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_CONF_QUIZ, $LANG_ACCESS, $LANG_QUIZ;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval = COM_createLink(
+                $_CONF_QUIZ['icons']['edit'],
+                QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;q_id={$A['q_id']}"
+            );
+            break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                $_CONF_QUIZ['icons']['delete'],
+                QUIZ_ADMIN_URL . '/index.php?delQuestion=x&q_id=' .
+                    $A['q_id'] . '&quiz_id=' . $A['quiz_id'],
+                array(
+                    'onclick' => "return confirm('{$LANG_QUIZ['confirm_delete']}');",
+                )
+            );
+           break;
+
+        case 'enabled':
+            if ($A[$fieldname] == 1) {
+                $chk = ' checked ';
+                $enabled = 1;
+            } else {
+                $chk = '';
+                $enabled = 0;
+            }
+            $retval = "<input name=\"{$fieldname}_{$A['q_id']}\" " .
+                "type=\"checkbox\" $chk " .
+                "onclick='QUIZtoggleEnabled(this, \"{$A['q_id']}\", \"question\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' ".
+                "/>\n";
+            break;
+
+        case 'id':
+        case 'q_id':
+            return '';
+            break;
+
+        default:
+            $retval = $fieldvalue;
+            break;
+        }
+        return $retval;
+    }
 
 }
 
