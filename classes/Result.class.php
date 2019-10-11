@@ -324,7 +324,7 @@ class Result
         $Q = Quiz::getInstance($this->quiz_id);
         $Q->Reset();
         if ($total_q > 0) {
-            $pct = (int)(($correct / $total_q) * 100);
+            $pct = round(($correct / $total_q) * 100);
         } else {
             $pct = 0;
         }

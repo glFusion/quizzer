@@ -740,7 +740,7 @@ class Quiz
                 }
             }
             if ($total > 0) {
-                $pct = (int)(($correct / $total) * 100);
+                $pct = round(($correct / $total) * 100);
             } else {
                 $pct = 0;
             }
