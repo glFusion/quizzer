@@ -29,9 +29,6 @@ if (!plugin_isadmin_quizzer()) {
     COM_404();
 }
 
-// Import administration functions
-USES_lib_admin();
-
 $action = 'listquizzes';      // Default view
 $expected = array(
     'edit','updateform','editquestion', 'updatequestion',
