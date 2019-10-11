@@ -25,6 +25,7 @@ var QUIZ_submit = function(frm_id)
                     for (var ans in result.answers) {
                         obj = result.answers[ans];
                         div = document.getElementById("row_" + ans);
+                        document.getElementById("ans_id_" + ans).disabled=true;
                         if (obj.correct == 1) {
                             if (obj.submitted == 1) {
                                 status_div = document.getElementById("stat_" + ans);
