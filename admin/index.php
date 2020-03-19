@@ -104,17 +104,20 @@ case 'updateresult':
 
 case 'delresult':
     $res_id = (int)$actionval;
-    $R = new Result($res_id);       // to get the quiz id
-    if (!$R->isNew) {
-        Result::Delete($res_id);
-        Cache::clear();
+    $R = new Quizzer\Result($res_id);       // to get the quiz id
+    $quiz_id = $R->getQuizID();
+    if (!$R->isNew()) {
+        Quizzer\Result::Delete($res_id);
+        Quizzer\Cache::clear();
     }
-    echo COM_refresh(QUIZ_ADMIN_URL .
-        '/index.php?action=results&quiz_id=' . $R->quiz_id);
+    echo COM_refresh(
+        QUIZ_ADMIN_URL .
+        '/index.php?action=results&quiz_id=' . $quiz_id
+    );
     break;
 
 case 'updatequestion':
-    $Q = Question::getInstance($_POST, $quiz_id);
+    $Q = Quizzer\Question::getInstance($_POST, $quiz_id);
     $msg = $Q->SaveDef($_POST);
     $view = 'editquiz';
     break;
@@ -127,7 +130,7 @@ case 'delbutton_x':
         }
     } elseif (isset($_POST['delresmulti']) && is_array($_POST['delresmulti'])) {
         foreach ($_POST['delresmulti'] as $key=>$value) {
-            Result::Delete($value);
+            Quizzer\Result::Delete($value);
         }
         $view = 'results';
     }
@@ -138,8 +141,9 @@ case 'copyform':
     $F = new Quizzer\Quiz($quiz_id);
     $msg = $F->Duplicate();
     if (empty($msg)) {
-        echo COM_refresh(QUIZ_ADMIN_URL . '/index.php?editquiz=x&amp;quiz_id=' .
-            $F->id);
+        echo COM_refresh(
+            QUIZ_ADMIN_URL . '/index.php?editquiz=x&amp;quiz_id=' . $F->id
+        );
         exit;
     } else {
         $view = 'listquizzes';
@@ -147,12 +151,12 @@ case 'copyform':
     break;
 
 case 'updateform':
-    $F = new Quizzer\Quiz($_POST['old_id']);
-    $msg = $F->SaveDef($_POST);
+    $Q = new Quizzer\Quiz($_POST['old_id']);
+    $msg = $Q->SaveDef($_POST);
     if ($msg != '') {                   // save operation failed
         $view = 'editquiz';
     } elseif (empty($_POST['old_id'])) {    // New form, return to add fields
-        $quiz_id = $F->id;
+        $quiz_id = $Q->getID();
         $view = 'editquiz';
         $msg = 6;
     } else {
@@ -204,7 +208,7 @@ case 'editquiz':
     $content .= Quizzer\Menu::Admin($view, 'hlp_quiz_edit');
     $content .= $Q->editQuiz();
 
-    // Allow adding/removing fields from existing quizzer
+    // Allow adding/removing questions from existing quiz
     if ($quiz_id != '') {
         $content .= "<br /><hr />\n";
         $content .= Quizzer\Question::adminList($quiz_id);
@@ -247,11 +251,14 @@ default:
 $display = COM_siteHeader();
 if (isset($msg) && !empty($msg)) {
     $display .= COM_showMessage(
-        COM_applyFilter($msg, true), $_CONF_QUIZ['pi_name']);
+        COM_applyFilter($msg, true), $_CONF_QUIZ['pi_name']
+    );
 }
 $display .= COM_startBlock(
     $LANG_QUIZ['admin_title'] . ' (Ver. ' . $_CONF_QUIZ['pi_version'] . ')',
-     '', COM_getBlockTemplate('_admin_block', 'header'));
+    '',
+    COM_getBlockTemplate('_admin_block', 'header')
+);
 $display .= $content;
 $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
 $display .= COM_siteFooter();

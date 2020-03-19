@@ -20,43 +20,44 @@ class Result
 {
     /** Questions, with answers.
     * @var array */
-    public $Questions = array();
+    private $Questions = array();
 
     /** Submission Values.
      * @var array */
-    public $Values = array();
+    private $Values = array();
 
     /** Result record ID.
     * @var integer */
-    var $res_id;
+    private $res_id = 0;
 
     /** Quize ID.
     * @var string */
-    var $quiz_id;
+    private $quiz_id = '';
 
     /** Submitting user ID.
     * @var integer */
-    var $uid;
+    private $uid = 0;
 
-    /** Submission date.
-    * @var string */
-    var $dt;
+    /** Submission date, as a timestamp.
+    * @var integer */
+    private $dt = 0;
 
     /** IP address of submitter.
     * @var string */
-    var $ip;
+    private $ip = '';
 
     /** Unique token for this submission.
     * @var string */
-    var $token;
+    private $token = '';
 
     /** Answers provided in intro fields.
      * @var string */
-    var $introfields;
+    private $introfields = '';
 
     /** Number of questions asked.
      * @var integer */
-    public $asked = 0;
+    private $asked = 0;
+
 
     /**
     * Constructor.
@@ -71,30 +72,17 @@ class Result
         if (is_array($res_id)) {
             // Already read from the DB, just load the values
             $this->SetVars($res_id);
-            $this->isNew = false;
         } elseif ($res_id > 0) {
             // Result ID supplied, read it
-            $this->isNew = false;
             $this->res_id = (int)$res_id;
             $this->Read($res_id);
-        } else {
-            // No ID supplied, create a new object
-            $this->isNew = true;
-            $this->res_id = 0;
-            $this->quiz_id = '';
-            $this->uid = 0;
-            $this->dt = 0;
-            $this->ip = '';
-            $this->token = '';
-            $this->introfields = '';
-            $this->asked = 0;
         }
 
-        if (!$this->isNew) {    // existing record, get the questions and answers
+        if (!$this->isNew()) {    // existing record, get the questions and answers
             $this->Values = Value::getByResult($this->res_id);
             $this->Questions = array();
             foreach ($this->Values as $val) {
-                $this->Questions[$val->q_id] = Question::getInstance($val->q_id);
+                $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID());
             }
         }
     }
@@ -127,20 +115,25 @@ class Result
         global $_TABLES;
 
         $id = (int)$id;
-        if ($id > 0) $this->id = (int)$id;
+        if ($id > 0) {
+            $this->id = (int)$id;
+        }
 
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
                 WHERE res_id = " . $this->id;
         //echo $sql;die;
         $res1 = DB_query($sql);
-        if (!$res1)
+        if (!$res1) {
             return false;
+        }
 
         $A = DB_fetchArray($res1, false);
-        if (empty($A)) return false;
-
-        $this->SetVars($A);
-        return true;
+        if (empty($A)) {
+            return false;
+        } else {
+            $this->SetVars($A);
+            return true;
+        }
     }
 
 
@@ -151,8 +144,9 @@ class Result
      */
     public function SetVars($A)
     {
-        if (!is_array($A))
+        if (!is_array($A)) {
             return false;
+        }
 
         $this->res_id = (int)$A['res_id'];
         $this->quiz_id = COM_sanitizeID($A['quiz_id']);
@@ -160,8 +154,11 @@ class Result
         $this->uid = (int)$A['uid'];
         $this->ip = $A['ip'];
         $this->token = $A['token'];
-        $this->introfields = $A['introfields'];
         $this->asked = (int)$A['asked'];
+        $this->introfields = @unserialize($A['introfields']);
+        if (!is_array($this->introfields)) {
+            $this->introfields = array();
+        }
     }
 
 
@@ -170,7 +167,7 @@ class Result
      *
      * @param   array   $fields     Array of Field objects
      */
-    public function getValues($fields)
+    public function readValues($fields)
     {
         global $_TABLES;
         $sql = "SELECT * from {$_TABLES['quizzer_values']}
@@ -202,7 +199,7 @@ class Result
         global $_TABLES, $_USER;
 
         $Q = Quiz::getInstance($quiz_id);
-        $questions = Question::getQuestions($Q->id, $Q->num_q);
+        $questions = Question::getQuestions($Q->getID(), $Q->getNumQ());
         SESS_unset('quizzer_resultset');
         SESS_setVar('quizzer_questions', $questions);
         $Q->num_q = count($questions);   // replace with actual number
@@ -315,7 +312,7 @@ class Result
         $correct = 0;
 
         foreach ($this->Values as $V) {
-            $correct += $this->Questions[$V->q_id]->Verify($V->value);
+            $correct += $this->Questions[$V->getQuestionID()]->Verify($V->getValue());
         }
         if (!is_int($correct)) {
             $correct = round($correct, 2);
@@ -330,18 +327,18 @@ class Result
         }
         $prog_status = $Q->getGrade($pct);
         if ($prog_status == 'success') {
-            $msg = $Q->pass_msg;
+            $msg = $Q->getPassMsg();
             /////// TODO : testing gift card rewards
             //$msg .= \Quizzer\Rewards\GiftCard::CreateReward();
         } else {
-            $msg = $Q->fail_msg;
+            $msg = $Q->getFailMsg();
         }
         $T = new \Template(QUIZ_PI_PATH . '/templates');
         $T->set_file('result', 'finish.thtml');
         $T->set_var(array(
             'pct' => $pct,
-            'quiz_name' => $Q->name,
-            'quiz_id'   => $Q->id,
+            'quiz_name' => $Q->getName(),
+            'quiz_id'   => $Q->getID(),
             'correct' => $correct,
             'total' => $total_q,
             'prog_status' => $prog_status,
@@ -373,6 +370,7 @@ class Result
         return $results;
     }
 
+
     /**
      * Find all results for a particular user.
      * Used to check if a user has already filled out a onetime quiz.
@@ -397,6 +395,83 @@ class Result
             $results[] = new self($A);
         }
         return $results;
+    }
+
+    /**
+     * Determinie if this is a new record or an existing one.
+     *
+     * @return  integer     1 if new, 0 if existing
+     */
+    public function isNew()
+    {
+        return $this->res_id == 0 ? 1 : 0;
+    }
+
+
+    /**
+     * Get the submitting user ID.
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
+    }
+
+
+    /**
+     * Get the associated quiz record ID.
+     *
+     * @return  string      Quiz ID
+     */
+    public function getQuizID()
+    {
+        return $this->quiz_id;
+    }
+
+
+    /**
+     * Get the values in this result set.
+     *
+     * @return  array       Submitted answers
+     */
+    public function getValues()
+    {
+        return $this->Values;
+    }
+
+
+    /**
+     * Get the number of questions asked by this quiz.
+     * Used to determine if the quiz was answered completely.
+     *
+     * @return  integer     Number of questions asked
+     */
+    public function getAsked()
+    {
+        return (int)$this->asked;
+    }
+
+
+    /**
+     * Get the record ID for this result set.
+     *
+     * @return  integer     Record ID
+     */
+    public function getID()
+    {
+        return (int)$this->res_id;
+    }
+
+
+    /**
+     * Get the answers to the intro fields.
+     *
+     * @return  string      Intro field answers.
+     */
+    public function getIntroFields()
+    {
+        return $this->introfields;
     }
 
 }

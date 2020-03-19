@@ -34,11 +34,13 @@ foreach($expected as $provided) {
         break;
     }
 }
-
 if (empty($action)) {
     COM_setArgNames(array('quiz_id', 'action'));
     $quiz_id = COM_getArgument('quiz_id');
-    $action = 'startquiz';
+    $action = COM_getArgument('action');
+    if (empty($action)) {
+        $action = 'startquiz';
+    }
 }
 if (empty($quiz_id)) {
     // Still no quiz ID? Get from POST or possibly from URL
@@ -56,6 +58,7 @@ if ($quiz_id == '') {
     // Else get the specific quiz
     $Q = \Quizzer\Quiz::getInstance($quiz_id);
 }
+// get the question ID if specified
 $q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
 $outputHandle = outputHandler::getInstance();
 $outputHandle->addRaw('<meta http-equiv="Pragma" content="no-cache">');
@@ -65,7 +68,7 @@ switch ($action) {
 case 'saveintro':
     $intro = isset($_POST['intro']) ? $_POST['intro'] : '';
     $R = new \Quizzer\Result();
-    $R->Create($Q->id, $intro);
+    $R->Create($Q->getID(), $intro);
     echo COM_refresh(QUIZ_PI_URL . '/index.php?startquiz=x&q_id=1');
     break;
 
@@ -78,10 +81,10 @@ case 'next_q':
     $q_id = isset($_REQUEST['next_q_id']) ? $_REQUEST['next_q_id'] : $q_id++;
 case 'startquiz':
     if ($action == 'startquiz') {
-        SESS_setVar('quizzer_quizID', $Q->id);
+        SESS_setVar('quizzer_quizID', $Q->getID());
     }
 default:
-    if (!$Q->isNew) {
+    if (!$Q->isNew()) {
         // If the quiz exists, render the question
         $content .= $Q->Render($q_id);
     }

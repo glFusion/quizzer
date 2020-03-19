@@ -48,9 +48,11 @@ class radio extends \Quizzer\Question
      */
     public function Verify($submitted)
     {
-        if (isset($submitted[0]) &&
+        if (
+            isset($submitted[0]) &&
             isset($this->Answers[$submitted[0]]) &&
-            $this->Answers[$submitted[0]]['correct'] == 1) {
+            $this->Answers[$submitted[0]]->isCorrect() == 1
+        ) {
             return 1;
         } else {
             return 0;
@@ -68,7 +70,7 @@ class radio extends \Quizzer\Question
     public function getCorrectAnswers()
     {
         foreach ($this->Answers as $a_id => $ans) {
-            if ($ans['correct']) {
+            if ($ans->isCorrect()) {
                 return array($a_id);
             }
         }

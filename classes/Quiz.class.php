@@ -22,34 +22,62 @@ class Quiz
      * @const string */
     const TAG = 'quiz';
 
-    /** Local properties.
-    * @var array */
-    var $properties = array();
+    /** Quiz DB record ID.
+     * @var integer */
+    private $id = 0;
+
+    /** Old DB record ID. Used when editing or duplicating a quiz.
+     * @var integer */
+    private $old_id = 0;
+
+    /** Current user ID.
+     * @var integer */
+    private $uid;
+
+    /** Name for the quiz.
+     * @var string */
+    private $name;
+
+    /** Text message shown at the start of a quiz.
+     * @var string */
+    private $introtext;
+
+    /** Custom fields for data collection at the start of a quiz.
+     * @var string */
+    private $introfields;
+
+    /** Levels to determine pass/fail scores.
+     * @var string */
+    private $levels;
 
     /** Quiz fields, an array of objects.
     * @var array */
-    var $fields = array();
+    private $fields = array();
+
+    /** Message to show the taker if the quiz is passed.
+     * @var string */
+    private $pass_msg = '';
+
+    /** Message to show the taker if the quiz is failed.
+     * @var string */
+    private $fail_msg = '';
 
     /** Result object for a user submission.
     * @var object */
-    var $Result;
+    private $Result;
 
     /** Database ID of a result record.
     * @var integer */
-    var $res_id;
+    private $res_id;
 
     /** Flag to indicate that submission is allowed.
      * Turns off the submit button when previewing.
      * @var boolean */
-    var $allow_submit;
+    private $allow_submit;
 
-    /** Flag to indicate that this is a new quic.
+    /** Flag to indicate that this is a new quiz.
      * @var boolean */
-    var $isNew;
-
-    /** User ID.
-     * @var integer */
-    var $uid;
+    private $isNew = true;
 
 
     /**
@@ -64,38 +92,42 @@ class Quiz
     {
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
-        $this->uid = (int)$_USER['uid'];
-        if ($this->uid == 0) $this->uid = 1;    // Anonymous
-        $def_group = (int)DB_getItem($_TABLES['groups'], 'grp_id',
-                "grp_name='quizzer Admin'");
-        if ($def_group < 1) $def_group = 1;     // default to Root
+        $this->setUid($_USER['uid']);
+        $def_group = (int)DB_getItem(
+            $_TABLES['groups'],
+            'grp_id',
+            "grp_name='quizzer Admin'"
+        );
+        if ($def_group < 1) {
+            $def_group = 1;     // default to Root
+        }
         $this->Result = NULL;
 
         if (is_array($id)) {
-            $this->SetVars($id, true);
+            $this->setVars($id, true);
             $this->isNew = false;
         } elseif (!empty($id)) {
             $id = COM_sanitizeID($id);
-            $this->id = $id;
+            $this->setID($id);
             $this->isNew = false;
             if (!$this->Read($id)) {
-                $this->id = COM_makeSid();
+                $this->setID(COM_makeSid());
                 $this->isNew = true;
             }
         } else {
             $this->isNew = true;
-            $this->fill_gid = $_CONF_QUIZ['fill_gid'];
-            $this->group_id = $def_group;
-            $this->enabled = 1;
-            $this->id = COM_makeSid();
-            $this->introtext = '';
-            $this->pass_msg = '';
-            $this->fail_msg = '';
-            $this->introfields = '';
-            $this->name = '';
-            $this->onetime = 0;
-            $this->num_q = 0;
-            $this->levels = 0;
+            $this->setFillGid($_CONF_QUIZ['fill_gid'])
+                ->setGid($def_group)
+                ->setEnabled(1)
+                ->setID(COM_makeSid())
+                ->setIntrotext('')
+                ->setPassMsg('')
+                ->setFailMsg('')
+                ->setIntroFields('')
+                ->setName('')
+                ->setOnetime(0)
+                ->setNumQ(0)
+                ->setLevels(0);
         }
     }
 
@@ -119,63 +151,381 @@ class Quiz
 
 
     /**
-     * Set a local property.
+     * Set the current user ID.
      *
-     * @param   string  $name   Name of property to set
-     * @param   mixed   $value  Value to set
+     * @param   integer $uid    User ID
+     * @return  object  $this
      */
-    public function __set($name, $value)
+    private function setUid($uid)
     {
-        switch ($name) {
-        case 'id':
-        case 'old_id':
-            $this->properties[$name] = COM_sanitizeID($value);
-            break;
-
-        case 'fill_gid':
-        case 'onetime':
-        case 'num_q':
-            $this->properties[$name] = (int)$value;
-            break;
-
-        case 'enabled':
-            $this->properties[$name] = $value == 0 ? 0 : 1;
-            break;
-
-        case 'introtext':
-        case 'introfields':
-        case 'pass_msg':
-        case 'fail_msg':
-        case 'name':
-        case 'levels':
-            $this->properties[$name] = trim($value);
-            break;
-
-        case 'questions':
-            $this->properties[$name] = $value;
-            break;
+        $this->uid = (int)$_USER['uid'];
+        if ($this->uid == 0) {
+            $this->uid = 1;    // Anonymous
         }
+        return $this;
     }
 
 
     /**
-     * Return a property, if it exists.
+     * Get the current user ID.
      *
-     * @param   string  $name   Name of property to get
-     * @return  mixed   Value of property identified as $name
+     * @return  integer     User ID
      */
-    public function __get($name)
+    public function getUid()
     {
-        if (array_key_exists($name, $this->properties)) {
-            return $this->properties[$name];
-        } else {
-            return '';
-        }
+        return (int)$this->uid;
     }
 
 
     /**
-     * Read all auiz fields.
+     * Set the quiz record ID.
+     *
+     * @param   string  $id     Record ID for quiz
+     * @return  object  $this
+     */
+    private function setID($id)
+    {
+        $this->id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Get the quiz reord ID.
+     *
+     * @return  string  Record ID of quiz
+     */
+    public function getID()
+    {
+        return $this->id;
+    }
+
+
+    /**
+     * Set the quiz name.
+     *
+     * @param   string  $name   Name of quiz
+     * @return  object  $this
+     */
+    private function setName($name)
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the quiz name.
+     *
+     * @return  string      Name of quiz
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+
+    /**
+     * Set the intro message text.
+     *
+     * @param   string  $text   Intro text
+     * @return  object  $this
+     */
+    private function setIntrotext($text)
+    {
+        $this->introtext = $text;
+        return $this;
+    }
+
+
+    /**
+     * Get the intro message text.
+     *
+     * @return  string      Intro text
+     */
+    public function getIntrotext()
+    {
+        return $this->introtext;
+    }
+
+
+    /**
+     * Set the intro custom fields
+     *
+     * @param   string  $text   Intro fields
+     * @return  object  $this
+     */
+    private function setIntrofields($text)
+    {
+        $this->introfields = $text;
+        return $this;
+    }
+
+
+    /**
+     * Get the intro custom fields
+     *
+     * @return  string      Intro fields
+     */
+    public function getIntrofields()
+    {
+        return $this->introfields;
+    }
+
+
+    /**
+     * Set the message shown when a quiz is passed.
+     *
+     * @param   string  $text   Message text
+     * @return  object  $this
+     */
+    private function setPassMsg($text)
+    {
+        $this->pass_msg = $text;
+        return $this;
+    }
+
+
+    /**
+     * Get the message to show when a quiz is passed.
+     *
+     * @return  string      Message text
+     */
+    public function getPassMsg()
+    {
+        return $this->pass_msg;
+    }
+
+
+    /**
+     * Set the message shown when a quiz is failed.
+     *
+     * @param   string  $text   Message text
+     * @return  object  $this
+     */
+    private function setFailMsg($text)
+    {
+        $this->fail_msg = $text;
+        return $this;
+    }
+
+
+    /**
+     * Get the message to show when a quiz is failed.
+     *
+     * @return  string      Message text
+     */
+    public function getFailMsg()
+    {
+        return $this->fail_msg;
+    }
+
+
+    /**
+     * Set the levels for passing or failing a quiz.
+     *
+     * @param   string  $text   Serialized levels
+     * @return  object  $this
+     */
+    private function setLevels($text)
+    {
+        $this->levels = $text;
+        return $this;
+    }
+
+
+    /**
+     * Get the levels for passing or failing a quiz.
+     *
+     * @return  string      Serialized levels
+     */
+    public function getLevels()
+    {
+        return $this->levels;
+    }
+
+
+    /**
+     * Set the ID of the group allowed to take the quiz.
+     *
+     * @param   integer $gid    Authorized Group ID
+     * @return  object  $this
+     */
+    private function setFillGid($gid)
+    {
+        $this->fill_gid = (int)$gid;
+        return $this;
+    }
+
+
+    /**
+     * Get the authorized group ID for the quiz.
+     *
+     * @return  integer     Group ID
+     */
+    public function getFillGid()
+    {
+        return (int)$this->fill_gid;
+    }
+
+
+    /**
+     * Set the ID of the owner group for this quiz.
+     *
+     * @param   integer $gid    Owner Group ID
+     * @return  object  $this
+     */
+    private function setGid($gid)
+    {
+        $this->group_id = (int)$gid;
+        return $this;
+    }
+
+
+    /**
+     * Get the owner group ID for the quiz.
+     *
+     * @return  integer     Group ID
+     */
+    public function getGid()
+    {
+        return (int)$this->group_id;
+    }
+
+
+    /**
+     * Set the ID of the group allowed to view quiz results.
+     *
+     * @param   integer $gid    Results viewer group ID
+     * @return  object  $this
+     */
+    private function setResultsGid($gid)
+    {
+        $this->results_gid = (int)$gid;
+        return $this;
+    }
+
+
+    /**
+     * Get the results viewer group ID.
+     *
+     * @return  integer     Group ID
+     */
+    public function getResultsGid()
+    {
+        return (int)$this->results_gid;
+    }
+
+
+    /**
+     * Set the flag to indicate if or how a quiz may be taken multiple times.
+     *
+     * @param   integer $flag   Ontime status flag value
+     * @return  object  $this
+     */
+    private function setOnetime($flag)
+    {
+        $this->onetime = (int)$flag;
+        return $this;
+    }
+
+
+    /**
+     * Get the one-time status flag.
+     *
+     * @return  integer     Value of onetime flag
+     */
+    public function getOnetime()
+    {
+        return (int)$this->onetime;
+    }
+
+
+    /**
+     * Set the number of questions to be presented to the quiz taker.
+     *
+     * @param   integer $numq   Number of questions
+     * @return  object  $this
+     */
+    private function setNumQ($numq)
+    {
+        $this->num_q = (int)$numq;
+        return $this;
+    }
+
+
+    /**
+     * Get the number of questions to be shown in a quiz.
+     *
+     * @return  integer     Number of questions
+     */
+    public function getNumQ()
+    {
+        return (int)$this->num_q;
+    }
+
+
+    /**
+     * Set the flag indicating whether this quiz is enabled (published).
+     *
+     * @param   integer $flag   Value of flag, 1 to enable, 0 to disable
+     * @return  object  $this
+     */
+    private function setEnabled($flag)
+    {
+        $this->enabled = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Get the enabled flag for this quiz.
+     *
+     * @return  integer     Value of flag, 1 or zero
+     */
+    public function getEnabled()
+    {
+        return $this->enabled ? 1 : 0;
+    }
+
+
+    /**
+     * Set the question objects into an array.
+     *
+     * @param   array   $questoins  Array of Question objects
+     * @return  object  $this
+     */
+    private function setQuestions($questions)
+    {
+        $this->questions = $questions;
+        return $this;
+    }
+
+
+    /**
+     * Get the questions for the quiz.
+     *
+     * @return  array       Array of question objects
+     */
+    public function getQuestions()
+    {
+        return $this->questions;
+    }
+
+
+    /**
+     * Check if this is a new record.
+     *
+     * @return  integer     1 if new, 0 if not
+     */
+    public function isNew()
+    {
+        return $this->isNew ? 1 : 0;
+    }
+
+
+    /**
+     * Read all quiz fields.
      *
      * @param  string  $id      Optional quiz ID.
      */
@@ -183,7 +533,7 @@ class Quiz
     {
         global $_TABLES;
 
-        $this->id = $id;
+        $this->setID($id);
 
         // Clear out any existing items, in case we're reusing this instance.
         $this->fields = array();
@@ -197,31 +547,8 @@ class Quiz
         }
 
         $A = DB_fetchArray($res1, false);
-        $this->SetVars($A, true);
+        $this->setVars($A, true);
         return true;
-    }
-
-
-    /**
-     * Read a results set for this quiz.
-     * If no results set ID is given, then find the first set for the
-     * current user ID.
-     *
-     * @depreated
-     * @param   integer $res_id     Results set to read
-     */
-    public function ReadData($res_id = 0)
-    {
-        if ($res_id == 0) {
-            $res_id = Result::FindResult($this->id, $this->uid);
-        } else {
-            $res_id = (int)$res_id;
-        }
-
-        if ($res_id > 0) {
-            $this->Result = new Result($res_id);
-            $this->Result->GetValues($this->questions);
-        }
     }
 
 
@@ -231,29 +558,29 @@ class Quiz
      * @param   array   $A          Array of values to use.
      * @param   boolean $fromdb     Indicate if $A is from the DB or a quiz.
      */
-    function SetVars($A, $fromdb=false)
+    function setVars($A, $fromdb=false)
     {
         if (!is_array($A))
             return false;
 
-        $this->id = $A['id'];
-        $this->name = $A['name'];
-        $this->introtext = $A['introtext'];
-        $this->pass_msg = $A['pass_msg'];
-        $this->fail_msg = $A['fail_msg'];
-        $this->introfields = $A['introfields'];
-        $this->fill_gid = $A['fill_gid'];
-        $this->onetime = $A['onetime'];
-        $this->num_q = $A['num_q'];
-        $this->levels = $A['levels'];
+        $this->setID($A['id'])
+            ->setName($A['name'])
+            ->setIntroText($A['introtext'])
+            ->setPassMsg($A['pass_msg'])
+            ->setFailMsg($A['fail_msg'])
+            ->setIntroFields($A['introfields'])
+            ->setFillGid($A['fill_gid'])
+            ->setOnetime($A['onetime'])
+            ->setNumQ($A['num_q'])
+            ->setLevels($A['levels']);
 
         if ($fromdb) {
             // Coming from the database
-            $this->enabled = $A['enabled'];
+            $this->setEnabled($A['enabled']);
             $this->old_id = $A['id'];
         } else {
             // This is coming from the quiz edit form
-            $this->enabled = isset($A['enabled']) ? 1 : 0;
+            $this->setEnabled(isset($A['enabled']) ? 1 : 0);
             $this->old_id = $A['old_id'];
         }
     }
@@ -281,23 +608,22 @@ class Quiz
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('editquiz', 'editquiz.thtml');
         $T->set_var(array(
-            'id'    => $this->id,
+            'id'    => $this->getID(),
             'old_id' => $this->old_id,
-            'name'  => $this->name,
-            'introtext' => $this->introtext,
-            'pass_msg' => $this->pass_msg,
-            'fail_msg' => $this->fail_msg,
-            'introfields' => $this->introfields,
-            'ena_chk' => $this->enabled == 1 ? 'checked="checked"' : '',
+            'name'  => $this->getName(),
+            'introtext' => $this->getIntrotext(),
+            'pass_msg' => $this->getPassMsg(),
+            'fail_msg' => $this->getFailMsg(),
+            'introfields' => $this->getIntrofields(),
+            'ena_chk' => $this->getEnabled() ? 'checked="checked"' : '',
             'email' => $this->email,
-            'user_group_dropdown' =>
-                    $this->_groupDropdown(),
+            'user_group_dropdown' => $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
-            'one_chk_' . $this->onetime => 'selected="selected"',
-            'num_q'     => (int)$this->num_q,
-            'levels'    => $this->levels,
+            'one_chk_' . $this->getOnetime() => 'selected="selected"',
+            'num_q'     => $this->getNumQ(),
+            'levels'    => $this->getLevels(),
         ) );
         if (!$this->isNew) {
             $T->set_var('candelete', 'true');
@@ -335,7 +661,7 @@ class Quiz
 
         // Check whether the submission can be updated and, if so, whether
         // the res_id from the quiz is correct
-        if ($this->onetime == QUIZ_LIMIT_ONCE) {
+        if ($this->getOnetime() == QUIZ_LIMIT_ONCE) {
             if ($res_id == 0) {
                 // even if no result ID given, see if there is one
                 $res_id = Result::FindResult($this->id, $this->uid);
@@ -352,7 +678,7 @@ class Quiz
         // Validate the quiz fields
         $msg = '';
         $invalid_flds = '';
-        foreach ($this->questions as $Q) {
+        foreach ($this->getQuestions() as $Q) {
             $msg = $Q->Validate($vals);
             if (!empty($msg)) {
                 $invalid_flds .= "<li>$msg</li>\n";
@@ -388,7 +714,7 @@ class Quiz
         global $_TABLES, $LANG_QUIZ;
 
         if (is_array($A)) {
-            $this->SetVars($A, false);
+            $this->setVars($A, false);
         }
 
         $frm_name = $this->name;
@@ -732,10 +1058,10 @@ class Quiz
         foreach ($questions as $Q) {
             $total = 0;
             $correct = 0;
-            $vals = Value::getByQuestion($Q->q_id);
+            $vals = Value::getByQuestion($Q->getID());
             foreach ($vals as $Val) {
                 $total++;
-                if ($Q->Verify($Val->value)) {
+                if ($Q->Verify($Val->getValue())) {
                     $correct++;
                 }
             }
@@ -746,7 +1072,7 @@ class Quiz
             }
             $prog_status = $this->getGrade($pct);
             $T->set_var(array(
-                'question' => $Q->question,
+                'question' => $Q->getQuestion(),
                 'pct' => $pct,
                 'correct' => $correct,
                 'total' => $total,
@@ -785,7 +1111,7 @@ class Quiz
         $results = Result::findByQuiz($this->id);
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($results as $R) {
-            $introfields = @unserialize($R->introfields);
+            $introfields = $R->getIntroFields();
             $T->set_block('results', 'dataIntroFields', 'dataIntro');
             $T->clear_var('dataIntro');
             foreach ($keys as $key) {
@@ -794,15 +1120,15 @@ class Quiz
             }
             $correct = 0;
             $total_a = 0;
-            foreach ($R->Values as $V) {
+            foreach ($R->getValues() as $V) {
                 $total_a++;
-                $Q = Question::getInstance($V->q_id);
-                $correct += $Q->Verify($V->value);
+                $Q = Question::getInstance($V->getQuestionID());
+                $correct += $Q->Verify($V->getValue());
                 /*if ($Q->Verify($V->value)) {
                     $correct++;
                 }*/
             }
-            $total_q = $R->asked;
+            $total_q = $R->getAsked();
             // Adjust correct number for cleaner presentation
             if (!is_int($correct)) {
                 $correct = round($correct, 2);
@@ -812,20 +1138,16 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            if ($total_a < $total_q) {
-                $msg = ' (' . sprintf($LANG_QUIZ['num_answered'], $total_a) . ')';
-            } else {
-                $msg = '';
-            }
             $prog_status = $this->getGrade($pct);
             $T->set_var(array(
-                'username' => COM_getDisplayName($R->uid),
+                'username' => COM_getDisplayName($R->getUid()),
                 'pct' => $pct,
                 'correct' => $correct,
+                'total_a' => $total_a,
                 'total' => $total_q,
-                'not_all_answered' => $msg,
                 'prog_status' => $prog_status,
-                'res_id' => $R->res_id,
+                'res_id' => $R->getID(),
+                'all_answered' => $total_a == $total_q,
             ) );
             $T->parse('dRow', 'DataRows', true);
         }
@@ -859,19 +1181,18 @@ class Quiz
             $result_arr = $headers;
             foreach ($result_arr as $key=>$val) $result_arr[$key] = '';
 
-            $introfields = @unserialize($R->introfields);
-            foreach ($introfields as $key=>$val) {
+            foreach ($R->getIntroFields() as $key=>$val) {
                 $result_arr[$key] = str_replace('"', "'", $val);
             }
             $correct = 0;
-            foreach ($R->Values as $V) {
-                $Q = Question::getInstance($V->q_id);
-                if ($Q->Verify($V->value)) {
+            foreach ($R->getValues() as $V) {
+                $Q = Question::getInstance($V->getQuestionID());
+                if ($Q->Verify($V->getValue())) {
                     $correct = 1;
                 } else {
                     $correct = 0;
                 }
-                $result_arr['q_' . $Q->q_id] = $correct;
+                $result_arr['q_' . $Q->getID()] = $correct;
             }
             $retval .= '"' . implode('","', $result_arr) . '"' . "\n";
         }
@@ -1022,25 +1343,28 @@ class Quiz
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_QUIZ['reset'],
+                'text' => $LANG_QUIZ['reset'] . '&nbsp;<icon class="uk-icon uk-icon-question-circle tooltip" title="' . $LANG_QUIZ['hlp_quiz_reset'] . '"></i>',
                 'field' => 'reset',
                 'sort' => false,
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_ADMIN['delete'],
+                'text' => $LANG_ADMIN['delete'] . '&nbsp;<icon class="uk-icon uk-icon-question-circle tooltip" title="' . $LANG_QUIZ['hlp_quiz_delete'] . '"></i>',
                 'field' => 'delete',
                 'sort' => false,
                 'align' => 'center',
             ),
         );
-
+        $sql = "SELECT q.*, (
+                SELECT count(*) FROM {$_TABLES['quizzer_results']} r
+                WHERE r.quiz_id = q.id
+            ) as submissions 
+            FROM {$_TABLES['quizzer_quizzes']} q
+            WHERE 1=1 $perm_sql";
         $text_arr = array();
         $query_arr = array(
             'table' => 'quizzer_quizzes',
-            'sql' => "SELECT *
-                FROM {$_TABLES['quizzer_quizzes']}
-                WHERE 1=1 $perm_sql",
+            'sql' => $sql,
             'query_fields' => array('name'),
             'default_filter' => ''
         );
@@ -1073,6 +1397,13 @@ class Quiz
         $retval = '';
 
         switch($fieldname) {
+        case 'id':
+            $retval = COM_createLink(
+                $fieldvalue,
+                QUIZ_PI_URL . '/index.php?startquiz=' . $fieldvalue
+            );
+            break;
+
         case 'edit':
             $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quiz_id={$A['id']}";
             $retval = COM_createLink(
@@ -1121,7 +1452,7 @@ class Quiz
 
         case 'enabled':
             if ($A[$fieldname] == 1) {
-                $chk = ' checked ';
+                $chk = 'checked="checked"';
                 $enabled = 1;
             } else {
                 $chk = '';
@@ -1135,8 +1466,7 @@ class Quiz
 
         case 'submissions':
             $url = QUIZ_ADMIN_URL . '/index.php?results=x&quiz_id=' . $A['id'];
-            $txt = (int)DB_count($_TABLES['quizzer_results'], 'quiz_id', $A['id']);
-            $retval = COM_createLink($txt, $url,
+            $retval = COM_createLink((int)$fieldvalue, $url,
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_QUIZ['results'],

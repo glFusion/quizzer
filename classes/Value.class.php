@@ -19,11 +19,20 @@ class Value
 {
     /** Flag to indicate that this is a new record.
      * @var boolean */
-    public $isNew = true;
+    private $isNew = true;
 
-    /** Internal properties accessed via `__set()` and `__get()`.
+    /** Result set record ID.
+     * @var integer */
+    private $res_id = 0;
+
+    /** Question record ID.
+     * @var integer */
+    private $q_id = 0;
+
+    /** Value(s) of the response.
      * @var array */
-    protected $properties = array();
+    private $value = array();
+
 
     /**
      * Constructor. Sets the local properties using the array $item.
@@ -36,15 +45,11 @@ class Value
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
         $this->isNew = true;
-        if ($res_id == 0) {
-            $this->res_id = 0;
-            $this->q_id = 0;
-            $this->value = '';
-        } elseif (is_array($res_id)) {
+        if (is_array($res_id)) {
             $this->setVars($res_id, true);
             $this->isNew = false;
         } else {
-            $this->Read($res_id, $q_id);
+            $this->Read((int)$res_id, (int)$q_id);
         }
     }
 
@@ -61,12 +66,18 @@ class Value
     {
         global $_TABLES;
 
-        if ($res_id > 0) $this->res_id = $res_id;
-        if ($q_id > 0) $this->q_id = $q_id;
+        if ($res_id > 0) {
+            $this->res_id = (int)$res_id;
+        }
+        if ($q_id > 0) {
+            $this->q_id = (int)$q_id;
+        }
         $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
                 WHERE res_id = {$this->res_id} AND q_id = {$this->q_id}";
         $res = DB_query($sql, 1);
-        if (DB_error() || !$res) return false;
+        if (DB_error() || !$res) {
+            return false;
+        }
         $A = DB_fetchArray($res, false);
         if ($this->setVars($A, true)) {
             $this->isNew = false;
@@ -74,46 +85,6 @@ class Value
         } else {
             $this->isNew = true;
             return false;
-        }
-    }
-
-
-    /**
-     * Set a value into a property.
-     *
-     * @param   string  $name       Name of property
-     * @param   mixed   $value      Value to set
-     */
-    public function __set($name, $value)
-    {
-        switch ($name) {
-        case 'res_id':
-        case 'q_id':
-            $this->properties[$name] = (int)$value;
-            break;
-
-        case 'value':
-            if (!is_array($value)) {
-                $value = array();
-            }
-            $this->properties[$name] = $value;
-            break;
-        }
-    }
-
-
-    /**
-     * Get a property's value, or null if not set.
-     *
-     * @param   string  $name       Name of property
-     * @return  mixed       Value of property, or empty string if undefined
-     */
-    public function __get($name)
-    {
-        if (array_key_exists($name, $this->properties)) {
-           return $this->properties[$name];
-        } else {
-            return '';
         }
     }
 
@@ -131,14 +102,15 @@ class Value
             return false;
         }
 
-        $this->res_id   = isset($A['res_id']) ? $A['res_id'] : 0;
-        $this->q_id     = isset($A['q_id']) ? $A['q_id'] : 0;;
+        $this->res_id   = isset($A['res_id']) ? (int)$A['res_id'] : 0;
+        $this->q_id     = isset($A['q_id']) ? (int)$A['q_id'] : 0;;
         if ($fromDB) {
             $this->value    = @unserialize($A['value']);
             if ($this->value === false) {
                 $this->value = array();
             }
         } else {
+            // Coming from a submission form
             $this->value    = isset($A['value']) ? $A['value'] : '';
         }
         return true;
@@ -155,7 +127,11 @@ class Value
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['quizzer_values'], array('res_id', 'q_id'), array($res_id,$q_id));
+        DB_delete(
+            $_TABLES['quizzer_values'],
+            array('res_id', 'q_id'),
+            array($res_id,$q_id)
+        );
     }
 
 
@@ -236,6 +212,32 @@ class Value
         return $vals;
     }
 
+
+    /**
+     * Check if this is a new record.
+     *
+     * @return  integer     1 if new, 0 if not
+     */
+    public function isNew()
+    {
+        return $this->isNew ? 1 : 0;
+    }
+
+
+    /**
+     * Get the answer value.
+     *
+     * @return  array   Value array
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    public function getQuestionID()
+    {
+        return (int)$this->q_id;
+    }
 }
 
 ?>

@@ -53,7 +53,7 @@ class checkbox extends \Quizzer\Question
         $correct = 0;
         $possible = count($this->Answers);
         foreach ($this->Answers as $id=>$ans) {
-            switch ($ans['correct']) {
+            switch ($ans->isCorrect()) {
             case 1:
                 if (in_array($id, $submitted)) {
                     $correct++;
@@ -82,7 +82,7 @@ class checkbox extends \Quizzer\Question
     {
         $retval = array();
         foreach ($this->Answers as $a_id => $ans) {
-            if ($ans['correct']) {
+            if ($ans->isCorrect()) {
                 $retval[] = $a_id;
             }
         }

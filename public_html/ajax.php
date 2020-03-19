@@ -18,12 +18,12 @@ switch ($_POST['action']) {
 case 'saveresponse':
     $result_id = SESS_getVar('quizzer_resultset');
     $quiz_id = isset($_POST['quiz_id']) ? $_POST['quiz_id'] : '';
-    $Q = \Quizzer\Quiz::getInstance($quiz_id);
-    $isvalid = $Q->isNew ? 0 : 1;
+    $Q = Quizzer\Quiz::getInstance($quiz_id);
+    $isvalid = $Q->isNew() ? 0 : 1;
     if ($result_id == 0) {
         // This happens if there are no intro questions already saved,
         // which would have created a result set.
-        $R = new \Quizzer\Result();
+        $R = new Quizzer\Result;
         $result_id = $R->Create($Q->id);
     }
     $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
@@ -34,24 +34,27 @@ case 'saveresponse':
             'answer_msg' => $LANG_QUIZ['must_supply_answer'],
         );
     } else {
-        if (!is_array($a_id)) $a_id = array($a_id);
-        $Question = \Quizzer\Question::getInstance($q_id);
-        $isvalid = $Question->isNew ? 0 : 1;
+        if (!is_array($a_id)) {
+            $a_id = array($a_id);
+        }
+        $Question = Quizzer\Question::getInstance($q_id);
+        $isvalid = $Question->isNew() ? 0 : 1;
         $correct = 0;   // so there's something for $retval
         if ($isvalid) {
             $correct = $Question->getCorrectAnswers();
-            \Quizzer\Value::Save($result_id, $q_id, $a_id);
+            Quizzer\Value::Save($result_id, $q_id, $a_id);
         }
-        $sub_answers = $Question->Answers;
-        foreach ($sub_answers as $id=>$answer) {
-            $sub_answers[$id]['submitted'] = (int)in_array($id, $a_id);
+        $sub_answers = $Question->getAnswers();
+        foreach ($sub_answers as $id=>&$answer) {
+            $answer = $answer->toArray();
+            $answer['submitted'] = (int)in_array($id, $a_id);
         }
         $retval = array(
             'isvalid' => $isvalid,
             'submitted_ans' => $a_id,
             'answers' => $sub_answers,
             'correct_ans' => $correct,
-            'answer_msg' => $Q->answer_msg,
+            'answer_msg' => $Question->getAnswerMsg(),
         );
     }
 }

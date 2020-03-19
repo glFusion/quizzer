@@ -7,6 +7,7 @@
     <th style="text-align:left">{introfield_value}</th>
 <!-- END hdrIntroFields -->
     <th style="text-align:center;">{$LANG_QUIZ['score']}</th>
+    <th style="text-align:center;">{$LANG_QUIZ['completed']}</th>
     <th style="text=align:center;">{$LANG_ADMIN['delete']}</th>
 <!-- BEGIN DataRows -->
     <tr>
@@ -17,11 +18,17 @@
 {!if prog_status}
       <td>
         <div class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}">
-            <div class="uk-progress-bar" style="width:{pct}%">{pct}% {msg}</div>
+            <div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
         </div>
       </td>
 {!else}
       <td></td>
+{!endif}
+      <td style="width:20px;text-align:center;white-space:nowrap;">
+{!if all_answered}
+        <i class="uk-icon uk-icon-check uk-text-success"></i>
+{!else}
+        {total_a} / {total}
 {!endif}
       <td style="width:20px;text-align:center;">
         <a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"

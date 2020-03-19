@@ -304,50 +304,6 @@ function plugin_centerblock_quizzer($where, $page, $topic = '')
 
 
 /**
- * Returns a name=>value array of options broken out from the given string.
- *
- * @param   mixed   $str    Array, or serialized array, of options
- * @return  array           Associative array of option=>value pairs
- */
-function QUIZ_getOpts($str)
-{
-    $A = array();
-    if (is_string($str)) {
-        // convert to an array
-        $A = @unserialize($str);
-        if (!$A)
-            $A = array();
-    } elseif (is_array($str)) {
-        // already an array, return unchanged
-        $A = $str;
-    } else {
-        // invalid argument
-        $A = NULL;
-    }
-    return $A;
-}
-
-
-/**
- * Serializes an array of options and returns the resulting string.
- * An empty string is returned on error.
- * Options must already be validated for the type of record to be saved.
- *
- * @param   array   $A      Array of name=>value pairs
- * @return  string          Serialized string representing the array
- */
-function QUIZ_setOpts($A)
-{
-    $str = '';
-    if (is_array($A)) {
-        $str = @serialize($A);
-        if (!$str) $str = '';
-    }
-    return $str;
-}
-
-
-/**
  * Get the URL to the localized configuration help file.
  *
  * @param   string  $option     Config element ID to retrieve

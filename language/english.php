@@ -24,7 +24,7 @@ $LANG_QUIZ = array(
 'questions' => 'Questions',
 'question'  => 'Question',
 'answers'   => 'Answers',
-'num_answered' => '%d answered',
+'num_answered' => '%d of %d answered',
 'correct'   => 'Correct',
 'num_q'     => 'Number of Questions',
 'scoring_levels' => 'Scoring Levels',
@@ -59,6 +59,8 @@ $LANG_QUIZ = array(
 'radio'     => 'Radio',
 'hlp_quiz_edit' => 'Create or edit an existing quiz. When creating a quiz, the quiz must be saved before questions can be added to it.',
 'hlp_quiz_list'  => 'Select a quiz to edit, or create a new quiz by clicking "New Quiz" above. Other available actions are shown in the selection under the "Action" column.',
+'hlp_quiz_reset' => 'Delete all answers for a quiz',
+'hlp_quiz_delete' => 'Permanently delete a quiz and all related answers',
 'hlp_question_edit' => 'Editing the question definition.',
 'required' => 'This field is required',
 'pul_once' => 'One entry, No Edit',
@@ -78,6 +80,9 @@ $LANG_QUIZ = array(
 'randomize' => 'Randomize Answers?',
 'must_supply_answer' => 'You must supply an answer to this question',
 'no_access_msg' => 'There are no quizzes available.',
+'toggle_failure' => 'Item(s) are unchanged',
+'toggle_success' => 'Item(s) have been updated',
+'completed' => 'Completed',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';
@@ -85,7 +90,7 @@ $PLG_quizzer_MESSAGE2 = 'The form contains missing or invalid fields.';
 $PLG_quizzer_MESSAGE3 = 'The form has been updated.';
 $PLG_quizzer_MESSAGE4 = 'Error updating the Quizzer plugin version.';
 $PLG_quizzer_MESSAGE5 = 'A database error occurred. Check your site\'s error.log';
-$PLG_quizzer_MESSAGE6 = 'Your form has been created. You may now create fields.';
+$PLG_quizzer_MESSAGE6 = 'Your quiz has been saved. You may now create or update questions.';
 $PLG_quizzer_MESSAGE7 = 'Sorry, the maximum number of submissions has been reached.';
 
 /** Language strings for the plugin configuration section */

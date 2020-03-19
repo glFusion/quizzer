@@ -3,9 +3,9 @@
  * Base class to handle quiz questions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     quizzes
- * @version     v0.0.1
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.0.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,8 +14,9 @@ namespace Quizzer;
 
 /**
  * Base class for quiz questions.
+ * @package quizzer
  */
-class Question
+abstract class Question
 {
     /** Maximum answers allowed.
      * @todo: Make this a per-quiz setting
@@ -24,19 +25,52 @@ class Question
 
     /** Flag to indicate that this is a new question.
      * @var boolean */
-    public $isNew;
+    private $isNew = true;
+
+    /** Quiz ID related to this queston.
+     * @var string */
+    private $quiz_id = '';
+
+    /** Question record ID.
+     * @var integer */
+    private $q_id = 0;
+
+    /** Flag to indicate question can appear on quizzes.
+     * @var boolean */
+    private $enabled = 1;
+
+    /** Flag to indicate that answers should be shown in random order.
+     * @var boolean */
+    private $randomize = 0;
+
+    /** Question text.
+     * @var string */
+    private $question = '';
+
+    /** Question type (checkbox, radio, etc).
+     * @var string */
+    private $type = 'radio';
+
+    /** Help message to show with the question.
+     * @var string */
+    private $help_msg = '';
+
+    /** Message to show after answering.
+     * @var string */
+    private $answer_msg = '';
+
+    /** Flag to indicate that partial credit is granted.
+     * @var boolean */
+    private $partial_credit = 0;
+
+    /** Answer value.
+     * @var integer */
+    protected $have_answer = 0;
 
     /** Answer options for this question
      * @var array */
-    public $Answers = array();
+    protected $Answers = array();
 
-    /** Internal properties accessed via `__set()` and `__get()`
-     * @var array */
-    private $properties = array();
-
-    /** Answer value.
-     * @var integer */ 
-    protected $have_answer = 0;
 
     /**
      * Constructor.
@@ -48,43 +82,17 @@ class Question
     {
         global $_USER, $_TABLES;
 
-        $this->isNew = true;
         if ($q_id == 0) {
-            $this->q_id = 0;
-            $this->name = '';
-            $this->type = 'radio';
-            $this->enabled = 1;
-            $this->access = 0;
-            $this->prompt = '';
             $this->quiz_id = $quiz_id;
-            $this->randomize = 0;
         } elseif (is_array($q_id)) {
             $this->setVars($q_id, true);
-            $this->isNew = false;
         } else {
             $q = self::Read($q_id);
             if ($q) {
                 $this->setVars($q);
-                $this->isNew = false;
             }
         }
-
-        if ($this->q_id > 0) {      // get answers if not a new record
-            $cache_key = 'answers_q_' . $this->q_id;
-            $this->Answers = Cache::get($cache_key);
-            if ($this->Answers == NULL) {
-                $this->Answers = array();
-                $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
-                    WHERE q_id = '{$this->q_id}'";
-                $res = DB_query($sql);
-                if ($res) {
-                    while ($A = DB_fetchArray($res, false)) {
-                        $this->Answers[$A['a_id']] = $A;
-                    }
-                }
-                Cache::set($cache_key, $this->Answers, array('answers', $this->q_id));
-            }
-        }
+        $this->Answers = Answer::getByQuestion($this->q_id);
     }
 
 
@@ -160,57 +168,6 @@ class Question
 
 
     /**
-     * Set a value into a property.
-     *
-     * @param   string  $name       Name of property
-     * @param   mixed   $value      Value to set
-     */
-    public function __set($name, $value)
-    {
-        switch ($name) {
-        case 'quiz_id':
-            $this->properties[$name] = COM_sanitizeID($value);
-            break;
-
-        case 'q_id':
-            $this->properties[$name] = (int)$value;
-            break;
-
-        case 'enabled':
-        case 'partial_credit':
-        case 'randomize':
-            $this->properties[$name] = $value == 0 ? 0 : 1;
-            break;
-
-        case 'question':
-        case 'name':
-        case 'type':
-        case 'help_msg':
-        case 'value':
-        case 'answer_msg':
-            $this->properties[$name] = trim($value);
-            break;
-        }
-    }
-
-
-    /**
-     * Get a property's value.
-     *
-     * @param   string  $name       Name of property
-     * @return  mixed       Value of property, or empty string if undefined
-     */
-    public function __get($name)
-    {
-        if (array_key_exists($name, $this->properties)) {
-           return $this->properties[$name];
-        } else {
-            return '';
-        }
-    }
-
-
-    /**
      * Set all variables for this field.
      * Data is expected to be from $_POST or a database record
      *
@@ -250,16 +207,11 @@ class Question
 
         // Determine if this question has already been answered
         $res_id = SESS_getVar('quizzer_resultset');
-        $Val = new Value();
-        if ($res_id) {
-            $res_id = (int)$res_id;
-            $Val->Read($res_id, $this->q_id);
-        }
-        if (!$Val->isNew) {
+        $Val = new Value($res_id, $this->q_id);
+        if (!$Val->isNew()) {
             $sub_btn_vis = 'none';
             $next_btn_vis = '';
-            $ans = $Val->value;
-            $this->have_answer = $Val->value;
+            $this->have_answer = $Val->getValue();
         } else {
             $sub_btn_vis = '';
             $next_btn_vis = 'none';
@@ -272,7 +224,7 @@ class Question
         // Set template variables without allowing caching
         $T->set_var(array(
             'quiz_id'       => $this->quiz_id,
-            'quiz_name'     => $Q->name,
+            'quiz_name'     => $Q->getName(),
             'num_q'         => $num_q,
             'q_num'         => $q_num,
             'q_id'          => $this->q_id,
@@ -294,10 +246,10 @@ class Question
         }
         foreach ($this->Answers as $A) {
             $T->set_var(array(
-                'q_id'      => $A['q_id'],
-                'a_id'      => $A['a_id'],
-                'answer'    => $A['value'],
-                'answer_select' => $this->makeSelection($A['a_id']),
+                'q_id'      => $A->getQid(),
+                'a_id'      => $A->getAid(),
+                'answer'    => $A->getValue(),
+                'answer_select' => $this->makeSelection($A->getAid()),
             ) );
 
             // If the question has been answered, show the answer and score.
@@ -305,11 +257,14 @@ class Question
             $cls = 'qz-unanswered';
             if ($this->have_answer > 0) {
                 $icon = '';
-                if ($this->have_answer == $A['a_id'] && !in_array($this->have_answer, $correct)) {
+                if (
+                    $this->have_answer == $A->getAid() &&
+                    !in_array($this->have_answer, $correct)
+                ) {
                     $cls = 'qz-incorrect';
                     $icon = '<i class="uk-icon uk-icon-close uk-icon-medium qz-color-incorrect"></i>';
                 }
-                if (in_array($A['a_id'], $correct)) {
+                if (in_array($A->getAid(), $correct)) {
                     $cls = 'qz-correct';
                     if (in_array($this->have_answer, $correct)) {
                         $icon = '<i class="uk-icon uk-icon-check uk-icon-medium qz-color-correct"></i>';
@@ -338,11 +293,7 @@ class Question
      * @param   integer $a_id   Answer ID
      * @return  string          HTML for input element
      */
-    protected function makeSelection($a_id)
-    {
-        return '';
-    }
-
+    protected abstract function makeSelection($a_id);
 
     /**
      * Check whether the supplied answer ID is correct for this question.
@@ -363,10 +314,7 @@ class Question
      *
      * @return   array      Array of correct answer IDs
      */
-    public function getCorrectAnswers()
-    {
-        return array();
-    }
+    public abstract function getCorrectAnswers();
 
 
     /**
@@ -388,7 +336,7 @@ class Question
         }
         $T = new \Template(QUIZ_PI_PATH. '/templates/admin');
         $T->set_file('editform', 'editquestion.thtml');
- 
+
         $T->set_var(array(
             'quiz_name' => DB_getItem($_TABLES['quizzer_quizzes'], 'name',
                             "id='" . DB_escapeString($this->quiz_id) . "'"),
@@ -398,22 +346,23 @@ class Question
             'type'      => $this->type,
             'ena_chk'   => $this->enabled == 1 ? 'checked="checked"' : '',
             'doc_url'   => QUIZ_getDocURL('question_def.html'),
-            'editing'   => $this->isNew ? '' : 'true',
+            'editing'   => $this->isNew() ? '' : 'true',
             'help_msg'  => $this->help_msg,
             'answer_msg' => $this->answer_msg,
-            'can_delete' => $this->isNew || $this->_wasAnswered() ? false : true,
+            'can_delete' => $this->isNew() || $this->_wasAnswered() ? false : true,
             $this->type . '_sel' => 'selected="selected"',
             'pcred_vis' => $this->allowPartial() ? '' : 'none',
             'random_chk' => $this->randomize ? 'checked="checked"' : '',
+            'pcred_chk' => $this->isPartialAllowed() ? 'checked="checked"' : '',
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
         foreach ($this->Answers as $answer) {
             $T->set_var(array(
-                'ans_id'    => $answer['a_id'],
-                'ans_val'   => $answer['value'],
+                'ans_id'    => $answer->getAid(),
+                'ans_val'   => $answer->getValue(),
+                'ischecked' => $answer->isCorrect() ? 'checked="checked"' : '',
                 'isRadio'   => $this->type == 'radio' ? true : false,
-                'ischecked' => $answer['correct'] ? 'checked="checked"' : '',
             ) );
             $T->parse('Ans', 'Answers', true);
         }
@@ -483,6 +432,7 @@ class Question
 
         // Now save the answer options
         $count = count($A['opt']);   // index into opt and correct arrays
+        $to_del = array();
         for ($i = 1; $i <= $count; $i++) {
             if (!empty($A['opt'][$i])) {
                 $question = DB_escapeString($A['opt'][$i]);
@@ -491,22 +441,18 @@ class Question
                 } else {
                     $correct = isset($A['correct'][$i]) && $A['correct'][$i] == 1 ? 1 : 0;
                 }
-                $sql = "INSERT INTO {$_TABLES['quizzer_answers']} SET
-                        q_id = '{$q_id}',
-                        a_id = '$i',
-                        value = '$question',
-                        correct = '$correct'
-                    ON DUPLICATE KEY UPDATE
-                        value = '$question',
-                        correct = '$correct'";
-                DB_query($sql);
-                if (DB_error()) {
-                    return 6;
-                }
+                $Ans = new Answer;
+                $Ans->setQid($q_id)
+                    ->setAid($i)
+                    ->setValue($question)
+                    ->setCorrect($correct)
+                    ->Save();
             } else {
-                // Answer left blank to remove
-                DB_delete($_TABLES['quizzer_answers'], array('q_id', 'a_id'), array($this->q_id, $i));
+                $to_del[] = $i;
             }
+        }
+        if (!empty($to_del)) {
+            Answer::Delete($this->q_id, implode(',', $to_del));
         }
         Cache::clear(array('questions', $this->quiz_id));
         Cache::clear(array('answers', $this->q_id));
@@ -658,7 +604,11 @@ class Question
     {
         global $_TABLES;
 
-        if (DB_count($_TABLES['quizzer_values'], 'q_id', $this->q_id) > 0) {
+        if (DB_count(
+            $_TABLES['quizzer_values'],
+            'q_id',
+            $this->q_id
+        ) > 0) {
             return true;
         } else {
             return false;
@@ -693,8 +643,21 @@ class Question
     {
         return false;
     }
-    
-    
+
+
+    /**
+     * Check if partial credit is allowed for this question.
+     * Must have the partial checkbox checked, and be allowed by
+     * the question type.
+     *
+     * @return  boolean     True if partial credit allowed
+     */
+    public function isPartialAllowed()
+    {
+        return $this->allowPartial() && $this->partial_credit;
+    }
+
+
     /**
      * Uses lib-admin to list the question definitions and allow updating.
      *
@@ -778,7 +741,7 @@ class Question
         return $T->finish($T->get_var('output'));
     }
 
-    
+
     /**
      * Determine what to display in the admin list for each field.
      *
@@ -837,6 +800,61 @@ class Question
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Check if this is a new record or an existing one.
+     *
+     * @return  integer     1 if new, 0 if existing
+     */
+    public function isNew()
+    {
+        return $this->q_id == 0 ? 1 : 0;
+    }
+
+
+    /**
+     * Get the record ID for this question.
+     *
+     * @return  integer     Record ID
+     */
+    public function getID()
+    {
+        return (int)$this->q_id;
+    }
+
+
+    /**
+     * Get the text for this question.
+     *
+     * @return  string      Question text to display
+     */
+    public function getQuestion()
+    {
+        return $this->question;
+    }
+
+
+    /**
+     * Get the possible answers for this question.
+     *
+     * @return  array       Array of answer records
+     */
+    public function getAnswers()
+    {
+        return $this->Answers;
+    }
+
+
+    /**
+     * Get the message to display post-answer.
+     *
+     * @return  string      Answer message
+     */
+    public function getAnswerMsg()
+    {
+        return $this->answer_msg;
     }
 
 }
