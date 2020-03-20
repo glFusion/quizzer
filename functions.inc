@@ -16,9 +16,8 @@ if (!defined ('GVERSION')) {
 }
 
 /** Load the plugin configuration */
-require_once $_CONF['path_system'] . 'classes/config.class.php';
-$frm_config = config::get_instance();
-$_CONF_QUIZ = $frm_config->get_config('quizzer');
+global $_CONF_QUIZ;
+$_CONF_QUIZ = config::get_instance()->get_config('quizzer');
 
 /** Include static plugin config values */
 require_once 'quizzer.php';
