@@ -32,7 +32,7 @@ if (!plugin_isadmin_quizzer()) {
 $action = 'listquizzes';      // Default view
 $expected = array(
     'edit','updateform','editquestion', 'updatequestion',
-    'save', 'print', 'editresult', 'updateresult', 'resetquiz',
+    'savequiz', 'print', 'editresult', 'updateresult', 'resetquiz',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
     'savereward', 'delreward',
@@ -152,7 +152,7 @@ case 'copyform':
     }
     break;
 
-case 'updateform':
+case 'savequiz':
     $Q = new Quizzer\Quiz($_POST['old_id']);
     $msg = $Q->SaveDef($_POST);
     if ($msg != '') {                   // save operation failed
@@ -162,7 +162,7 @@ case 'updateform':
         $view = 'editquiz';
         $msg = 6;
     } else {
-        $view = 'listquizzes';
+        COM_refresh(QUIZ_ADMIN_URL . '/index.php?quizzes');
     }
     break;
 

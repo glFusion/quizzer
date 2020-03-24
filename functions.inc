@@ -28,7 +28,7 @@ define('QUIZ_PI_PATH', __DIR__);
 define('QUIZ_PI_URL', $_CONF['site_url'] . '/' . $_CONF_QUIZ['pi_name']);
 /** Define the administration url for the plugin */
 define('QUIZ_ADMIN_URL',
-            $_CONF['site_admin_url'] . '/plugins/' . $_CONF_QUIZ['pi_name']);
+    $_CONF['site_admin_url'] . '/plugins/' . $_CONF_QUIZ['pi_name']);
 
 define('QUIZ_ACCESS_FILL', 1);   // access to fill out form
 define('QUIZ_ACCESS_VIEW', 2);   // access to view results

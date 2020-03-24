@@ -57,7 +57,7 @@ function QUIZ_do_upgrade($dvlp=false)
     }
     include_once 'install_defaults.php';
     plugin_updateconfig_quizzer();
-
+    QUIZ_remove_old_files();
     COM_errorLog('Successfully updated the Quizzer plugin');
     return true;
 }
@@ -119,6 +119,61 @@ function QUIZ_do_set_version($ver)
         return false;
     } else {
         return true;
+    }
+}
+
+
+/**
+ * Remove deprecated files.
+ * No return, and errors here don't really matter
+ */
+function QUIZ_remove_old_files()
+{
+    global $_CONF, $_CONF_QUIZ;
+
+    $paths = array(
+        __DIR__ => array(
+        ),
+        // public_html/classifieds
+        $_CONF['path_html'] . $_CONF_QUIZ['pi_name'] => array(
+            // 1.3.0
+            'docs/english/config.legacy.html',
+        ),
+        // admin/plugins/classifieds
+        $_CONF['path_html'] . 'admin/plugins/' . $_CONF_QUIZ['pi_name'] => array(
+        ),
+    );
+
+    foreach ($paths as $path=>$files) {
+        foreach ($files as $file) {
+            // Remove the file or directory
+            QUIZ_rmdir("$path/$file");
+        }
+    }
+}
+
+
+/**
+ * Remove a file, or recursively remove a directory.
+ *
+ * @param   string  $dir    Directory name
+ */
+function QUIZ_rmdir($dir)
+{
+    if (is_dir($dir)) {
+        $objects = scandir($dir);
+        foreach ($objects as $object) {
+            if ($object != "." && $object != "..") {
+                if (is_dir($dir . '/' . $object)) {
+                    QUIZ_rmdir($dir . '/' . $object);
+                } else {
+                    @unlink($dir . '/' . $object);
+                }
+            }
+        }
+        @rmdir($dir);
+    } elseif (is_file($dir)) {
+        @unlink($dir);
     }
 }
 

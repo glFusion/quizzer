@@ -152,7 +152,7 @@ function confirmDelete()
   <div class="uk-form-row" style="margin-top:10px">
     <label class="uk-form-label"></label>
     <div class="uk-form-controls">
-      <button name="updateform" type="submit" class="uk-button uk-button-success">{$LANG_ADMIN['submit']}</button>
+      <button name="savequiz" type="submit" class="uk-button uk-button-success">{$LANG_ADMIN['submit']}</button>
       <button name="btnReset" type="reset" class="uk-button uk-button-primary">{$LANG_QUIZ['reset']}</button>
       <button type="submit" name="cancel" class="uk-button" 
         onclick="javascript:document.location.href='{referrer}';">{$LANG_ADMIN['cancel']}</button>
