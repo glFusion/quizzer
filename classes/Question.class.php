@@ -16,7 +16,7 @@ namespace Quizzer;
  * Base class for quiz questions.
  * @package quizzer
  */
-abstract class Question
+class Question
 {
     /** Maximum answers allowed.
      * @todo: Make this a per-quiz setting
@@ -293,7 +293,11 @@ abstract class Question
      * @param   integer $a_id   Answer ID
      * @return  string          HTML for input element
      */
-    protected abstract function makeSelection($a_id);
+    protected function makeSelection($a_id)
+    {
+        return '';
+    }
+
 
     /**
      * Check whether the supplied answer ID is correct for this question.
@@ -314,7 +318,10 @@ abstract class Question
      *
      * @return   array      Array of correct answer IDs
      */
-    public abstract function getCorrectAnswers();
+    public function getCorrectAnswers()
+    {
+        return array();
+    }
 
 
     /**
