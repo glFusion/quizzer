@@ -18,6 +18,10 @@ namespace Quizzer;
  */
 class Quiz
 {
+    const PASSED = 4;
+    const WARNING = 2;
+    const FAILED = 1;
+
     /** Base tag for caching.
      * @const string */
     const TAG = 'quiz';
@@ -32,19 +36,19 @@ class Quiz
 
     /** Current user ID.
      * @var integer */
-    private $uid;
+    private $uid = 0;
 
     /** Name for the quiz.
      * @var string */
-    private $name;
+    private $name = '';
 
     /** Text message shown at the start of a quiz.
      * @var string */
-    private $introtext;
+    private $introtext = '';
 
     /** Custom fields for data collection at the start of a quiz.
      * @var string */
-    private $introfields;
+    private $introfields = '';
 
     /** Levels to determine pass/fail scores.
      * @var string */
@@ -68,7 +72,7 @@ class Quiz
 
     /** Database ID of a result record.
     * @var integer */
-    private $res_id;
+    private $res_id = 0;
 
     /** Reward record ID.
      * @var integer */
@@ -84,11 +88,19 @@ class Quiz
     /** Flag to indicate that submission is allowed.
      * Turns off the submit button when previewing.
      * @var boolean */
-    private $allow_submit;
+    private $allow_submit = 1;
 
     /** Flag to indicate that this is a new quiz.
      * @var boolean */
     private $isNew = true;
+
+    /** Scoring name=>value mappings.
+     * @var array */
+    public static $grades = array(
+        1 => 'danger',
+        2 => 'warning',
+        4 => 'success',
+    );
 
 
     /**
@@ -104,14 +116,6 @@ class Quiz
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
         $this->setUid($_USER['uid']);
-        $def_group = (int)DB_getItem(
-            $_TABLES['groups'],
-            'grp_id',
-            "grp_name='quizzer Admin'"
-        );
-        if ($def_group < 1) {
-            $def_group = 1;     // default to Root
-        }
         $this->Result = NULL;
 
         if (is_array($id)) {
@@ -127,6 +131,14 @@ class Quiz
             }
         } else {
             $this->isNew = true;
+            $def_group = (int)DB_getItem(
+                $_TABLES['groups'],
+                'grp_id',
+                "grp_name='quizzer Admin'"
+            );
+            if ($def_group < 1) {
+                $def_group = 1;     // default to Root
+            }
             $this->setFillGid($_CONF_QUIZ['fill_gid'])
                 ->setGid($def_group)
                 ->setEnabled(1)
@@ -525,6 +537,54 @@ class Quiz
 
 
     /**
+     * Set the reward record ID.
+     *
+     * @param   integer $id     Reward record ID
+     * @return  object  $this
+     */
+    private function setRewardID($id)
+    {
+        $this->reward_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the reward record ID.
+     *
+     * @return  integer     Reward ID, 0 if none
+     */
+    public function getRewardID()
+    {
+        return (int)$this->reward_id;
+    }
+
+
+    /**
+     * Set the reward record minimum status.
+     *
+     * @param   integer $status     Minimu status
+     * @return  object  $this
+     */
+    private function setRewardStatus($status)
+    {
+        $this->reward_status = (int)$status;
+        return $this;
+    }
+
+
+    /**
+     * Get the minimum result status (grade) required for a reward.
+     *
+     * @return  integer     Minimum grade
+     */
+    public function getRewardStatus()
+    {
+        return (int)$this->reward_status;
+    }
+
+
+    /**
      * Check if this is a new record.
      *
      * @return  integer     1 if new, 0 if not
@@ -583,7 +643,9 @@ class Quiz
             ->setFillGid($A['fill_gid'])
             ->setOnetime($A['onetime'])
             ->setNumQ($A['num_q'])
-            ->setLevels($A['levels']);
+            ->setLevels($A['levels'])
+            ->setRewardID($A['reward_id'])
+            ->setRewardStatus($A['reward_status']);
 
         if ($fromdb) {
             // Coming from the database
@@ -621,6 +683,7 @@ class Quiz
             'editquiz' => 'editquiz.thtml',
             'tips'  => 'tooltipster.thtml',
         ) );
+
         $T->set_var(array(
             'id'    => $this->getID(),
             'old_id' => $this->old_id,
@@ -638,7 +701,7 @@ class Quiz
             'one_chk_' . $this->getOnetime() => 'selected="selected"',
             'num_q'     => $this->getNumQ(),
             'levels'    => $this->getLevels(),
-            'reward_options', Reward::optionList($this->reward_id),
+            'reward_options' => Reward::optionList($this->reward_id),
             'rs_' . $this->reward_status => 'checked="checked"',
         ) );
         if (!$this->isNew) {
@@ -1039,13 +1102,21 @@ class Quiz
     public function getGrade($pct)
     {
         static $scores = NULL;
-        if ($scores === NULL) $scores = explode('|', $this->levels);
-        $levels = array('success', 'warning', 'danger');
+        if ($scores === NULL) {
+            $scores = explode('|', $this->levels);
+        }
+        $levels = array(self::PASSED, self::WARNING, self::FAILED);
         $max_i = min(count($scores), 3);
-        $grade = 'danger';
+        $grade = array(
+            'grade' => self::FAILED,
+            'class' => self::$grades[self::FAILED],
+        );
         for ($i = 0; $i < $max_i; $i++) {
             if ($pct >= (float)$scores[$i]) {
-                $grade = $levels[$i];
+                $grade = array(
+                    'grade' => $levels[$i],
+                    'class' => self::$grades[$levels[$i]],
+                );
                 break;
             }
         }
@@ -1089,7 +1160,7 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->getGrade($pct);
+            $prog_status = $this->getGrade($pct)['class'];
             $T->set_var(array(
                 'question' => $Q->getQuestion(),
                 'pct' => $pct,
@@ -1157,7 +1228,7 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->getGrade($pct);
+            $prog_status = $this->getGrade($pct)['class'];
             $T->set_var(array(
                 'username' => COM_getDisplayName($R->getUid()),
                 'pct' => $pct,

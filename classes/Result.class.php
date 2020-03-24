@@ -325,13 +325,17 @@ class Result
         } else {
             $pct = 0;
         }
-        $prog_status = $Q->getGrade($pct);
-        if ($prog_status == 'success') {
+        $score = $Q->getGrade($pct);
+        //$prog_status = $Q->getGrade($pct);
+        //if ($prog_status == 'success') {
+        if ($score['grade'] == Quiz::PASSED) {
             $msg = $Q->getPassMsg();
-            /////// TODO : testing gift card rewards
-            //$msg .= \Quizzer\Rewards\GiftCard::CreateReward();
         } else {
             $msg = $Q->getFailMsg();
+        }
+        if ($Q->getRewardStatus() <= $score['grade']) {
+            $msg .= \Quizzer\Reward::getById($Q->getRewardID())
+                ->createReward($this->uid);
         }
         $T = new \Template(QUIZ_PI_PATH . '/templates');
         $T->set_file('result', 'finish.thtml');

@@ -85,11 +85,12 @@ $LANG_QUIZ = array(
 'completed' => 'Completed',
 'editing_reward' => 'Editing a Reward',
 'new_reward' => 'New Reward',
-'passed' => 'Passed',
-'failed' => 'Failed',
+'success' => 'Passed',
+'warning' => 'Warning',
+'danger' => 'Failed',
 'either' => 'Either',
 'reward' => 'Reward',
-'reward_status' => 'Reward if quiz is',
+'reward_status' => 'Min. Score for Reward',
 
 // Reward strings
 'Giftcard' => 'Gift Card',

@@ -303,6 +303,12 @@ class Reward
     }
 
 
+    /**
+     * Get an option list to select the reward type.
+     *
+     * @param   integer $sel    Currently-selected option
+     * @return  string      Option elements for a select list
+     */
     public function optionList($sel=0)
     {
         global $_TABLES;
@@ -313,6 +319,17 @@ class Reward
             (int)$sel,
             1
         );
+    }
+
+
+    /**
+     * Dummy function if a reward type is not defined or not applicable.
+     *
+     * @return  string      Reward message to the quiz taker
+     */
+    public function createReward($uid)
+    {
+        return '';
     }
 
 
