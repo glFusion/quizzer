@@ -24,7 +24,7 @@ case 'saveresponse':
         // This happens if there are no intro questions already saved,
         // which would have created a result set.
         $R = new Quizzer\Result;
-        $result_id = $R->Create($Q->id);
+        $result_id = $R->Create($Q->getID());
     }
     $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
     $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
