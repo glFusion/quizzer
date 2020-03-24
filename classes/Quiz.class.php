@@ -606,7 +606,10 @@ class Quiz
         }
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
-        $T->set_file('editquiz', 'editquiz.thtml');
+        $T->set_file(array(
+            'editquiz' => 'editquiz.thtml',
+            'tips'  => 'tooltipster.thtml',
+        ) );
         $T->set_var(array(
             'id'    => $this->getID(),
             'old_id' => $this->old_id,
@@ -628,6 +631,7 @@ class Quiz
         if (!$this->isNew) {
             $T->set_var('candelete', 'true');
         }
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'editquiz');
         return $T->finish($T->get_var('output'));
     }
