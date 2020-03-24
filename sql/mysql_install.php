@@ -30,7 +30,7 @@ $_SQL = array(
   `pass_msg` text,
   `fail_msg` text,
   `reward_id` int(11) unsigned NOT NULL DEFAULT '0',
-  `reward_status` tinyint(1) unsigned NOT NULL DEFAULT '3',
+  `reward_status` tinyint(1) unsigned NOT NULL DEFAULT '4',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -93,7 +93,7 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_results']} ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD fail_msg TEXT",
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD reward_id int(11) unsigned NOT NULL DEFAULT '0'",
-        "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD reward_status tinyint(1) unsigned NOT NULL DEFAULT '3'",
+        "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD reward_status tinyint(1) unsigned NOT NULL DEFAULT '4'",
         "CREATE TABLE {$_TABLES['quizzer_rewards']} (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
           `name` varchar(80) DEFAULT NULL,

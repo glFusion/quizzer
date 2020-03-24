@@ -127,8 +127,9 @@ function confirmDelete()
         <span id="hlp_rewardstatus" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input type="radio" name="reward_status" value="2" {rs_2}>&nbsp;{$LANG_QUIZ['passed']}&nbsp;&nbsp;
-        <input type="radio" name="reward_status" value="3" {rs_3}>&nbsp;{$LANG_QUIZ['either']}
+        <input type="radio" name="reward_status" value="1" {rs_2}>&nbsp;{$LANG_QUIZ['danger']}&nbsp;&nbsp;
+        <input type="radio" name="reward_status" value="2" {rs_2}>&nbsp;{$LANG_QUIZ['warning']}&nbsp;&nbsp;
+        <input type="radio" name="reward_status" value="4" {rs_4}>&nbsp;{$LANG_QUIZ['success']}
       </div>
     </div>
 
