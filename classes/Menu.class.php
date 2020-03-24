@@ -34,28 +34,26 @@ class Menu
         // Import administration functions
         USES_lib_admin();
 
-        $menu_arr = array ();
         if ($help_text == '') {
             $help_text = 'admin_text';
         }
 
-        if ($view == 'listquizzes') {
-            $menu_arr[] = array(
-                'url' => QUIZ_ADMIN_URL . '/index.php?action=editquiz',
-                'text' => $LANG_QUIZ['add_quiz'],
-            );
-        } else {
-            $menu_arr[] = array(
-                'url' => QUIZ_ADMIN_URL . '/index.php?view=listquizzes',
+        $menu_arr = array(
+            array(
+                'url' => QUIZ_ADMIN_URL . '/index.php?quizzes=x',
                 'text' => $LANG_QUIZ['list_quizzes'],
-            );
-        }
-
-        $menu_arr[] = array(
-            'url' => $_CONF['site_admin_url'],
-            'text' => $LANG01[53],
+                'active' => $view == 'listquizzes' ? true : false,
+            ),
+            array(
+                'url' => QUIZ_ADMIN_URL . '/index.php?rewards=x',
+                'text' => 'Rewards',
+                'active' => $view == 'rewards' ? true : false,
+            ),
+            array(
+                'url' => $_CONF['site_admin_url'],
+                'text' => $LANG01[53],
+            ),
         );
-
         $text = $LANG_QUIZ[$help_text];
         if (!empty($other_text)) {
             $text .= '<br />' . $other_text;

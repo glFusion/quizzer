@@ -23,12 +23,12 @@ global $_TABLES;
  */
 global $_DB_table_prefix;
 
-$_TABLES['quizzer_quizzes']    = $_DB_table_prefix . 'quizzer_quizzes';
+$_TABLES['quizzer_quizzes'] = $_DB_table_prefix . 'quizzer_quizzes';
 $_TABLES['quizzer_questions']    = $_DB_table_prefix . 'quizzer_questions';
-$_TABLES['quizzer_answers']    = $_DB_table_prefix . 'quizzer_answers';
-$_TABLES['quizzer_results']   = $_DB_table_prefix . 'quizzer_results';
-$_TABLES['quizzer_values']   = $_DB_table_prefix . 'quizzer_values';
-
+$_TABLES['quizzer_answers']  = $_DB_table_prefix . 'quizzer_answers';
+$_TABLES['quizzer_results'] = $_DB_table_prefix . 'quizzer_results';
+$_TABLES['quizzer_values']  = $_DB_table_prefix . 'quizzer_values';
+$_TABLES['quizzer_rewards'] = $_DB_table_prefix . 'quizzer_rewards';
 /**
  * Global configuration array.
  * @global  array   $_CONF_QUIZ

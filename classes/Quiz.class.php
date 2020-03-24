@@ -70,6 +70,17 @@ class Quiz
     * @var integer */
     private $res_id;
 
+    /** Reward record ID.
+     * @var integer */
+    private $reward_id = 0;
+
+    /** Status for which a reward is granted.
+     * 1 = failed (not used)
+     * 2 = passed
+     * 3 = either
+     * @var integer */
+    private $reward_status = 3;
+
     /** Flag to indicate that submission is allowed.
      * Turns off the submit button when previewing.
      * @var boolean */
@@ -606,7 +617,10 @@ class Quiz
         }
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
-        $T->set_file('editquiz', 'editquiz.thtml');
+        $T->set_file(array(
+            'editquiz' => 'editquiz.thtml',
+            'tips'  => 'tooltipster.thtml',
+        ) );
         $T->set_var(array(
             'id'    => $this->getID(),
             'old_id' => $this->old_id,
@@ -624,10 +638,13 @@ class Quiz
             'one_chk_' . $this->getOnetime() => 'selected="selected"',
             'num_q'     => $this->getNumQ(),
             'levels'    => $this->getLevels(),
+            'reward_options', Reward::optionList($this->reward_id),
+            'rs_' . $this->reward_status => 'checked="checked"',
         ) );
         if (!$this->isNew) {
             $T->set_var('candelete', 'true');
         }
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'editquiz');
         return $T->finish($T->get_var('output'));
     }
@@ -750,6 +767,8 @@ class Quiz
             fill_gid = '{$this->fill_gid}',
             onetime = '{$this->onetime}',
             num_q = {$this->num_q},
+            reward_id = {$this->reward_id},
+            reward_status = {$this->reward_status},
             levels = '" . DB_escapeString($this->levels) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -1286,6 +1305,17 @@ class Quiz
         return $msg;
     }
 
+
+    public static function resetReward($r_id)
+    {
+        global $_TABLES;
+
+        $sql = "UPDATE {$_TABLES['quizzer_quizzes']}
+            SET reward_id = 0, reward_status = 0
+            WHERE reward_id = " . (int)$r_id;
+        DB_query($sql);
+    }
+
     
     /**
      * Uses lib-admin to list the quizzer definitions and allow updating.
@@ -1370,6 +1400,14 @@ class Quiz
         );
         $defsort_arr = array('field' => 'name', 'direction' => 'ASC');
         $form_arr = array();
+        $retval .= COM_createLink(
+            $LANG_QUIZ['new_quiz'],
+            QUIZ_ADMIN_URL . '/index.php?editquiz=0',
+            array(
+                'class' => 'uk-button uk-button-success',
+                'style' => 'float:left',
+            )
+        );
         $retval .= ADMIN_list(
             'quizzer_quizes',
             array(__CLASS__,  'getAdminField'),

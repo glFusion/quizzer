@@ -83,6 +83,18 @@ $LANG_QUIZ = array(
 'toggle_failure' => 'Item(s) are unchanged',
 'toggle_success' => 'Item(s) have been updated',
 'completed' => 'Completed',
+'editing_reward' => 'Editing a Reward',
+'new_reward' => 'New Reward',
+'passed' => 'Passed',
+'failed' => 'Failed',
+'either' => 'Either',
+'reward' => 'Reward',
+'reward_status' => 'Reward if quiz is',
+
+// Reward strings
+'Giftcard' => 'Gift Card',
+'expiration' => 'Expiration (days)',
+'amount' => 'Amount',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

@@ -35,9 +35,11 @@ $expected = array(
     'save', 'print', 'editresult', 'updateresult', 'resetquiz',
     'editquiz', 'copyform', 'delbutton_x', 'showhtml',
     'moderate',
+    'savereward', 'delreward',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
     'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
     'delresult',
+    'rewards', 'editreward',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -182,6 +184,11 @@ case 'delQuestion':
     $msg = Quizzer\Question::Delete($q_id);
     $view = 'editquiz';
     break;
+
+case 'savereward':
+    Quizzer\Reward::getById($_POST['id'])->Save($_POST);
+    COM_refresh(QUIZ_ADMIN_URL . '/index.php?rewards');
+    break;
 }
 
 // Select the page to display
@@ -234,6 +241,26 @@ case 'results':
 case 'resultsbyq':
     $content .= Quizzer\Menu::Admin('', '');
     $content .= Quizzer\Quiz::getInstance($quiz_id)->resultByQuestion();
+    break;
+
+case 'rewards':
+    $content .= Quizzer\Menu::Admin($view, '');
+    $content .= Quizzer\Reward::adminList();
+    break;
+
+case 'editreward':
+    $r_id = (int)$actionval;
+    if ($r_id == 0) {
+        if (isset($_GET['type'])) {
+            $R = Quizzer\Reward::getInstance($_GET['type']);
+        } else {
+            $R = Quizzer\Reward::getInstance();
+        }
+    } else {
+        $R = Quizzer\Reward::getById($r_id);
+    }
+    $content .= Quizzer\Menu::Admin();
+    $content .= $R->Edit();
     break;
 
 case 'none':
