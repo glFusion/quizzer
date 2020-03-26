@@ -264,6 +264,11 @@ COM_errorLog($sql);
     }
 
 
+    /**
+     * Convert this answer into an array for AJAX usage.
+     *
+     * @return  array   Array of object properties
+     */
     public function toArray()
     {
         return array(
@@ -274,7 +279,6 @@ COM_errorLog($sql);
             'submitted' => $this->_submitted,
         );
     }
-
 
 }
 
