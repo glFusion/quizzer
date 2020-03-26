@@ -3,9 +3,9 @@
  * Public API functions for the Quizzer plugin for glFusion.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.2
+ * @version     v0.0.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -223,6 +223,21 @@ function plugin_autouninstall_quizzer()
         'vars'=> array()
     );
     return $out;
+}
+
+
+/**
+ * Run scheduled tasks.
+ * - Delete old carts that aren't assigned to any user.
+ * - Call PLG_itemDeleted to notify plugins that an item is not available
+ */
+function plugin_runScheduledTask_quizzer()
+{
+    global $_CONF_QUIZ;
+
+    if ($_CONF_QUIZ['purge_null_results'] > 0) {
+        Quizzer\Result::purgeNulls();
+    }
 }
 
 

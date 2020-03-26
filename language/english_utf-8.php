@@ -123,6 +123,7 @@ $LANG_fs['quizzer'] = array(
 $LANG_confignames['quizzer'] = array(
     'centerblock'  => 'Make Centerblock?',
     'fill_gid'  => 'Default group to fill quizzer',
+    'purge_null_results' => 'Days after which to purge null results',
 );
 
 // Note: entries 0, 1, and 12 are the same as in $LANG_configselects['Core']

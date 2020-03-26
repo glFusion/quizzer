@@ -597,27 +597,20 @@ class Result
      *
      * @param   integer $days   How old, in days, the record must be
      */
-    public static function purgeNulls($days=0)
+    public static function purgeNulls($days=1)
     {
         global $_TABLES;
 
-        $cutoff = max((int)$days, 1) * 86400;
-        $sql = "DELETE r.* FROM {$_TABLES['quizzer_results']} r
-            WHERE NOT EXISTS (
-                SELECT v.res_id FROM {$_TABLES['quizzer_values']} v
-                WHERE v.res_id = r.res_id AND v.value IS NOT NULL)
-            AND r.dt < unix_timestamp() - $cutoff";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        $A = DB_fetchAll($res, false);
-        $vals = array();
-        foreach ($A as $v) {
-            $vals[] = $v['res_id'];
+        if ($days > 0) {
+            $cutoff = max((int)$days, 1) * 86400;
+            $sql = "DELETE r.* FROM {$_TABLES['quizzer_results']} r
+                WHERE NOT EXISTS (
+                    SELECT v.res_id FROM {$_TABLES['quizzer_values']} v
+                    WHERE v.res_id = r.res_id AND v.value IS NOT NULL)
+                AND r.dt < unix_timestamp() - $cutoff";
+            //echo $sql;die;
+            DB_query($sql);
         }
-        $val_str = '(' . implode(',', $vals) . ')';
-        // Delete cascades to values
-        $sql = "DELETE FROM {$_TABLES['quizzer_results']}
-            WHERE res_id IN $val_str";
     }
 
 }
