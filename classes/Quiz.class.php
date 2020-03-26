@@ -75,6 +75,10 @@ class Quiz
      * @var boolean */
     private $allow_submit;
 
+    /** Indicator whether one or multiple submissions are allowed.
+     * @var boolean */
+    private $onetime = 0;
+
     /** Flag to indicate that this is a new quiz.
      * @var boolean */
     private $isNew = true;
@@ -425,7 +429,7 @@ class Quiz
      */
     private function setOnetime($flag)
     {
-        $this->onetime = (int)$flag;
+        $this->onetime = $flag ? 1 : 0;
         return $this;
     }
 
@@ -435,9 +439,9 @@ class Quiz
      *
      * @return  integer     Value of onetime flag
      */
-    public function getOnetime()
+    public function isOnetime()
     {
-        return (int)$this->onetime;
+        return $this->onetime ? 1 : 0;
     }
 
 
@@ -483,7 +487,7 @@ class Quiz
      *
      * @return  integer     Value of flag, 1 or zero
      */
-    public function getEnabled()
+    public function isEnabled()
     {
         return $this->enabled ? 1 : 0;
     }
@@ -605,13 +609,13 @@ class Quiz
             'pass_msg' => $this->getPassMsg(),
             'fail_msg' => $this->getFailMsg(),
             'introfields' => $this->getIntrofields(),
-            'ena_chk' => $this->getEnabled() ? 'checked="checked"' : '',
+            'ena_chk' => $this->isEnabled() ? 'checked="checked"' : '',
             'email' => $this->email,
             'user_group_dropdown' => $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
-            'one_chk_' . $this->getOnetime() => 'selected="selected"',
+            'one_chk_' . $this->isOnetime() => 'selected="selected"',
             'num_q'     => $this->getNumQ(),
             'levels'    => $this->getLevels(),
         ) );
@@ -652,7 +656,7 @@ class Quiz
 
         // Check whether the submission can be updated and, if so, whether
         // the res_id from the quiz is correct
-        if ($this->getOnetime() == QUIZ_LIMIT_ONCE) {
+        if ($this->isOnetime()) {
             if ($res_id == 0) {
                 // even if no result ID given, see if there is one
                 $res_id = Result::FindResult($this->id, $this->uid);
@@ -777,12 +781,9 @@ class Quiz
 
         // Don't allow another submission if the user has already filled out
         // this quiz.
-        if ($this->onetime) {
-            $results = Result::findByUser($this->uid, $this->id);
-            if (count($results) > 0) {
-                COM_refresh($_CONF['site_url'] . '/index.php?plugin=quizzer&msg=7');
-                exit;
-            }
+        if (!$this->canSubmit()) {
+            COM_refresh($_CONF['site_url'] . '/index.php?plugin=quizzer&msg=7');
+            exit;
         }
 
         // Check that the current user has access to fill out this quiz.
@@ -988,7 +989,7 @@ class Quiz
             WHERE quiz.enabled = 1 " .
             SEC_buildAccessSql('AND', 'quiz.fill_gid') .
             " GROUP BY quiz.id
-            HAVING q_count > 0 
+            HAVING q_count > 0
             ORDER BY id ASC
             LIMIT 1";
         //echo $sql;die;
@@ -1278,7 +1279,46 @@ class Quiz
         return $msg;
     }
 
-    
+
+    /**
+     * Helper function to check if the current user can submit to this quiz.
+     * Checks if the quiz is valid, enabled, and not one-time that has been
+     * answered already.
+     *
+     * @return  boolean     True if submission is allowed, False if not.
+     */
+    public function canSubmit()
+    {
+        if (
+            $this->isNew() ||
+            !$this->isEnabled() ||
+            !$this->hasAccess(QUIZ_ACCESS_FILL)
+        ) {
+            return false;
+        }
+
+        // If this is a one-time quiz, check if answers have been submitted for
+        // all questions.
+        if ($this->isOnetime()) {
+            $answered = 0;      // answer counter
+            $questions = 0;     // questions count
+            $results = Result::findByUser($this->uid, $this->id);
+            if (count($results) > 0) {
+                $questions = count($results[0]->getQuestions());
+                foreach ($results[0]->getValues() as $Val) {
+                    if (!empty($Val->getValue())) {
+                        $answered++;
+                    }
+                }
+            }
+            if ($answered >= $questions) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     /**
      * Uses lib-admin to list the quizzer definitions and allow updating.
      *
@@ -1354,7 +1394,7 @@ class Quiz
         $sql = "SELECT q.*, (
                 SELECT count(*) FROM {$_TABLES['quizzer_results']} r
                 WHERE r.quiz_id = q.id
-            ) as submissions 
+            ) as submissions
             FROM {$_TABLES['quizzer_quizzes']} q
             WHERE 1=1 $perm_sql";
         $text_arr = array();
@@ -1376,7 +1416,7 @@ class Quiz
         return $retval;
     }
 
-    
+
     /**
      * Determine what to display in the admin list for each form.
      *
