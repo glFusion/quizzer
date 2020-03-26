@@ -68,10 +68,13 @@ $_SQL = array(
 
 'quizzer_values' => "CREATE TABLE {$_TABLES['quizzer_values']} (
   `res_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `orderby` int(3) unsigned NOT NULL DEFAULT '0',
   `q_id` int(11) unsigned NOT NULL DEFAULT '0',
   `value` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`res_id`,`q_id`),
-  UNIQUE KEY `res_q` (`res_id`,`q_id`)
+  UNIQUE KEY `res_q` (`res_id`,`q_id`),
+  KEY `res_orderby` (`res_id`,`orderby`),
+  CONSTRAINT `fk_results_res_id` FOREIGN KEY (`res_id`) REFERENCES `gl_quizzer_results` (`res_id`) ON DELETE CASCADE
 ) ENGINE=MyISAM",
 );
 
@@ -82,6 +85,11 @@ $_QUIZ_UPGRADE_SQL = array(
     '0.0.3' => array(
         "ALTER TABLE {$_TABLES['quizzer_results']} ADD `asked` int(3) unsigned NOT NULL DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD fail_msg TEXT",
+        "ALTER TABLE {$_TABLES['quizzer_values']} ADD orderby int(5) unsigned NOT NULL DEFAULT '0' AFTER res_id",
+        "ALTER TABLE {$_TABLES['quizzer_values']} ADD key `res_orderby` (`res_id`, `orderby`)",
+        "ALTER TABLE {$_TABLES['quizzer_values']} ADD CONSTRAINT fk_results_res_idi
+            FOREIGN KEY (res_id) REFERENCES {$_TABLES['quizzer_results']} (res_id)
+            ON DELETE CASCADE",
     ),
 );
 

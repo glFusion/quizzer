@@ -158,8 +158,8 @@ class Quiz
      */
     private function setUid($uid)
     {
-        $this->uid = (int)$_USER['uid'];
-        if ($this->uid == 0) {
+        $this->uid = (int)$uid;
+        if ($this->uid < 1) {
             $this->uid = 1;    // Anonymous
         }
         return $this;
@@ -490,19 +490,6 @@ class Quiz
 
 
     /**
-     * Set the question objects into an array.
-     *
-     * @param   array   $questoins  Array of Question objects
-     * @return  object  $this
-     */
-    private function setQuestions($questions)
-    {
-        $this->questions = $questions;
-        return $this;
-    }
-
-
-    /**
      * Get the questions for the quiz.
      *
      * @return  array       Array of question objects
@@ -671,12 +658,6 @@ class Quiz
                 $res_id = Result::FindResult($this->id, $this->uid);
             }
             if ($res_id > 0) return false;       // can't update the submission
-        /*} elseif ($this->onetime == QUIZ_LIMIT_EDIT) {
-            // check that the supplied result ID is the same as the saved one.
-            $real_res_id = Result::FindResult($this->id, $this->uid);
-            if ($real_res_id != $res_id) {
-                return false;
-            }*/
         }   // else, multiple submissions are allowed
 
         // Validate the quiz fields
@@ -784,7 +765,7 @@ class Quiz
      * Set $mode to 'preview' to have the cancel button return to the admin
      * list.  Otherwise it might return and re-execute an action, like "copy".
      *
-     * @param   string  $question   ID of question being rendered.
+     * @param   integer $question   ID of question being rendered.
      * @return  string      HTML for the quiz
      */
     public function Render($question = 0)
@@ -809,22 +790,25 @@ class Quiz
             return $this->noAccessMsg();
         }
 
+        $Result = Result::getCurrent($this->getID());
+        if ($Result->getID() == 0) {
+            $Result->Create($this->getID());
+        }
+
         if ($question == 0) {
-            SESS_unset('quizzer_resultset');
             if ($this->num_q == 0) {
                 // If the number of questions is zero (forgot to fill in...)
                 // then ask all questions.
                 $this->num_q = Question::countQ($this->id);
             }
-            $questions = Question::getQuestions($this->id, $this->num_q);
-            SESS_setVar('quizzer_questions', $questions);
-            $this->num_q = count($questions);   // replace with actual number
         }
 
         // If starting the quiz, and there are intro fields to fill out, then
         // display those. Otherwise start with the first question below.
-        if ($question == 0 &&
-            ($this->introtext != '' || $this->introfields != '')
+        if (
+            $question == 0 &&
+            ($this->introtext != '' || $this->introfields != '') &&
+            !$Result->introDone()
         ) {
             $T = new \Template(QUIZ_PI_PATH . '/templates');
             $T->set_file('intro', 'intro.thtml');
@@ -847,19 +831,16 @@ class Quiz
             $T->parse('output', 'intro');
             $retval .= $T->finish($T->get_var('output'));
         } else {
-            // If question is zero but there are no intro fields,
-            // jump to question 1.
-            if ($question == 0) $question++;
-            $questions = SESS_getVar('quizzer_questions');
-            if (!is_array($questions) || count($questions) == 0) {
-                // Missing session var or empty array
-                COM_setMsg($LANG_QUIZ['msg_no_questions']);
-                echo COM_refresh(QUIZ_PI_URL);
+            // Just jump to the next (or first) quiz question.
+            // Create a new result set if necessary.
+            $Questions = $Result->getQuestions();
+            if ($question == 0) {
+                $question = $Result->getNextQuestion();
             }
-            $total_q = count($questions);
-            if (isset($questions[$question])) {
-                $Q = Question::getInstance($questions[$question]);
-                $retval .= $Q->Render($question, $total_q);
+            if (isset($Questions[$question])) {
+                $retval = $Questions[$question]
+                    ->setTotalQ(count($Questions))
+                    ->Render();
             }
         }
         return $retval;
@@ -1000,10 +981,17 @@ class Quiz
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['quizzer_quizzes']}
-                WHERE enabled = 1
-                ORDER BY id ASC
-                LIMIT 1";
+        $sql = "SELECT quiz.*, COUNT(questions.q_id) as q_count
+            FROM {$_TABLES['quizzer_quizzes']} AS quiz
+            LEFT JOIN {$_TABLES['quizzer_questions']} AS questions
+                ON quiz.id = questions.quiz_id
+            WHERE quiz.enabled = 1 " .
+            SEC_buildAccessSql('AND', 'quiz.fill_gid') .
+            " GROUP BY quiz.id
+            HAVING q_count > 0 
+            ORDER BY id ASC
+            LIMIT 1";
+        //echo $sql;die;
         $res = DB_query($sql);
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
@@ -1347,13 +1335,17 @@ class Quiz
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_QUIZ['reset'] . '&nbsp;<icon class="uk-icon uk-icon-question-circle tooltip" title="' . $LANG_QUIZ['hlp_quiz_reset'] . '"></i>',
+                'text' => $LANG_QUIZ['reset'] . '&nbsp;' . Icon::getHTML('question', 'tooltip', array(
+                    'title' => $LANG_QUIZ['hlp_quiz_reset'],
+                )),
                 'field' => 'reset',
                 'sort' => false,
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_ADMIN['delete'] . '&nbsp;<icon class="uk-icon uk-icon-question-circle tooltip" title="' . $LANG_QUIZ['hlp_quiz_delete'] . '"></i>',
+                'text' => $LANG_ADMIN['delete'] . '&nbsp;' . Icon::getHTML('question', 'tooltip', array(
+                    'title' => $LANG_QUIZ['hlp_quiz_delete'],
+                )),
                 'field' => 'delete',
                 'sort' => false,
                 'align' => 'center',
@@ -1411,7 +1403,7 @@ class Quiz
         case 'edit':
             $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quiz_id={$A['id']}";
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['edit'],
+                Icon::getHTML('edit'),
                 $url
             );
             break;
@@ -1419,23 +1411,23 @@ class Quiz
         case 'copy':
             $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quiz_id={$A['id']}";
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['copy'],
+                Icon::getHTML('copy'),
                 $url
             );
             break;
 
-        case 'questions':
+        /*case 'questions':
             $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quiz_id={$A['id']}";
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['question'],
+                Icon::getHTML('question'),
                 $url
             );
-            break;
+            break;*/
 
         case 'delete':
             $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quiz_id={$A['id']}";
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['delete'],
+                Icon::getHTML('delete'),
                 $url,
                 array(
                     'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_delete']}?');",
@@ -1446,7 +1438,7 @@ class Quiz
         case 'reset':
             $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quiz_id={$A['id']}";
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['reset'],
+                Icon::getHTML('reset', 'uk-text-danger'),
                 $url,
                 array(
                     'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_reset']}?');",

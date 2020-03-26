@@ -16,19 +16,19 @@ require_once '../lib-common.php';
 
 switch ($_POST['action']) {
 case 'saveresponse':
-    $result_id = SESS_getVar('quizzer_resultset');
     $quiz_id = isset($_POST['quiz_id']) ? $_POST['quiz_id'] : '';
+    $R = Quizzer\Result::getCurrent($quiz_id);
     $Q = Quizzer\Quiz::getInstance($quiz_id);
     $isvalid = $Q->isNew() ? 0 : 1;
-    if ($result_id == 0) {
+    if ($R->getID() == 0) {
+        COM_errorLog("HERE");
         // This happens if there are no intro questions already saved,
         // which would have created a result set.
-        $R = new Quizzer\Result;
-        $result_id = $R->Create($Q->getID());
+        $R->Create($Q->getID());
     }
     $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
     $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
-    if ($result_id == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
+    if ($R->getID() == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
         $retval = array(
             'isvalid' => 0,
             'answer_msg' => $LANG_QUIZ['must_supply_answer'],
@@ -42,7 +42,7 @@ case 'saveresponse':
         $correct = 0;   // so there's something for $retval
         if ($isvalid) {
             $correct = $Question->getCorrectAnswers();
-            Quizzer\Value::Save($result_id, $q_id, $a_id);
+            Quizzer\Value::Save($R->getID(), $q_id, $a_id);
         }
         $sub_answers = $Question->getAnswers();
         foreach ($sub_answers as $id=>&$answer) {

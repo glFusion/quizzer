@@ -3,9 +3,9 @@
  * Class to handle the Quiz result sets.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.1
+ * @version     v0.0.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -18,6 +18,8 @@ namespace Quizzer;
  */
 class Result
 {
+    const SESS_NAME = 'quizzer_resultset';
+
     /** Questions, with answers.
     * @var array */
     private $Questions = array();
@@ -79,11 +81,7 @@ class Result
         }
 
         if (!$this->isNew()) {    // existing record, get the questions and answers
-            $this->Values = Value::getByResult($this->res_id);
-            $this->Questions = array();
-            foreach ($this->Values as $val) {
-                $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID());
-            }
+            $this->readQuestions();
         }
     }
 
@@ -93,14 +91,49 @@ class Result
      * Gets the value from the session if no ID is supplied.
      *
      * @param   integer $res_id     Optional result set ID
+     * @param   string  $quiz_id    ID of quiz if $res_id is not provided
      * @return  object      Instance of a Result object
      */
-    public static function getResult($res_id = 0)
+    public static function getResult($res_id = 0, $quiz_id='')
     {
-        if ($res_id == 0) {
-            $res_id = SESS_getVar('quizzer_resultset');
+        if ($res_id == 0 && $quiz_id != '') {
+            $res_id = SESS_getVar(self::SESS_NAME[$quiz_id]);
         }
         return new self($res_id);
+    }
+
+
+    /**
+     * Set the result set ID into the session variable.
+     */
+    private function setCurrent()
+    {
+        SESS_setVar(self::SESS_NAME . '.' . $this->quiz_id, $this->res_id);
+        return $this;
+    }
+
+
+    /**
+     * Get the current result set used by the guest.
+     *
+     * @param   string  $quiz_id    ID of the quiz
+     * @return  object      Current result set, new set if none.
+     */
+    public static function getCurrent($quiz_id)
+    {
+        $res_id = (int)SESS_getVar(self::SESS_NAME . '.' . $quiz_id);
+        return self::getResult($res_id);
+    }
+
+
+    /**
+     * Clear the current result set to re-initialize the quiz.
+     *
+     * @param   string  $quiz_id    ID of the quiz to clear
+     */
+    public static function clearCurrent($quiz_id)
+    {
+        SESS_unset(self::SESS_NAME . '.' . $quiz_id);
     }
 
 
@@ -116,11 +149,11 @@ class Result
 
         $id = (int)$id;
         if ($id > 0) {
-            $this->id = (int)$id;
+            $this->res_id = (int)$id;
         }
 
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE res_id = " . $this->id;
+                WHERE res_id = " . $this->res_id;
         //echo $sql;die;
         $res1 = DB_query($sql);
         if (!$res1) {
@@ -133,6 +166,20 @@ class Result
         } else {
             $this->SetVars($A);
             return true;
+        }
+    }
+
+
+    /**
+     * Read the questions for this result set.
+     * Sets the sequence number into the question object.
+     */
+    private function readQuestions()
+    {
+        $this->Values = Value::getByResult($this->res_id);
+        $this->Questions = array();
+        foreach ($this->Values as $val) {
+            $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID())->setSeq($val->getOrderby());
         }
     }
 
@@ -171,7 +218,7 @@ class Result
     {
         global $_TABLES;
         $sql = "SELECT * from {$_TABLES['quizzer_values']}
-                WHERE res_id = '{$this->id}'";
+                WHERE res_id = '{$this->res_id}'";
         $res = DB_query($sql);
         $vals = array();
         // First get the values into an array indexed by field ID
@@ -200,14 +247,22 @@ class Result
 
         $Q = Quiz::getInstance($quiz_id);
         $questions = Question::getQuestions($Q->getID(), $Q->getNumQ());
-        SESS_unset('quizzer_resultset');
-        SESS_setVar('quizzer_questions', $questions);
+        if (empty($questions)) {
+            return $this;
+        }
+        $question_ids = array();
+        foreach ($questions as $A) {
+            $question_ids[] = $A['q_id'];
+        }
+
+        self::clearCurrent($quiz_id);
+        //SESS_setVar('quizzer_questions', $questions);
         $Q->num_q = count($questions);   // replace with actual number
         //$num_q = min($Q->num_q, Question::countQ($quiz_id));
         $this->uid = $_USER['uid'];
         $this->quiz_id = COM_sanitizeID($quiz_id);
         $this->dt = time();
-        $this->ip = $_SERVER['REMOTE_ADDR'];
+        $this->ip = $_SERVER['REAL_ADDR'];
         $ip = DB_escapeString($this->ip);
         $this->token = uniqid();
         $sql = "INSERT INTO {$_TABLES['quizzer_results']} SET
@@ -220,13 +275,15 @@ class Result
                 token = '{$this->token}'";
         DB_query($sql, 1);
         if (!DB_error()) {
-            $this->id = DB_insertID();
-            SESS_setVar('quizzer_resultset', $this->id);
+            $this->res_id = DB_insertID();
+            $this->setCurrent();
+            Value::createResultSet($this->res_id, $question_ids);
+            $this->readQuestions();
             Cache::Clear();
         } else {
-            $this->id = 0;
+            $this->res_id = 0;
         }
-        return $this->id;
+        return $this;
     }
 
 
@@ -345,6 +402,7 @@ class Result
             'finish_msg' => $msg,
         ) );
         $T->parse('output', 'result');
+        self::clearCurrent($Q->getiD());
         return $T->finish($T->get_var('output'));
     }
 
@@ -472,6 +530,90 @@ class Result
     public function getIntroFields()
     {
         return $this->introfields;
+    }
+
+
+    /**
+     * Get the next qustion to be answered for this resultset.
+     *
+     * @uses    Value::getNextUnanswered()
+     * @return  object      Question object to be rendered
+     */
+    public function getNextQuestion()
+    {
+        $q_id = Value::getFirstUnanswered($this->res_id);
+        return $q_id;
+    }
+
+
+    /**
+     * Get the question objects related to this result.
+     *
+     * @return  array       Array of Question objects
+     */
+    public function getQuestions()
+    {
+        return $this->Questions;
+    }
+
+
+    /**
+     * Check if the intro fields have been filled out.
+     *
+     * @return  boolean     True if the intro questions are completed
+     */
+    public function introDone()
+    {
+        return !empty($this->introfields);
+    }
+
+
+    /**
+     * Save the answers to the intro questions.
+     * These go into the results table, not the values.
+     *
+     * @param   array   $A      Array of prompt->value pairs
+     * @return  object  $this
+     */
+    public function saveIntro($A)
+    {
+        global $_TABLES;
+
+        $val = DB_escapeString(@serialize($A));
+        $sql = "UPDATE {$_TABLES['quizzer_results']}
+            SET introfields = '$val'
+            WHERE res_id = {$this->res_id}";
+        DB_query($sql);
+        return $this;
+    }
+
+
+    /**
+     * Purge result records which have no questions answered.
+     *
+     * @param   integer $days   How old, in days, the record must be
+     */
+    public static function purgeNulls($days=0)
+    {
+        global $_TABLES;
+
+        $cutoff = max((int)$days, 1) * 86400;
+        $sql = "DELETE r.* FROM {$_TABLES['quizzer_results']} r
+            WHERE NOT EXISTS (
+                SELECT v.res_id FROM {$_TABLES['quizzer_values']} v
+                WHERE v.res_id = r.res_id AND v.value IS NOT NULL)
+            AND r.dt < unix_timestamp() - $cutoff";
+        //echo $sql;die;
+        $res = DB_query($sql);
+        $A = DB_fetchAll($res, false);
+        $vals = array();
+        foreach ($A as $v) {
+            $vals[] = $v['res_id'];
+        }
+        $val_str = '(' . implode(',', $vals) . ')';
+        // Delete cascades to values
+        $sql = "DELETE FROM {$_TABLES['quizzer_results']}
+            WHERE res_id IN $val_str";
     }
 
 }

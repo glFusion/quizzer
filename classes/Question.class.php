@@ -71,6 +71,16 @@ class Question
      * @var array */
     protected $Answers = array();
 
+    /** Question sequence on the quiz.
+     * This is only set when the question set is read from a result record
+     * so the renderer knows which question this is, e.g. "3 of 5"
+     * @var integer */
+    protected $_seq = 0;
+
+    /** Total number of questions being asked.
+     * Used to create the progress bar.
+     * @var integer */
+    protected $_total_q = 0;
 
     /**
      * Constructor.
@@ -199,16 +209,16 @@ class Question
      * @param   integer $num_q  Total number of questions for this quiz
      * @return  string  HTML for the question form
      */
-    public function Render($q_num, $num_q)
+    public function Render()
     {
         $retval = '';
         $saveaction = 'savedata';
         $allow_submit = true;
 
         // Determine if this question has already been answered
-        $res_id = SESS_getVar('quizzer_resultset');
-        $Val = new Value($res_id, $this->q_id);
-        if (!$Val->isNew()) {
+        $Result = Result::getCurrent($this->quiz_id);
+        $Val = new Value($Result->getID(), $this->q_id);
+        if ($Val->hasAnswer()) {
             $sub_btn_vis = 'none';
             $next_btn_vis = '';
             $this->have_answer = $Val->getValue();
@@ -225,17 +235,17 @@ class Question
         $T->set_var(array(
             'quiz_id'       => $this->quiz_id,
             'quiz_name'     => $Q->getName(),
-            'num_q'         => $num_q,
-            'q_num'         => $q_num,
+            'num_q'         => $this->_total_q,
+            'q_num'         => $this->_seq,
             'q_id'          => $this->q_id,
             'question'      => $this->question,
             'answer_msg'    => $this->have_answer ? $this->answer_msg : '',
-            'next_q_id'     => $q_num + 1,
-            'is_last'       => $q_num == $num_q,
+            'next_q_id'     => $this->_seq + 1,
+            'is_last'       => $this->_seq == $this->_total_q,
             'sub_btn_vis'   => $sub_btn_vis,
             'next_btn_vis'  => $next_btn_vis,
             'answer_vis'    => $this->have_answer ? '' : 'none',
-            'pct'           => (int)(($q_num / $num_q) * 100),
+            'pct'           => (int)(($this->_seq / $this->_total_q) * 100),
         ) );
 
         $T->set_block('question', 'AnswerRow', 'Answer');
@@ -262,12 +272,12 @@ class Question
                     !in_array($this->have_answer, $correct)
                 ) {
                     $cls = 'qz-incorrect';
-                    $icon = '<i class="uk-icon uk-icon-close uk-icon-medium qz-color-incorrect"></i>';
+                    $icon = Icon::getHTML('close', 'uk-icon-medium qz-color-incorrect');
                 }
                 if (in_array($A->getAid(), $correct)) {
                     $cls = 'qz-correct';
                     if (in_array($this->have_answer, $correct)) {
-                        $icon = '<i class="uk-icon uk-icon-check uk-icon-medium qz-color-correct"></i>';
+                        $icon = Icon::getHTML('check', 'uk-icon-medium qz-color-correct');
                     }
                 }
                 $T->set_var(array(
@@ -568,15 +578,15 @@ class Question
                 AND enabled = 1";
         if ($rand) $sql .= ' ORDER BY RAND()';
         if ($max > 0) $sql .= " LIMIT $max";
+        //echo $sql;die;
         $res = DB_query($sql);
 
         // Question #0 indicates the start of the quiz, so index actual
         // questions starting at #1
-        $questions = array();
-        $i = 1;
+        $questions = array();   // array of question objects to return
+        $i = 0;
         while ($A = DB_fetchArray($res, false)) {
-            $questions[$i] = $A;
-            $i++;
+            $questions[++$i] = $A;
         }
         return $questions;
     }
@@ -705,6 +715,7 @@ class Question
                 'text'  => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort'  => false,
+                'align' => 'center',
             ),
         );
 
@@ -767,14 +778,14 @@ class Question
         switch($fieldname) {
         case 'edit':
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['edit'],
+                Icon::getHTML('edit'),
                 QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;q_id={$A['q_id']}"
             );
             break;
 
         case 'delete':
             $retval = COM_createLink(
-                $_CONF_QUIZ['icons']['delete'],
+                Icon::getHTML('delete'),
                 QUIZ_ADMIN_URL . '/index.php?delQuestion=x&q_id=' .
                     $A['q_id'] . '&quiz_id=' . $A['quiz_id'],
                 array(
@@ -862,6 +873,44 @@ class Question
     public function getAnswerMsg()
     {
         return $this->answer_msg;
+    }
+
+
+    /**
+     * Get the sequence number for this question's appearance.
+     *
+     * @param   integer $seq    Sequence number
+     * @return  object  $this
+     */
+    public function setSeq($seq)
+    {
+        $this->_seq = $seq;
+        return $this;
+    }
+
+
+    /**
+     * Get the sequence number for this question's appearance.
+     *
+     * @return  integer     Sequence number
+     */
+    public function getSeq()
+    {
+        return (int)$this->_seq;
+    }
+
+
+    /**
+     * Set the total number of questions being asked.
+     * Used to create the progress bar.
+     *
+     * @param   intger  $num    Number of questions on the quiz
+     * @return  object  $this
+     */
+    public function setTotalQ($num)
+    {
+        $this->_total_q = (int)$num;
+        return $this;
     }
 
 }

@@ -3,9 +3,9 @@
  * Base class to handle quiz values (user-supplied answers).
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     quizzes
- * @version     v0.0.1
+ * @version     v0.0.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -24,6 +24,10 @@ class Value
     /** Result set record ID.
      * @var integer */
     private $res_id = 0;
+
+    /** Order in which the question appears on the quiz.
+     * @var integer */
+    private $orderby = 0;
 
     /** Question record ID.
      * @var integer */
@@ -104,6 +108,7 @@ class Value
 
         $this->res_id   = isset($A['res_id']) ? (int)$A['res_id'] : 0;
         $this->q_id     = isset($A['q_id']) ? (int)$A['q_id'] : 0;;
+        $this->orderby  = isset($A['orderby']) ? (int)$A['orderby'] : 0;;
         if ($fromDB) {
             $this->value    = @unserialize($A['value']);
             if ($this->value === false) {
@@ -136,6 +141,32 @@ class Value
 
 
     /**
+     * Create a set of answer records for a new result set.
+     * Populates the values table with the result and question IDs, and
+     * empty answer fields.
+     *
+     * @param   integer $res_id     Result ID
+     * @param   array   $questions  Array of question IDs
+     */
+    public static function createResultSet($res_id, $questions)
+    {
+        global $_TABLES;
+
+        $res_id = (int)$res_id;
+        $i = 0;
+        foreach ($questions as $key=>$q_id) {
+            $q_id = (int)$q_id;
+            $i++;
+            $values[] = "($res_id, $i, $q_id)";
+        }
+        $values = implode(',', $values);
+        $sql = "INSERT INTO {$_TABLES['quizzer_values']}
+            (res_id, orderby, q_id) VALUES $values";
+        DB_query($sql);
+    }
+
+
+    /**
      * Save this value to the database.
      *
      * @param   integer $res_id     Resultset ID
@@ -156,15 +187,36 @@ class Value
             $values = array($values);
         }
         $value = DB_escapeString(@serialize($values));
-        $sql = "INSERT INTO {$_TABLES['quizzer_values']}
+        /*$sql = "INSERT INTO {$_TABLES['quizzer_values']}
                     (res_id, q_id, value)
                 VALUES
                     ('$res_id', '$q_id', '$value')
                 ON DUPLICATE KEY
-                    UPDATE value = '$value'";
+                UPDATE value = '$value'";*/
+        $sql = "UPDATE {$_TABLES['quizzer_values']}
+            SET value = '$value'
+            WHERE res_id = $res_id AND q_id = $q_id";
         DB_query($sql, 1);
         $status = DB_error();
         return $status ? false : true;
+    }
+
+
+    /**
+     * Get the first unanswered question by searching the values table.
+     *
+     * @param   integer $res_id     Result set ID
+     * @return  integer     ID of the question to be presented
+     */
+    public static function getFirstUnanswered($res_id)
+    {
+        global $_TABLES;
+
+        return (int)DB_getItem(
+            $_TABLES['quizzer_values'],
+            'q_id',
+            "res_id = $res_id AND value IS NULL ORDER BY res_id,orderby ASC LIMIT 1"
+        );
     }
 
 
@@ -181,10 +233,11 @@ class Value
 
         $vals = array();
         $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE res_id = $res_id";
+                WHERE res_id = $res_id
+                ORDER BY orderby ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
-            $vals[] = new self($A);
+            $vals[$A['orderby']] = new self($A);
         }
         return $vals;
     }
@@ -234,10 +287,39 @@ class Value
         return $this->value;
     }
 
+
+    /**
+     * Get the question record ID related to this answer.
+     *
+     * @return  integer     Question record ID
+     */
     public function getQuestionID()
     {
         return (int)$this->q_id;
     }
+
+
+    /**
+     * Get the sequence number for this question to appear on the quiz.
+     *
+     * @return  integer     Sequence number
+     */
+    public function getOrderby()
+    {
+        return (int)$this->orderby;
+    }
+
+
+    /**
+     * Check if this answer has been completed. The value will be empty if not.
+     *
+     * @return  boolean     True if an answer has been recorded
+     */
+    public function hasAnswer()
+    {
+        return !empty($this->value);
+    }
+
 }
 
 ?>
