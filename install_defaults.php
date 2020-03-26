@@ -3,9 +3,9 @@
  * Configuration defaults for the Quizzer plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.1
+ * @version     v0.0.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -67,6 +67,17 @@ $quizzerConfigData = array(
         'fieldset' => 0,
         'selection_array' => 0,     // uses helper function
         'sort' => 20,
+        'set' => true,
+        'group' => 'quizzer',
+    ),
+    array(
+        'name' => 'purge_null_results',
+        'default_value' => 0,
+        'type' => 'text',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,
+        'sort' => 30,
         'set' => true,
         'group' => 'quizzer',
     ),
