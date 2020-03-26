@@ -75,7 +75,7 @@ case 'saveintro':
     } else {
         $Result->saveIntro($intro);
     }
-    echo COM_refresh(QUIZ_PI_URL . '/index.php?startquiz=' . $Q->getID());
+    echo COM_refresh(QUIZ_PI_URL . '/index.php?next_q=x&quiz_id=' . $Q->getID());
     break;
 
 case 'finishquiz':
