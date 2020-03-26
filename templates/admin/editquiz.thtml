@@ -67,7 +67,7 @@ function confirmDelete()
       <div class="uk-form-controls">
         <select name="onetime">
           <option value="0" {one_chk_0} />{$LANG_QUIZ['pul_mult']}</option>
-          <option value="2" {one_chk_2} />{$LANG_QUIZ['pul_once']}</option>
+          <option value="1" {one_chk_1} />{$LANG_QUIZ['pul_once']}</option>
         </select>
       </div>
     </div>

@@ -90,6 +90,7 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_values']} ADD CONSTRAINT fk_results_res_idi
             FOREIGN KEY (res_id) REFERENCES {$_TABLES['quizzer_results']} (res_id)
             ON DELETE CASCADE",
+        "UPDATE {$_TABLES['quizzer_quizzes']} SET onetime = 1 WHERE onetime = 2",
     ),
 );
 
