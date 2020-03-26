@@ -18,7 +18,7 @@ function confirmDelete()
       </label>
       <div class="uk-form-controls">
         <input required id="f_id" type="text" size="32" name="id" value="{id}" />
-        <i class="uk-icon uk-icon-warning qz-color-incorrect tooltip" title="{$LANG_QUIZ['required']}"></i>
+        <i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
       </div>
     </div>
 
@@ -28,7 +28,7 @@ function confirmDelete()
       </label>
       <div class="uk-form-controls">
         <input required id="f_name" type="text" size="32" name="name" value="{name}" />
-        <i class="uk-icon uk-icon-warning qz-color-incorrect tooltip" title="{$LANG_QUIZ['required']}"></i>
+        <i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
       </div>
     </div>
 
