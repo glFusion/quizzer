@@ -101,6 +101,11 @@ case 'startquiz':
         // If the quiz exists, render the question
         $content .= $Q->Render(0);
     }
+    if ($content == '') {
+        // If no content found, start over fresh
+        Quizzer\Result::clearCurrent($Q->getID());
+        COM_refresh(QUIZ_PI_URL . '/index.php');
+    }
     break;
 
 case 'next_q':
