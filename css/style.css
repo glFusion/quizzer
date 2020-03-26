@@ -48,7 +48,8 @@ div.qz-answers {
 div.qz-answer-wrapper {
     clear: both;
     min-height: 2rem;
-    margin-bottom: 25px;
+    /*margin-bottom: 25px;*/
+    min-height: 50px;
     padding: 5px;
 }
 div.qz-name {
