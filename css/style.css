@@ -39,7 +39,7 @@ div.qz-question {
     line-height: 2.0rem;
 }
 div.qz-answers {
-    width: 80%;
+    width: 70%;
     font-size: large;
     margin-bottom: 20px;
     margin: auto;
@@ -61,6 +61,9 @@ div.qz-introtext {
     font-size: large;
     margin-bottom: 10px;
 }
+div.qz-intro-answer input {
+    width: 80%;
+}
 div.qz-buttons {
     padding-top: 20px;
     clear:both;
@@ -70,7 +73,7 @@ div.qz-answermsg {
     font-size: large;
 }
 div.qz-answerrow {
-    width: 80%;
+    width: 70%;
     float: left;
     min-height: 2rem;
     padding: 10px;
@@ -79,12 +82,12 @@ div.qz-answerrow label {
     font-weight: normal;
 }
 .qz-answerrow.qz-question {
-    width: 90%;
+    width: 80%;
     display: inline-block;
     vertical-align: top;
 }
 .qz-answerrow.qz-select {
-    width: 15px;
+    width: 10%;
     display: inline-block;
     vertical-align: top;
 }
@@ -104,3 +107,21 @@ div.qz-answerrow label {
 }
 .qz-finish-msg.success {
 }
+
+@media screen and (max-width: 600px) {
+    div.qz-answers {
+        width: 100%;
+    }
+    div.qz-answerrow {
+        width: 80%;
+        padding: 2px;
+    }
+    div.qz-answer-wrapper {
+        min-height: 35px;
+    }
+    div.qz-question-wrapper {
+        width: 95%;
+        margin-left: auto;
+    }
+}
+

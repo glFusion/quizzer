@@ -1,21 +1,24 @@
 {# begin {templatelocation} #}
-<form autocomplete="off" class="uk-form uk-form-horizontal" id="quiz_form" action="{site_url}/quizzer/index.php" method="post">
-  <input type="hidden" name="quiz_id" value="{quiz_id}" />
-  <input type="hidden" name="q_id" value="{q_id}" />
-  <input type="hidden" name="next_q_id" value="{next_q_id}" />
-  <input type="hidden" name="action" value="saveresponse" />
-<div class="qz-question-wrapper">
+<form autocomplete="off" class="uk-form uk-form-horizontal"
+    id="quiz_form" action="{site_url}/quizzer/index.php" method="post">
+    <input type="hidden" name="quizID" value="{quizID}" />
+      <input type="hidden" name="questionID" value="{questionID}" />
+      <input type="hidden" name="next_q_id" value="{next_q_id}" />
+      <input type="hidden" name="action" value="saveresponse" />
+    <div class="qz-question-wrapper">
 {!if quiz_name}
-  <div class="qz-name">{quiz_name}</div>
+        <div class="qz-name">{quizName}</div>
 {!endif}
-<div class="uk-progress">
-    <div class="uk-progress-bar" style="width:{pct}%">{$LANG_QUIZ['question']} {q_num} of {num_q}</div>
-</div>
-  <div class="qz-question">{question}</div>
-  <div class="qz-answers">
+        <div class="uk-progress">
+            <div class="uk-progress-bar" style="width:{pct}%">
+                {$LANG_QUIZ['question']} {q_num} of {num_q}
+            </div>
+        </div>
+        <div class="qz-question">{questionText}</div>
+        <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
-    <div class="qz-answer-wrapper">
-      <div id="row_{a_id}" class="qz-answerrow {border_class}">
+            <div class="qz-answer-wrapper">
+                <div id="row_{a_id}" class="qz-answerrow {border_class}">
         <label>
           <span class="qz-answerrow qz-question">{answer}</span>
           <span class="qz-answerrow qz-select">{answer_select}</span>
@@ -26,8 +29,8 @@
 <!-- END AnswerRow -->
   </div>
 </div>
-{!if answer_msg}
-<div id="answer_msg" class="qz-answermsg uk-alert" style="display:{answer_vis};">{answer_msg}</div>
+{!if postAnswerMag}
+<div id="answer_msg" class="qz-answermsg uk-alert" style="display:{answer_vis};">{postAnswerMsg}</div>
 {!else}
 <span id="answer_msg" style="display:none;"></span>
 {!endif}
