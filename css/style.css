@@ -39,7 +39,7 @@ div.qz-question {
     line-height: 2.0rem;
 }
 div.qz-answers {
-    width: 70%;
+    width: 80%;
     font-size: large;
     margin-bottom: 20px;
     margin: auto;
@@ -73,7 +73,7 @@ div.qz-answermsg {
     font-size: large;
 }
 div.qz-answerrow {
-    width: 70%;
+    width: 80%;
     float: left;
     min-height: 2rem;
     padding: 10px;
