@@ -28,7 +28,7 @@ class Quiz
 
     /** Quiz DB record ID.
      * @var integer */
-    private $id = 0;
+    private $quizID = 0;
 
     /** Old DB record ID. Used when editing or duplicating a quiz.
      * @var integer */
@@ -40,7 +40,7 @@ class Quiz
 
     /** Name for the quiz.
      * @var string */
-    private $name = '';
+    private $quizName;
 
     /** Text message shown at the start of a quiz.
      * @var string */
@@ -89,6 +89,10 @@ class Quiz
      * Turns off the submit button when previewing.
      * @var boolean */
     private $allow_submit = 1;
+
+    /** Indicator whether one or multiple submissions are allowed.
+     * @var boolean */
+    private $onetime = 0;
 
     /** Flag to indicate that this is a new quiz.
      * @var boolean */
@@ -158,16 +162,16 @@ class Quiz
     /**
      * Get an instance of a quiz object.
      *
-     * @param   string  $quiz_id     Quiz ID
+     * @param   string  $quizID     Quiz ID
      * @return  object      Quiz object
      */
-    public static function getInstance($quiz_id)
+    public static function getInstance($quizID)
     {
-        $key = self::TAG . '_' . $quiz_id;
+        $key = self::TAG . '_' . $quizID;
         $Obj = Cache::get($key);
         if ($Obj === NULL) {
-            $Obj = new self($quiz_id);
-            Cache::set($quiz_id, $Obj);
+            $Obj = new self($quizID);
+            Cache::set($quizID, $Obj);
         }
         return $Obj;
     }
@@ -208,7 +212,7 @@ class Quiz
      */
     private function setID($id)
     {
-        $this->id = $id;
+        $this->quizID = $id;
         return $this;
     }
 
@@ -220,7 +224,7 @@ class Quiz
      */
     public function getID()
     {
-        return $this->id;
+        return $this->quizID;
     }
 
 
@@ -232,7 +236,7 @@ class Quiz
      */
     private function setName($name)
     {
-        $this->name = $name;
+        $this->quizName = $name;
         return $this;
     }
 
@@ -244,7 +248,7 @@ class Quiz
      */
     public function getName()
     {
-        return $this->name;
+        return $this->quizName;
     }
 
 
@@ -448,7 +452,7 @@ class Quiz
      */
     private function setOnetime($flag)
     {
-        $this->onetime = (int)$flag;
+        $this->onetime = $flag ? 1 : 0;
         return $this;
     }
 
@@ -458,9 +462,9 @@ class Quiz
      *
      * @return  integer     Value of onetime flag
      */
-    public function getOnetime()
+    public function isOnetime()
     {
-        return (int)$this->onetime;
+        return $this->onetime ? 1 : 0;
     }
 
 
@@ -472,7 +476,7 @@ class Quiz
      */
     private function setNumQ($numq)
     {
-        $this->num_q = (int)$numq;
+        $this->questionsAsked = (int)$numq;
         return $this;
     }
 
@@ -484,7 +488,7 @@ class Quiz
      */
     public function getNumQ()
     {
-        return (int)$this->num_q;
+        return (int)$this->questionsAsked;
     }
 
 
@@ -506,7 +510,7 @@ class Quiz
      *
      * @return  integer     Value of flag, 1 or zero
      */
-    public function getEnabled()
+    public function isEnabled()
     {
         return $this->enabled ? 1 : 0;
     }
@@ -597,7 +601,7 @@ class Quiz
         $this->fields = array();
 
         $sql = "SELECT * FROM {$_TABLES['quizzer_quizzes']}
-                WHERE id = '" . $this->id . "'";
+                WHERE quizID = '" . $this->quizID . "'";
         //echo $sql;die;
         $res1 = DB_query($sql, 1);
         if (!$res1 || DB_numRows($res1) < 1) {
@@ -618,18 +622,19 @@ class Quiz
      */
     function setVars($A, $fromdb=false)
     {
-        if (!is_array($A))
+        if (!is_array($A)) {
             return false;
+        }
 
-        $this->setID($A['id'])
-            ->setName($A['name'])
+        $this->setID($A['quizID'])
+            ->setName($A['quizName'])
             ->setIntroText($A['introtext'])
             ->setPassMsg($A['pass_msg'])
             ->setFailMsg($A['fail_msg'])
             ->setIntroFields($A['introfields'])
             ->setFillGid($A['fill_gid'])
             ->setOnetime($A['onetime'])
-            ->setNumQ($A['num_q'])
+            ->setNumQ($A['questionsAsked'])
             ->setLevels($A['levels'])
             ->setRewardID($A['reward_id'])
             ->setRewardStatus($A['reward_status']);
@@ -637,7 +642,7 @@ class Quiz
         if ($fromdb) {
             // Coming from the database
             $this->setEnabled($A['enabled']);
-            $this->old_id = $A['id'];
+            $this->old_id = $A['quizID'];
         } else {
             // This is coming from the quiz edit form
             $this->setEnabled(isset($A['enabled']) ? 1 : 0);
@@ -672,21 +677,21 @@ class Quiz
         ) );
 
         $T->set_var(array(
-            'id'    => $this->getID(),
+            'quizID'    => $this->getID(),
             'old_id' => $this->old_id,
-            'name'  => $this->getName(),
+            'quizName'  => $this->getName(),
             'introtext' => $this->getIntrotext(),
             'pass_msg' => $this->getPassMsg(),
             'fail_msg' => $this->getFailMsg(),
             'introfields' => $this->getIntrofields(),
-            'ena_chk' => $this->getEnabled() ? 'checked="checked"' : '',
+            'ena_chk' => $this->isEnabled() ? 'checked="checked"' : '',
             'email' => $this->email,
             'user_group_dropdown' => $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
             'lang_confirm_delete' => $LANG_QUIZ['confirm_quiz_delete'],
-            'one_chk_' . $this->getOnetime() => 'selected="selected"',
-            'num_q'     => $this->getNumQ(),
+            'one_chk_' . $this->isOnetime() => 'selected="selected"',
+            'questionsAsked' => $this->getNumQ(),
             'levels'    => $this->getLevels(),
             'reward_options' => Reward::optionList($this->reward_id),
             'rs_' . $this->reward_status => 'checked="checked"',
@@ -728,10 +733,10 @@ class Quiz
 
         // Check whether the submission can be updated and, if so, whether
         // the res_id from the quiz is correct
-        if ($this->getOnetime() == QUIZ_LIMIT_ONCE) {
+        if ($this->isOnetime()) {
             if ($res_id == 0) {
                 // even if no result ID given, see if there is one
-                $res_id = Result::FindResult($this->id, $this->uid);
+                $res_id = Result::FindResult($this->quizID, $this->uid);
             }
             if ($res_id > 0) return false;       // can't update the submission
         }   // else, multiple submissions are allowed
@@ -753,7 +758,7 @@ class Quiz
             $this->Result = new Result($res_id);
             $this->Result->setInstance($this->instance_id);
             $this->Result->setModerate($this->moderate);
-            $this->res_id = $this->Result->SaveData($this->id, $this->questions,
+            $this->res_id = $this->Result->SaveData($this->quizID, $this->questions,
                     $vals, $this->uid);
         } else {
             $this->res_id = false;
@@ -778,31 +783,31 @@ class Quiz
             $this->setVars($A, false);
         }
 
-        $frm_name = $this->name;
+        $frm_name = $this->quizName;
         if (empty($frm_name)) {
             return $LANG_QUIZ['err_name_required'];
         }
 
         // If saving a new record or changing the ID of an existing one,
         // make sure the new quiz ID doesn't already exist.
-        $changingID = false;
-        if ($this->isNew || (!$this->isNew && $this->id != $this->old_id)) {
-            if (!$this->isNew) $changingID = true;
-            $x = DB_count($_TABLES['quizzer_quizzes'], 'id', $this->id);
+        $changingID = (!$this->isNew && $this->quizID != $this->old_id);
+        if ($this->isNew || $changingID) {
+            $x = DB_count($_TABLES['quizzer_quizzes'], 'quizID', $this->quizID);
             if ($x > 0) {
-                $this->id = COM_makeSid();
+                $this->quizID = COM_makeSid();
+                $changingID = true;     // tread as a changed ID if we have to create one
             }
         }
 
         if (!$this->isNew && $this->old_id != '') {
             $sql1 = "UPDATE {$_TABLES['quizzer_quizzes']} ";
-            $sql3 = " WHERE id = '{$this->old_id}'";
+            $sql3 = " WHERE quizID = '{$this->old_id}'";
         } else {
             $sql1 = "INSERT INTO {$_TABLES['quizzer_quizzes']} ";
             $sql3 = '';
         }
-        $sql2 = "SET id = '{$this->id}',
-            name = '" . DB_escapeString($this->name) . "',
+        $sql2 = "SET quizID = '" . DB_escapeString($this->quizID) . "',
+            quizName = '" . DB_escapeString($this->quizName) . "',
             introtext = '" . DB_escapeString($this->introtext) . "',
             introfields= '" . DB_escapeString($this->introfields) . "',
             pass_msg= '" . DB_escapeString($this->pass_msg) . "',
@@ -810,7 +815,7 @@ class Quiz
             enabled = '{$this->enabled}',
             fill_gid = '{$this->fill_gid}',
             onetime = '{$this->onetime}',
-            num_q = {$this->num_q},
+            questionsAsked = {$this->questionsAsked},
             reward_id = {$this->reward_id},
             reward_status = {$this->reward_status},
             levels = '" . DB_escapeString($this->levels) . "'";
@@ -822,11 +827,11 @@ class Quiz
             // Now, if the ID was changed, update the field & results tables
             if (!$this->isNew && $changingID) {
                 DB_query("UPDATE {$_TABLES['quizzer_results']}
-                        SET quiz_id = '{$this->id}'
-                        WHERE quiz_id = '{$this->old_id}'");
+                        SET quizID = '{$this->quizID}'
+                        WHERE quizID = '{$this->old_id}'");
                 DB_query("UPDATE {$_TABLES['quizzer_questions']}
-                        SET quiz_id = '{$this->id}'
-                        WHERE quiz_id = '{$this->old_id}'");
+                        SET quizID = '{$this->quizID}'
+                        WHERE quizID = '{$this->old_id}'");
             }
             CTL_clearCache();       // so autotags pick up changes
             Cache::clear();         // Clear plugin cache
@@ -855,12 +860,9 @@ class Quiz
 
         // Don't allow another submission if the user has already filled out
         // this quiz.
-        if ($this->onetime) {
-            $results = Result::findByUser($this->uid, $this->id);
-            if (count($results) > 0) {
-                COM_refresh($_CONF['site_url'] . '/index.php?plugin=quizzer&msg=7');
-                exit;
-            }
+        if (!$this->canSubmit()) {
+            COM_refresh($_CONF['site_url'] . '/index.php?plugin=quizzer&msg=7');
+            exit;
         }
 
         // Check that the current user has access to fill out this quiz.
@@ -874,10 +876,10 @@ class Quiz
         }
 
         if ($question == 0) {
-            if ($this->num_q == 0) {
+            if ($this->questionsAsked == 0) {
                 // If the number of questions is zero (forgot to fill in...)
                 // then ask all questions.
-                $this->num_q = Question::countQ($this->id);
+                $this->questionsAsked = Question::countQ($this->quizID);
             }
         }
 
@@ -891,9 +893,9 @@ class Quiz
             $T = new \Template(QUIZ_PI_PATH . '/templates');
             $T->set_file('intro', 'intro.thtml');
             $T->set_var(array(
-                'introtext'     => $this->introtext,
-                'quiz_name'     => $this->name,
-                'quiz_id'       => $this->id,
+                'introtext' => $this->introtext,
+                'quizName'  => $this->quizName,
+                'quizID'    => $this->quizID,
             ) );
             if ($this->introfields != '') {
                 $introfields = explode('|', $this->introfields);
@@ -930,26 +932,26 @@ class Quiz
      * Deletes a quiz, removes the questions, and deletes user data.
      *
      * @uses    Result::Delete()
-     * @param   integer $quiz_id     Optional quiz ID, current object if empty
+     * @param   integer $quizID Optional quiz ID, current object if empty
      */
-    public static function DeleteDef($quiz_id)
+    public static function DeleteDef($quizID)
     {
         global $_TABLES;
 
-        $quiz_id = COM_sanitizeID($quiz_id);
+        $quizID = COM_sanitizeID($quizID);
         // If still no valid ID, do nothing
-        if ($quiz_id == '') return;
+        if ($quizID == '') return;
 
-        DB_delete($_TABLES['quizzer_quizzes'], 'id', $quiz_id);
-        //DB_delete($_TABLES['quizzer_frmXfld'], 'frm_id', $quiz_id);
-        DB_delete($_TABLES['quizzer_questions'], 'quiz_id', $quiz_id);
+        DB_delete($_TABLES['quizzer_quizzes'], 'quizID', $quizID);
+        //DB_delete($_TABLES['quizzer_frmXfld'], 'frm_id', $quizID);
+        DB_delete($_TABLES['quizzer_questions'], 'quizID', $quizID);
 
-        $sql = "SELECT id FROM {$_TABLES['quizzer_results']}
-            WHERE quiz_id='$quiz_id'";
+        $sql = "SELECT resultID FROM {$_TABLES['quizzer_results']}
+            WHERE quizID='$quizID'";
         $r = DB_query($sql, 1);
         if ($r) {
             while ($A = DB_fetchArray($r, false)) {
-                Result::Delete($A['id']);
+                Result::Delete($A['resultID']);
             }
         }
         Cache::clear();
@@ -995,13 +997,13 @@ class Quiz
      */
     public function Duplicate()
     {
-        $this->name .= ' -Copy';
-        $this->id = COM_makeSid();
+        $this->quizName .= ' -Copy';
+        $this->quizID = COM_makeSid();
         $this->isNew = true;
         $this->SaveDef();
 
         foreach ($this->questions as $Q) {
-            $Q->frm_id = $this->id;
+            $Q->frm_id = $this->quizID;
             $msg = $F->Duplicate();
             if (!empty($msg)) return $msg;
         }
@@ -1039,7 +1041,7 @@ class Quiz
         $newval = $oldval == 0 ? 1 : 0;
         $sql = "UPDATE {$_TABLES['quizzer_quizzes']}
                 SET $fld = $newval
-                WHERE id = '$id'";
+                WHERE quizID = '$id'";
         $res = DB_query($sql, 1);
         if (DB_error($res)) {
             COM_errorLog(__CLASS__ . '\\' . __FUNCTION__ . ':: ' . $sql);
@@ -1059,15 +1061,15 @@ class Quiz
     {
         global $_TABLES;
 
-        $sql = "SELECT quiz.*, COUNT(questions.q_id) as q_count
+        $sql = "SELECT quiz.*, COUNT(questions.questionID) as q_count
             FROM {$_TABLES['quizzer_quizzes']} AS quiz
             LEFT JOIN {$_TABLES['quizzer_questions']} AS questions
-                ON quiz.id = questions.quiz_id
+                ON quiz.quizID = questions.quizID
             WHERE quiz.enabled = 1 " .
             SEC_buildAccessSql('AND', 'quiz.fill_gid') .
-            " GROUP BY quiz.id
-            HAVING q_count > 0 
-            ORDER BY id ASC
+            " GROUP BY quiz.quizID
+            HAVING q_count > 0
+            ORDER BY quiz.quizID ASC
             LIMIT 1";
         //echo $sql;die;
         $res = DB_query($sql);
@@ -1124,9 +1126,9 @@ class Quiz
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'resultsbyq.thtml');
-        $T->set_var('quiz_name', $this->name);
+        $T->set_var('quiz_name', $this->quizName);
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quiz_id = '{$this->id}'";
+                WHERE quizID = '{$this->quizID}'";
         $res = DB_query($sql);
         $questions = array();
         while ($A = DB_fetchArray($res, false)) {
@@ -1175,7 +1177,7 @@ class Quiz
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'results.thtml');
-        $T->set_var('quiz_name', $this->name);
+        $T->set_var('quiz_name', $this->quizName);
         $intro = explode('|', $this->introfields);
         $keys = array();
         $T->set_block('results', 'hdrIntroFields', 'hdrIntro');
@@ -1186,7 +1188,7 @@ class Quiz
                 $keys[] = COM_sanitizeId($key);
             }
         }
-        $results = Result::findByQuiz($this->id);
+        $results = Result::findByQuiz($this->quizID);
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($results as $R) {
             $introfields = $R->getIntroFields();
@@ -1243,7 +1245,7 @@ class Quiz
     {
         global $LANG_QUIZ;
 
-        $questions = Question::getQuestions($this->id, 0, false);
+        $questions = Question::getQuestions($this->quizID, 0, false);
         $intro = explode('|', $this->introfields);
         $total_q = count($questions);
         $headers = array();
@@ -1254,7 +1256,7 @@ class Quiz
             $headers['q_' . $i] = $LANG_QUIZ['question'] . ' ' . $i;
         }
         $retval = '"' . implode('","', $headers) . '"' . "\n";
-        $results = Result::findByQuiz($this->id);
+        $results = Result::findByQuiz($this->quizID);
         foreach ($results as $R) {
             $result_arr = $headers;
             foreach ($result_arr as $key=>$val) $result_arr[$key] = '';
@@ -1288,9 +1290,9 @@ class Quiz
     {
         global $_TABLES, $LANG_QUIZ;
 
-        $questions = Question::getQuestions($this->id, 0, false);
+        $questions = Question::getQuestions($this->quizID, 0, false);
         $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quiz_id = '{$this->id}'";
+                WHERE quizID = '{$this->quizID}'";
         $res = DB_query($sql);
         $questions = array();
         while ($A = DB_fetchArray($res, false)) {
@@ -1302,7 +1304,7 @@ class Quiz
         foreach ($questions as $Q) {
             $total = 0;
             $correct = 0;
-            $vals = Value::getByQuestion($Q->q_id);
+            $vals = Value::getByQuestion($Q->questionID);
             foreach ($vals as $Val) {
                 $total++;
                 if ($Q->Verify($Val->value)) {
@@ -1365,6 +1367,12 @@ class Quiz
     }
 
 
+    /**
+     * Reset the reward status in all quizzes.
+     * Called when a reward is deleted.
+     *
+     * @param   integer     Reward record ID
+     */
     public static function resetReward($r_id)
     {
         global $_TABLES;
@@ -1375,7 +1383,47 @@ class Quiz
         DB_query($sql);
     }
 
-    
+
+    /**
+     * Helper function to check if the current user can submit to this quiz.
+     * Checks if the quiz is valid, enabled, and not one-time that has been
+     * answered already.
+     *
+     * @return  boolean     True if submission is allowed, False if not.
+     */
+    public function canSubmit()
+    {
+        if (
+            $this->isNew() ||
+            !$this->isEnabled() ||
+            !$this->hasAccess(QUIZ_ACCESS_FILL)
+        ) {
+            return false;
+        }
+
+        // If this is a one-time quiz, check if answers have been submitted for
+        // all questions.
+        if ($this->isOnetime()) {
+            $answered = 0;      // answer counter
+            $questions = 0;     // questions count
+            $results = Result::findByUser($this->uid, $this->quizID);
+            if (count($results) > 0) {
+                $questions = count($results[0]->getQuestions());
+                foreach ($results[0]->getValues() as $Val) {
+                    if (!empty($Val->getValue())) {
+                        $answered++;
+                    }
+                }
+                if ($answered >= $questions) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+
+>>>>>>> develop
     /**
      * Uses lib-admin to list the quizzer definitions and allow updating.
      *
@@ -1393,7 +1441,7 @@ class Quiz
         $header_arr = array(
             array(
                 'text' => 'ID',
-                'field' => 'id',
+                'field' => 'quizID',
                 'sort' => true,
             ),
             array(
@@ -1416,7 +1464,7 @@ class Quiz
             ),
             array(
                 'text' => $LANG_QUIZ['quiz_name'],
-                'field' => 'name',
+                'field' => 'quizName',
                 'sort' => true,
             ),
             array(
@@ -1450,18 +1498,18 @@ class Quiz
         );
         $sql = "SELECT q.*, (
                 SELECT count(*) FROM {$_TABLES['quizzer_results']} r
-                WHERE r.quiz_id = q.id
-            ) as submissions 
+                WHERE r.quizID = q.quizID
+            ) as submissions
             FROM {$_TABLES['quizzer_quizzes']} q
             WHERE 1=1 $perm_sql";
         $text_arr = array();
         $query_arr = array(
             'table' => 'quizzer_quizzes',
             'sql' => $sql,
-            'query_fields' => array('name'),
+            'query_fields' => array('quizName'),
             'default_filter' => ''
         );
-        $defsort_arr = array('field' => 'name', 'direction' => 'ASC');
+        $defsort_arr = array('field' => 'quizName', 'direction' => 'ASC');
         $form_arr = array();
         $retval .= COM_createLink(
             $LANG_QUIZ['new_quiz'],
@@ -1481,7 +1529,7 @@ class Quiz
         return $retval;
     }
 
-    
+
     /**
      * Determine what to display in the admin list for each form.
      *
@@ -1498,7 +1546,7 @@ class Quiz
         $retval = '';
 
         switch($fieldname) {
-        case 'id':
+        case 'quizID':
             $retval = COM_createLink(
                 $fieldvalue,
                 QUIZ_PI_URL . '/index.php?startquiz=' . $fieldvalue
@@ -1506,7 +1554,7 @@ class Quiz
             break;
 
         case 'edit':
-            $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quiz_id={$A['id']}";
+            $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('edit'),
                 $url
@@ -1514,7 +1562,7 @@ class Quiz
             break;
 
         case 'copy':
-            $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quiz_id={$A['id']}";
+            $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('copy'),
                 $url
@@ -1522,7 +1570,7 @@ class Quiz
             break;
 
         /*case 'questions':
-            $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quiz_id={$A['id']}";
+            $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('question'),
                 $url
@@ -1530,7 +1578,7 @@ class Quiz
             break;*/
 
         case 'delete':
-            $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quiz_id={$A['id']}";
+            $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('delete'),
                 $url,
@@ -1541,7 +1589,7 @@ class Quiz
             break;
 
         case 'reset':
-            $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quiz_id={$A['id']}";
+            $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('reset', 'uk-text-danger'),
                 $url,
@@ -1559,14 +1607,14 @@ class Quiz
                 $chk = '';
                 $enabled = 0;
             }
-            $retval = "<input name=\"{$fieldname}_{$A['id']}\" " .
+            $retval = "<input name=\"{$fieldname}_{$A['quizID']}\" " .
                 "type=\"checkbox\" $chk " .
-                "onclick='QUIZtoggleEnabled(this, \"{$A['id']}\", \"quiz\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' " .
+                "onclick='QUIZtoggleEnabled(this, \"{$A['quizID']}\", \"quiz\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' " .
                 "/>\n";
             break;
 
         case 'submissions':
-            $url = QUIZ_ADMIN_URL . '/index.php?results=x&quiz_id=' . $A['id'];
+            $url = QUIZ_ADMIN_URL . '/index.php?results=x&quizID=' . $A['quizID'];
             $retval = COM_createLink((int)$fieldvalue, $url,
                 array(
                     'class' => 'tooltip',
@@ -1578,7 +1626,7 @@ class Quiz
         case 'action':
             $retval = '<select name="action"
                 onchange="javascript: document.location.href=\'' .
-                QUIZ_ADMIN_URL . '/index.php?quiz_id=' . $A['id'] .
+                QUIZ_ADMIN_URL . '/index.php?quizID=' . $A['quizID'] .
                 '&action=\'+this.options[this.selectedIndex].value">'. "\n";
             $retval .= '<option value="">--' . $LANG_QUIZ['select'] . '--</option>'. "\n";
             $retval .= '<option value="resultsbyq">' . $LANG_QUIZ['resultsbyq'] . '</option>'. "\n";

@@ -11,7 +11,7 @@
 <!-- BEGIN introFields -->
   <div class="uk-form-row">
       <label class="uk-form-label">{if_prompt}</label>
-      <div class="uk-form-controls">
+      <div class="uk-form-controls qz-intro-answer">
         <input required type="text" size="60" maxlength="255" name="intro[{if_name}]" />
         <i class="uk-icon uk-icon-exclamation-triangle qz-color-incorrect tooltip"
             title="{$LANG_QUIZ['required']}"></i>

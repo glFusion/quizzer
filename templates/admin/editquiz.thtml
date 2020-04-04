@@ -17,7 +17,7 @@ function confirmDelete()
         <span id="hlp_quiz_id" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input required id="f_id" type="text" size="32" name="id" value="{id}" />
+        <input required id="f_id" type="text" size="32" name="quizID" value="{quizID}" />
         <i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
       </div>
     </div>
@@ -27,7 +27,7 @@ function confirmDelete()
         <span id="hlp_quiz_name" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input required id="f_name" type="text" size="32" name="name" value="{name}" />
+        <input required id="f_name" type="text" size="32" name="quizName" value="{quizName}" />
         <i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
       </div>
     </div>
@@ -67,7 +67,7 @@ function confirmDelete()
       <div class="uk-form-controls">
         <select name="onetime">
           <option value="0" {one_chk_0} />{$LANG_QUIZ['pul_mult']}</option>
-          <option value="2" {one_chk_2} />{$LANG_QUIZ['pul_once']}</option>
+          <option value="1" {one_chk_1} />{$LANG_QUIZ['pul_once']}</option>
         </select>
       </div>
     </div>
@@ -77,7 +77,7 @@ function confirmDelete()
         <span id="hlp_num_q" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input id="f_num_q" type="text" value="{num_q}" name="num_q" size="3" />
+        <input id="f_num_q" type="text" value="{questionsAsked}" name="questionsAsked" size="3" />
       </div>
     </div>
 

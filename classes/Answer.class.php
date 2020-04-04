@@ -21,24 +21,19 @@ class Answer
 {
     /** Question record ID.
      * @var integer */
-    private $q_id = 0;
+    private $questionID = 0;
 
     /** Answer ID, numbered within the question.
      * @var integer */
-    private $a_id = 0;
+    private $answerID = 0;
 
     /** Answer value text.
      * @var string */
-    private $value = '';
+    private $answerText = '';
 
     /** Flag to indicate that this is a correct answer.
      * @var boolean */
-    private $correct = 0;
-
-    /** Indicate that this answer was submitted.
-     * Not part of the DB record.
-     * @var boolean */
-    private $_submitted = 0;
+    private $is_correct = 0;
 
 
     /**
@@ -55,10 +50,7 @@ class Answer
 
 
     /**
-     * Get an instance of a question based on the question type.
-     * If the "question" parameter is an array it must include at least q_id
-     * and type.
-     * Only works to retrieve existing fields.
+     * Get all the answers for a given question.
      *
      * @param   integer $q_id       Question ID
      * @return  array       Array of Answer objects
@@ -73,11 +65,11 @@ class Answer
         if ($retval == NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
-                WHERE q_id = '{$q_id}'";
+                WHERE questionID = '{$q_id}'";
             $res = DB_query($sql);
             if ($res) {
                 while ($A = DB_fetchArray($res, false)) {
-                    $retval[$A['a_id']] = new self($A);
+                    $retval[$A['answerID']] = new self($A);
                 }
             }
             Cache::set($cache_key, $retval, array('answers', $q_id));
@@ -99,10 +91,10 @@ class Answer
             return false;
         }
 
-        $this->q_id = (int)$A['q_id'];
-        $this->a_id = (int)$A['a_id'];
-        $this->correct = isset($A['correct']) ? (int)$A['correct'] : 0;
-        $this->value = $A['value'];
+        $this->questionID = (int)$A['questionID'];
+        $this->answerID = (int)$A['answerID'];
+        $this->is_correct  = isset($A['is_correct']) ? (int)$A['is_correct'] : 0;
+        $this->answerText = $A['answerText'];
         return true;
     }
 
@@ -117,21 +109,20 @@ class Answer
     {
         global $_TABLES;
 
-        $value = DB_escapeString($this->value);
+        $answerText = DB_escapeString($this->answerText);
         $sql = "INSERT INTO {$_TABLES['quizzer_answers']} SET
-                q_id = '{$this->getQid()}',
-                a_id = '{$this->getAid()}',
-                value = '$value',
-                correct = '{$this->isCorrect()}'
+                questionID = '{$this->getQid()}',
+                answerID = '{$this->getAid()}',
+                answerText = '$answerText',
+                is_correct = '{$this->isCorrect()}'
             ON DUPLICATE KEY UPDATE
-                value = '$value',
-                correct = '{$this->isCorrect()}'";
-COM_errorLog($sql);
+                answerText = '$answerText',
+                is_correct = '{$this->isCorrect()}'";
         DB_query($sql);
         if (DB_error()) {
             return 6;
         }
-        Cache::clear(array('answers', $this->q_id));
+        Cache::clear(array('answers', $this->questionID));
         return 0;
     }
 
@@ -140,7 +131,7 @@ COM_errorLog($sql);
      * Delete the current question definition.
      *
      * @param   integer $q_id       ID number of the question
-     * @param   string  @a_id       Comma-separated answer IDs
+     * @param   string  $a_id       Comma-separated answer IDs
      */
     public static function Delete($q_id, $a_id)
     {
@@ -149,8 +140,8 @@ COM_errorLog($sql);
         $q_id = (int)$q_id;
         $a_id= DB_escapeString($a_id);
         $sql = "DELETE FROM {$_TABLES['quizzer_answers']}
-            WHERE q_id = $q_id
-            AND a_id IN ($a_id)";
+            WHERE questionID = $q_id
+            AND answerID IN ($a_id)";
         DB_query($sql);
     }
 
@@ -163,7 +154,7 @@ COM_errorLog($sql);
      */
     public function setQid($q_id)
     {
-        $this->q_id = (int)$q_id;
+        $this->questionID = (int)$q_id;
         return $this;
     }
 
@@ -175,7 +166,7 @@ COM_errorLog($sql);
      */
     public function getQid()
     {
-        return (int)$this->q_id;
+        return (int)$this->questionID;
     }
 
 
@@ -187,7 +178,7 @@ COM_errorLog($sql);
      */
     public function setAid($a_id)
     {
-        $this->a_id = (int)$a_id;
+        $this->answerID = (int)$a_id;
         return $this;
     }
 
@@ -199,7 +190,7 @@ COM_errorLog($sql);
      */
     public function getAid()
     {
-        return (Int)$this->a_id;
+        return (Int)$this->answerID;
     }
 
 
@@ -211,7 +202,7 @@ COM_errorLog($sql);
      */
     public function setCorrect($flag)
     {
-        $this->correct = $flag ? 1 : 0;
+        $this->is_correct = $flag ? 1 : 0;
         return $this;
     }
 
@@ -223,7 +214,7 @@ COM_errorLog($sql);
      */
     public function isCorrect()
     {
-        return $this->correct ? 1 : 0;
+        return $this->is_correct ? 1 : 0;
     }
 
 
@@ -235,7 +226,7 @@ COM_errorLog($sql);
      */
     public function setValue($txt)
     {
-        $this->value = $txt;
+        $this->answerText = $txt;
         return $this;
     }
 
@@ -248,19 +239,7 @@ COM_errorLog($sql);
      */
     public function getValue($esc = false)
     {
-        return $this->value;
-    }
-
-
-    /**
-     * Indicate that this answer was submitted.
-     *
-     * @param   boolean $flag   Non-zero if submitted, zero if not
-     * @return  object  $this
-     */
-    public function setSubmitted($flag)
-    {
-        $this->_submitted = $flag ? 1 : 0;
+        return $this->answerText;
     }
 
 
@@ -272,11 +251,10 @@ COM_errorLog($sql);
     public function toArray()
     {
         return array(
-            'q_id' => $this->q_id,
-            'a_id' => $this->a_id,
-            'value' => $this->value,
-            'correct' => $this->correct,
-            'submitted' => $this->_submitted,
+            'questionID' => $this->questionID,
+            'answerID' => $this->answerID,
+            'answerText' => $this->answerText,
+            'is_correct' => $this->is_correct,
         );
     }
 

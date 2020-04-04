@@ -23,7 +23,7 @@ class Value
 
     /** Result set record ID.
      * @var integer */
-    private $res_id = 0;
+    private $resultID = 0;
 
     /** Order in which the question appears on the quiz.
      * @var integer */
@@ -31,7 +31,7 @@ class Value
 
     /** Question record ID.
      * @var integer */
-    private $q_id = 0;
+    private $questionID = 0;
 
     /** Value(s) of the response.
      * @var array */
@@ -41,19 +41,19 @@ class Value
     /**
      * Constructor. Sets the local properties using the array $item.
      *
-     * @param   integer $res_id     ID of the result set, if any
-     * @param   integer $q_id       Question ID
+     * @param   integer $resultID     ID of the result set, if any
+     * @param   integer $questionID       Question ID
      */
-    public function __construct($res_id = 0, $q_id = 0)
+    public function __construct($resultID = 0, $questionID = 0)
     {
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
         $this->isNew = true;
-        if (is_array($res_id)) {
-            $this->setVars($res_id, true);
+        if (is_array($resultID)) {
+            $this->setVars($resultID, true);
             $this->isNew = false;
         } else {
-            $this->Read((int)$res_id, (int)$q_id);
+            $this->Read((int)$resultID, (int)$questionID);
         }
     }
 
@@ -62,22 +62,22 @@ class Value
      * Read this field definition from the database and load the object.
      *
      * @see     self::setVars
-     * @param   integer     $res_id     Resulset ID
-     * @param   integer     $q_id       Question ID
+     * @param   integer     $resultID     Resulset ID
+     * @param   integer     $questionID       Question ID
      * @return  boolean     Status from setVars()
      */
-    public function Read($res_id = 0, $q_id = 0)
+    public function Read($resultID = 0, $questionID = 0)
     {
         global $_TABLES;
 
-        if ($res_id > 0) {
-            $this->res_id = (int)$res_id;
+        if ($resultID > 0) {
+            $this->resultID = (int)$resultID;
         }
-        if ($q_id > 0) {
-            $this->q_id = (int)$q_id;
+        if ($questionID > 0) {
+            $this->questionID = (int)$questionID;
         }
         $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE res_id = {$this->res_id} AND q_id = {$this->q_id}";
+                WHERE resultID = {$this->resultID} AND questionID = {$this->questionID}";
         $res = DB_query($sql, 1);
         if (DB_error() || !$res) {
             return false;
@@ -106,8 +106,8 @@ class Value
             return false;
         }
 
-        $this->res_id   = isset($A['res_id']) ? (int)$A['res_id'] : 0;
-        $this->q_id     = isset($A['q_id']) ? (int)$A['q_id'] : 0;;
+        $this->resultID   = isset($A['resultID']) ? (int)$A['resultID'] : 0;
+        $this->questionID     = isset($A['questionID']) ? (int)$A['questionID'] : 0;;
         $this->orderby  = isset($A['orderby']) ? (int)$A['orderby'] : 0;;
         if ($fromDB) {
             $this->value    = @unserialize($A['value']);
@@ -125,17 +125,17 @@ class Value
     /**
      * Delete the current field definition.
      *
-     * @param   integer $res_id     Resultset ID
-     * @param   integer $q_id       Question ID
+     * @param   integer $resultID     Resultset ID
+     * @param   integer $questionID       Question ID
      */
-    public static function Delete($res_id = 0, $q_id = 0)
+    public static function Delete($resultID = 0, $questionID = 0)
     {
         global $_TABLES;
 
         DB_delete(
             $_TABLES['quizzer_values'],
-            array('res_id', 'q_id'),
-            array($res_id,$q_id)
+            array('resultID', 'questionID'),
+            array($resultID,$questionID)
         );
     }
 
@@ -145,23 +145,23 @@ class Value
      * Populates the values table with the result and question IDs, and
      * empty answer fields.
      *
-     * @param   integer $res_id     Result ID
+     * @param   integer $resultID     Result ID
      * @param   array   $questions  Array of question IDs
      */
-    public static function createResultSet($res_id, $questions)
+    public static function createResultSet($resultID, $questions)
     {
         global $_TABLES;
 
-        $res_id = (int)$res_id;
+        $resultID = (int)$resultID;
         $i = 0;
-        foreach ($questions as $key=>$q_id) {
-            $q_id = (int)$q_id;
+        foreach ($questions as $key=>$questionID) {
+            $questionID = (int)$questionID;
             $i++;
-            $values[] = "($res_id, $i, $q_id)";
+            $values[] = "($resultID, $i, $questionID)";
         }
         $values = implode(',', $values);
         $sql = "INSERT INTO {$_TABLES['quizzer_values']}
-            (res_id, orderby, q_id) VALUES $values";
+            (resultID, orderby, questionID) VALUES $values";
         DB_query($sql);
     }
 
@@ -169,18 +169,18 @@ class Value
     /**
      * Save this value to the database.
      *
-     * @param   integer $res_id     Resultset ID
-     * @param   integer $q_id       Question ID
+     * @param   integer $resultID     Resultset ID
+     * @param   integer $questionID       Question ID
      * @param   integer|array   $values     Value(s) of answer
      * @return  boolean     True on success, False on failure
      */
-    public static function Save($res_id, $q_id, $values)
+    public static function Save($resultID, $questionID, $values)
     {
         global $_TABLES;
 
-        $res_id = (int)$res_id;
-        $q_id = (int)$q_id;
-        if ($res_id == 0 || $q_id == 0) {
+        $resultID = (int)$resultID;
+        $questionID = (int)$questionID;
+        if ($resultID == 0 || $questionID == 0) {
             return false;
         }
         if (!is_array($values)) {
@@ -188,14 +188,14 @@ class Value
         }
         $value = DB_escapeString(@serialize($values));
         /*$sql = "INSERT INTO {$_TABLES['quizzer_values']}
-                    (res_id, q_id, value)
+                    (resultID, questionID, value)
                 VALUES
-                    ('$res_id', '$q_id', '$value')
+                    ('$resultID', '$questionID', '$value')
                 ON DUPLICATE KEY
                 UPDATE value = '$value'";*/
         $sql = "UPDATE {$_TABLES['quizzer_values']}
             SET value = '$value'
-            WHERE res_id = $res_id AND q_id = $q_id";
+            WHERE resultID = $resultID AND questionID = $questionID";
         DB_query($sql, 1);
         $status = DB_error();
         return $status ? false : true;
@@ -205,17 +205,17 @@ class Value
     /**
      * Get the first unanswered question by searching the values table.
      *
-     * @param   integer $res_id     Result set ID
+     * @param   integer $resultID     Result set ID
      * @return  integer     ID of the question to be presented
      */
-    public static function getFirstUnanswered($res_id)
+    public static function getFirstUnanswered($resultID)
     {
         global $_TABLES;
 
         return (int)DB_getItem(
             $_TABLES['quizzer_values'],
-            'q_id',
-            "res_id = $res_id AND value IS NULL ORDER BY res_id,orderby ASC LIMIT 1"
+            'questionID',
+            "resultID = $resultID AND value IS NULL ORDER BY resultID,orderby ASC LIMIT 1"
         );
     }
 
@@ -224,16 +224,16 @@ class Value
      * Get all submitted values by resultset.
      * Used for scoring overall results by submitter
      *
-     * @param   integer $res_id Resultset ID
+     * @param   integer $resultID Resultset ID
      * @return  objecdt         Value object
      */
-    public static function getByResult($res_id)
+    public static function getByResult($resultID)
     {
         global $_TABLES;
 
         $vals = array();
         $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE res_id = $res_id
+                WHERE resultID = $resultID
                 ORDER BY orderby ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -247,17 +247,17 @@ class Value
      * Get all submitted values by question.
      * Used for scoring overall results by question.
      *
-     * @param   integer $q_id   Question ID
+     * @param   integer $questionID   Question ID
      * @return  objecdt         Value object
      */
-    public static function getByQuestion($q_id)
+    public static function getByQuestion($questionID)
     {
         global $_TABLES;
 
         $vals = array();
-        $q_id = (int)$q_id;
+        $questionID = (int)$questionID;
         $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE q_id = $q_id";
+                WHERE questionID = $questionID";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $vals[] = new self($A);
@@ -295,7 +295,7 @@ class Value
      */
     public function getQuestionID()
     {
-        return (int)$this->q_id;
+        return (int)$this->questionID;
     }
 
 

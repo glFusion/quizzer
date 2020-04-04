@@ -76,9 +76,12 @@ function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
     global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL;
 
     // If no sql statements passed in, return success
-    if (!isset($_QUIZ_UPGRADE_SQL[$version]) ||
-            !is_array($_QUIZ_UPGRADE_SQL[$version]))
+    if (
+        !isset($_QUIZ_UPGRADE_SQL[$version]) ||
+        !is_array($_QUIZ_UPGRADE_SQL[$version])
+    ) {
         return true;
+    }
 
     // Execute SQL now to perform the upgrade
     COM_errorLog("--Updating Quizzer to version $version");

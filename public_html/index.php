@@ -19,7 +19,7 @@ if (!in_array('quizzer', $_PLUGINS)) {
 
 $content = '';
 $action = '';
-$quiz_id = '';
+$quizID = '';
 $expected = array(
     'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz',
     'next_q', 'finishquiz',
@@ -36,28 +36,28 @@ foreach($expected as $provided) {
     }
 }
 if (empty($action)) {
-    COM_setArgNames(array('quiz_id', 'action'));
-    $quiz_id = COM_getArgument('quiz_id');
+    COM_setArgNames(array('quizID', 'action'));
+    $quizID = COM_getArgument('quizID');
     $action = COM_getArgument('action');
     if (empty($action)) {
         $action = 'startquiz';
     }
 }
-if (empty($quiz_id)) {
+if (empty($quizID)) {
     // Still no quiz ID? Get from POST or possibly from URL
-    $quiz_id = isset($_REQUEST['quiz_id']) ? $_REQUEST['quiz_id'] : '';
+    $quizID= isset($_REQUEST['quizID']) ? $_REQUEST['quizID'] : '';
 }
-if ($quiz_id == '') {
+if ($quizID == '') {
     // Missing quiz ID, get the first enabled one
-    $quiz_id = SESS_getVar('quizzer_quizID');
-    if ($quiz_id !== 0) {
-        $Q = \Quizzer\Quiz::getInstance($quiz_id);
+    $quizID = SESS_getVar('quizzer_quizID');
+    if ($quizID !== 0) {
+        $Q = \Quizzer\Quiz::getInstance($quizID);
     } else {
         $Q = \Quizzer\Quiz::getFirst();
     }
 } else {
     // Else get the specific quiz
-    $Q = \Quizzer\Quiz::getInstance($quiz_id);
+    $Q = \Quizzer\Quiz::getInstance($quizID);
 }
 
 // get the question ID if specified
@@ -72,14 +72,14 @@ case 'saveintro':
     $intro = isset($_POST['intro']) ? $_POST['intro'] : '';
     if ($Result->isNew()) {
         $Result->Create($Q->getID(), $intro);
-    } else {
-        $Result->saveIntro($intro);
     }
-    echo COM_refresh(QUIZ_PI_URL . '/index.php?next_q=x&quiz_id=' . $Q->getID());
+    $Result->saveIntro($intro);
+    echo COM_refresh(QUIZ_PI_URL . '/index.php?next_q=x&quizID=' . $Q->getID());
     break;
 
 case 'finishquiz':
     $content .= $Result->showScore();
+    SESS_unSet('quizzer_quizID');
     break;
 
 case 'startquiz':
@@ -92,7 +92,7 @@ case 'startquiz':
     if (!$Q->isNew()) { // double-check
         SESS_setVar('quizzer_quizID', $Q->getID());
     } else {
-        SESS_unsetVar('quizzer_quizID');
+        SESS_unSet('quizzer_quizID');
     }
     if ($Result->isNew()) {
         $Result->Create($Q->getID());
@@ -100,6 +100,11 @@ case 'startquiz':
     if (!$Q->isNew()) {
         // If the quiz exists, render the question
         $content .= $Q->Render(0);
+    }
+    if ($content == '') {
+        // If no content found, start over fresh
+        Quizzer\Result::clearCurrent($Q->getID());
+        COM_refresh(QUIZ_PI_URL . '/index.php');
     }
     break;
 
