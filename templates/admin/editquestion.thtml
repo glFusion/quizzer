@@ -1,8 +1,8 @@
 {# begin {templatelocation} #}
 <form id="frm1" class="uk-form uk-form-horizontal frmForms" method="post"
     action="{site_url}/admin/plugins/quizzer/index.php">
-  <input type="hidden" name="q_id" value="{q_id}" />
-  <input type="hidden" name="quiz_id" value="{quiz_id}" />
+  <input type="hidden" name="questionID" value="{questionID}" />
+  <input type="hidden" name="quizID" value="{quizID}" />
   <fieldset>
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_QUIZ['quiz_name']}</label>
@@ -14,7 +14,7 @@
         <span id="hlp_question" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <textarea rows="3" cols="80" name="question">{question}</textarea>
+        <textarea rows="3" cols="80" name="questionText">{question}</textarea>
       </div>
     </div>
 
@@ -23,7 +23,7 @@
         <span id="hlp_type" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <select id="type" name="type" onchange="QZADM_changeQType(this.value);">
+        <select id="type" name="questionType" onchange="QZADM_changeQType(this.value);">
           <option value="radio" {radio_sel}>{$LANG_QUIZ['radio']}</option>
           <option value="checkbox" {checkbox_sel}>{$LANG_QUIZ['checkbox']}</option>
         </select>
@@ -58,7 +58,7 @@
         <span id="hlp_answer_msg" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <textarea rows="3" cols="60" name="answer_msg">{answer_msg}</textarea>
+        <textarea rows="3" cols="60" name="postAnswerMsg">{answer_msg}</textarea>
       </div>
     </div>
 
@@ -67,7 +67,7 @@
         <span id="hlp_randomize" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input id="f_randomize" type="checkbox" value="1" name="randomize" {random_chk} />
+        <input id="f_randomize" type="checkbox" value="1" name="randomizeAnswers" {random_chk} />
       </div>
     </div>
 
@@ -85,7 +85,7 @@
         <span id="hlp_pcredit" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input type="checkbox" value="1" name="partial_credit" {pcred_chk} />
+        <input type="checkbox" value="1" name="allowPartialCredit" {pcred_chk} />
       </div>
     </div>
 

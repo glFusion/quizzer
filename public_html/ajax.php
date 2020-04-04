@@ -16,17 +16,16 @@ require_once '../lib-common.php';
 
 switch ($_POST['action']) {
 case 'saveresponse':
-    $quiz_id = isset($_POST['quiz_id']) ? $_POST['quiz_id'] : '';
+    $quiz_id = isset($_POST['quizID']) ? $_POST['quizID'] : '';
     $R = Quizzer\Result::getCurrent($quiz_id);
     $Q = Quizzer\Quiz::getInstance($quiz_id);
     $isvalid = $Q->isNew() ? 0 : 1;
     if ($R->getID() == 0) {
-        COM_errorLog("HERE");
         // This happens if there are no intro questions already saved,
         // which would have created a result set.
         $R->Create($Q->getID());
     }
-    $q_id = isset($_POST['q_id']) ? (int)$_POST['q_id'] : 0;
+    $q_id = isset($_POST['questionID']) ? (int)$_POST['questionID'] : 0;
     $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
     if ($R->getID() == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
         $retval = array(

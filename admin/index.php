@@ -53,13 +53,13 @@ foreach($expected as $provided) {
 }
 
 $view = isset($_REQUEST['view']) ? $_REQUEST['view'] : $action;
-$quiz_id = QUIZ_getVar($_REQUEST, 'quiz_id', 'string');
-if ($quiz_id == '') {
+$quizID = QUIZ_getVar($_REQUEST, 'quizID', 'string');
+if ($quizID == '') {
     // Question update submissions have "id" as the id field name
-    $quiz_id = QUIZ_getVar($_REQUEST, 'id', 'string');
+    $quizID = QUIZ_getVar($_REQUEST, 'id', 'string');
 }
-$quiz_id = COM_sanitizeID($quiz_id, false);
-$q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
+$quizID = COM_sanitizeID($quizID, false);
+$questionID = isset($_REQUEST['questionID']) ? (int)$_REQUEST['questionID'] : 0;
 $msg = isset($_GET['msg']) && !empty($_GET['msg']) ? $_GET['msg'] : '';
 $content = '';
 
@@ -67,9 +67,9 @@ switch ($action) {
 case 'action':      // Got "?action=something".
     switch ($actionval) {
     case 'bulkfldaction':
-        if (!isset($_POST['cb']) || !isset($_POST['quiz_id']))
+        if (!isset($_POST['cb']) || !isset($_POST['quizID']))
             break;
-        $id = $_POST['quiz_id'];    // Override the usual 'id' parameter
+        $id = $_POST['quizID'];    // Override the usual 'id' parameter
         $fldaction = isset($_POST['fldaction']) ? $_POST['fldaction'] : '';
 
         switch ($fldaction) {
@@ -95,10 +95,10 @@ case 'action':      // Got "?action=something".
     break;
 
 case 'updateresult':
-    $F = new Quizzer\Quiz($_POST['quiz_id']);
+    $F = new Quizzer\Quiz($_POST['quizID']);
     $R = new Quizzer\Result($_POST['res_id']);
     // Clear the moderation flag when saving a moderated submission
-    $R->SaveData($_POST['quiz_id'], $F->fields, $_POST, $R->uid);
+    $R->SaveData($_POST['quizID'], $F->fields, $_POST, $R->uid);
     Quizzer\Result::Approve($R->id);
     $view = 'results';
     break;
@@ -106,20 +106,22 @@ case 'updateresult':
 case 'delresult':
     $res_id = (int)$actionval;
     $R = new Quizzer\Result($res_id);       // to get the quiz id
-    $quiz_id = $R->getQuizID();
+    $quizID = $R->getQuizID();
     if (!$R->isNew()) {
         Quizzer\Result::Delete($res_id);
         Quizzer\Cache::clear();
     }
     echo COM_refresh(
         QUIZ_ADMIN_URL .
-        '/index.php?action=results&quiz_id=' . $quiz_id
+        '/index.php?action=results&quizID=' . $quizID
     );
     break;
 
 case 'updatequestion':
-    $Q = Quizzer\Question::getInstance($_POST, $quiz_id);
-    $msg = $Q->SaveDef($_POST);
+    $Q = Quizzer\Question::getInstance($_POST, $quizID);
+    if ($Q) {
+        $msg = $Q->SaveDef($_POST);
+    }
     $view = 'editquiz';
     break;
 
@@ -139,11 +141,11 @@ case 'delbutton_x':
     break;
 
 case 'copyform':
-    $F = new Quizzer\Quiz($quiz_id);
+    $F = new Quizzer\Quiz($quizID);
     $msg = $F->Duplicate();
     if (empty($msg)) {
         echo COM_refresh(
-            QUIZ_ADMIN_URL . '/index.php?editquiz=x&amp;quiz_id=' . $F->id
+            QUIZ_ADMIN_URL . '/index.php?editquiz=x&amp;quizID=' . $F->id
         );
         exit;
     } else {
@@ -157,7 +159,7 @@ case 'savequiz':
     if ($msg != '') {                   // save operation failed
         $view = 'editquiz';
     } elseif (empty($_POST['old_id'])) {    // New form, return to add fields
-        $quiz_id = $Q->getID();
+        $quizID = $Q->getID();
         $view = 'editquiz';
         $msg = 6;
     } else {
@@ -167,20 +169,20 @@ case 'savequiz':
 
 case 'delQuiz':
     // Delete a form definition.  Also deletes user values.
-    $id = $_REQUEST['quiz_id'];
+    $id = $_REQUEST['quizID'];
     $msg = Quizzer\Quiz::DeleteDef($id);
     $view = 'listquizzes';
     break;
 
 case 'resetquiz':
     // Removes all results for the quiz.
-    Quizzer\Result::ResetQuiz($quiz_id);
+    Quizzer\Result::ResetQuiz($quizID);
     echo COM_refresh(QUIZ_ADMIN_URL);
     break;
 
 case 'delQuestion':
     // Delete a field definition.  Also deletes user values.
-    $msg = Quizzer\Question::Delete($q_id);
+    $msg = Quizzer\Question::Delete($questionID);
     $view = 'editquiz';
     break;
 }
@@ -188,37 +190,37 @@ case 'delQuestion':
 // Select the page to display
 switch ($view) {
 case 'csvbyq':
-    $Q = new Quizzer\Quiz($quiz_id);
+    $Q = new Quizzer\Quiz($quizID);
     // initiate the download
     header('Content-type: text/csv');
-    header('Content-Disposition: attachment; filename="quiz-summary-'.$quiz_id.'.csv"');
+    header('Content-Disposition: attachment; filename="quiz-summary-'.$quizID.'.csv"');
     echo $Q->csvByQuestion();
     exit;
 
 case 'csvbysubmitter':
-    $Q = new Quizzer\Quiz($quiz_id);
+    $Q = new Quizzer\Quiz($quizID);
     // initiate the download
     header('Content-type: text/csv');
-    header('Content-Disposition: attachment; filename="quiz-detail-'.$quiz_id.'.csv"');
+    header('Content-Disposition: attachment; filename="quiz-detail-'.$quizID.'.csv"');
     echo $Q->csvBySubmitter();
     exit;
 
 case 'editquiz':
     // Edit a single definition
-    $Q = new Quizzer\Quiz($quiz_id);
+    $Q = new Quizzer\Quiz($quizID);
     $content .= Quizzer\Menu::Admin($view, 'hlp_quiz_edit');
     $content .= $Q->editQuiz();
 
     // Allow adding/removing questions from existing quiz
-    if ($quiz_id != '') {
+    if ($quizID != '') {
         $content .= "<br /><hr />\n";
-        $content .= Quizzer\Question::adminList($quiz_id);
+        $content .= Quizzer\Question::adminList($quizID);
     }
     break;
 
 case 'editquestion':
-    $q_id = isset($_GET['q_id']) ? (int)$_GET['q_id'] : 0;
-    $Q = Quizzer\Question::getInstance($q_id, $quiz_id);
+    $questionID = isset($_GET['questionID']) ? (int)$_GET['questionID'] : 0;
+    $Q = Quizzer\Question::getInstance($questionID, $quizID);
     $content .= Quizzer\Menu::Admin($view, 'hlp_question_edit');
     $content .= $Q->EditDef();
     break;
@@ -229,12 +231,12 @@ case 'resetpermform':
 
 case 'results':
     $content .= Quizzer\Menu::Admin('', '');
-    $content .= Quizzer\Quiz::getInstance($quiz_id)->resultSummary();
+    $content .= Quizzer\Quiz::getInstance($quizID)->resultSummary();
     break;
 
 case 'resultsbyq':
     $content .= Quizzer\Menu::Admin('', '');
-    $content .= Quizzer\Quiz::getInstance($quiz_id)->resultByQuestion();
+    $content .= Quizzer\Quiz::getInstance($quizID)->resultByQuestion();
     break;
 
 case 'none':

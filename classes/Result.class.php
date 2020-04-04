@@ -30,11 +30,11 @@ class Result
 
     /** Result record ID.
     * @var integer */
-    private $res_id = 0;
+    private $resultID = 0;
 
     /** Quize ID.
     * @var string */
-    private $quiz_id = '';
+    private $quizID = '';
 
     /** Submitting user ID.
     * @var integer */
@@ -42,7 +42,7 @@ class Result
 
     /** Submission date, as a timestamp.
     * @var integer */
-    private $dt = 0;
+    private $ts = 0;
 
     /** IP address of submitter.
     * @var string */
@@ -67,17 +67,19 @@ class Result
     * then the fields are simply copied from the array, e.g. when displaying
     * many results in a table.
     *
-    * @param    mixed   $res_id     Result set ID or array from DB
+    * @param    mixed   $resultID     Result set ID or array from DB
     */
-    public function __construct($res_id=0)
+    public function __construct($resultID=0)
     {
-        if (is_array($res_id)) {
+        if (is_array($resultID)) {
             // Already read from the DB, just load the values
-            $this->SetVars($res_id);
-        } elseif ($res_id > 0) {
+            $this->SetVars($resultID);
+        } elseif ($resultID > 0) {
             // Result ID supplied, read it
-            $this->res_id = (int)$res_id;
-            $this->Read($res_id);
+            $this->resultID = (int)$resultID;
+            if (!$this->Read($resultID)) {
+                $this->resultID = 0;
+            }
         }
 
         if (!$this->isNew()) {    // existing record, get the questions and answers
@@ -90,16 +92,16 @@ class Result
      * Get a specific result set.
      * Gets the value from the session if no ID is supplied.
      *
-     * @param   integer $res_id     Optional result set ID
-     * @param   string  $quiz_id    ID of quiz if $res_id is not provided
+     * @param   integer $resultID     Optional result set ID
+     * @param   string  $quizID    ID of quiz if $resultID is not provided
      * @return  object      Instance of a Result object
      */
-    public static function getResult($res_id = 0, $quiz_id='')
+    public static function getResult($resultID = 0, $quizID='')
     {
-        if ($res_id == 0 && $quiz_id != '') {
-            $res_id = SESS_getVar(self::SESS_NAME[$quiz_id]);
+        if ($resultID == 0 && $quizID != '') {
+            $resultID = SESS_getVar(self::SESS_NAME . '.' . $quizID);
         }
-        return new self($res_id);
+        return new self($resultID);
     }
 
 
@@ -108,7 +110,8 @@ class Result
      */
     private function setCurrent()
     {
-        SESS_setVar(self::SESS_NAME . '.' . $this->quiz_id, $this->res_id);
+//        echo "setting current quiz {$this->quizID} to {$this->resultID}";die;
+        SESS_setVar(self::SESS_NAME . '.' . $this->quizID, $this->resultID);
         return $this;
     }
 
@@ -116,24 +119,24 @@ class Result
     /**
      * Get the current result set used by the guest.
      *
-     * @param   string  $quiz_id    ID of the quiz
+     * @param   string  $quizID    ID of the quiz
      * @return  object      Current result set, new set if none.
      */
-    public static function getCurrent($quiz_id)
+    public static function getCurrent($quizID)
     {
-        $res_id = (int)SESS_getVar(self::SESS_NAME . '.' . $quiz_id);
-        return self::getResult($res_id);
+        $resultID = (int)SESS_getVar(self::SESS_NAME . '.' . $quizID);
+        return self::getResult($resultID);
     }
 
 
     /**
      * Clear the current result set to re-initialize the quiz.
      *
-     * @param   string  $quiz_id    ID of the quiz to clear
+     * @param   string  $quizID    ID of the quiz to clear
      */
-    public static function clearCurrent($quiz_id)
+    public static function clearCurrent($quizID)
     {
-        SESS_unset(self::SESS_NAME . '.' . $quiz_id);
+        SESS_unset(self::SESS_NAME . '.' . $quizID);
     }
 
 
@@ -149,11 +152,11 @@ class Result
 
         $id = (int)$id;
         if ($id > 0) {
-            $this->res_id = (int)$id;
+            $this->resultID = (int)$id;
         }
 
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE res_id = " . $this->res_id;
+                WHERE resultID = " . $this->resultID;
         //echo $sql;die;
         $res1 = DB_query($sql);
         if (!$res1) {
@@ -176,10 +179,11 @@ class Result
      */
     private function readQuestions()
     {
-        $this->Values = Value::getByResult($this->res_id);
+        $this->Values = Value::getByResult($this->resultID);
         $this->Questions = array();
         foreach ($this->Values as $val) {
-            $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID())->setSeq($val->getOrderby());
+            $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID())
+                ->setSeq($val->getOrderby());
         }
     }
 
@@ -195,9 +199,9 @@ class Result
             return false;
         }
 
-        $this->res_id = (int)$A['res_id'];
-        $this->quiz_id = COM_sanitizeID($A['quiz_id']);
-        $this->dt = (int)$A['dt'];
+        $this->resultID = (int)$A['resultID'];
+        $this->quizID = COM_sanitizeID($A['quizID']);
+        $this->ts = (int)$A['ts'];
         $this->uid = (int)$A['uid'];
         $this->ip = $A['ip'];
         $this->token = $A['token'];
@@ -218,7 +222,7 @@ class Result
     {
         global $_TABLES;
         $sql = "SELECT * from {$_TABLES['quizzer_values']}
-                WHERE res_id = '{$this->res_id}'";
+                WHERE resultID = '{$this->resultID}'";
         $res = DB_query($sql);
         $vals = array();
         // First get the values into an array indexed by field ID
@@ -237,51 +241,51 @@ class Result
     /**
      * Creates a result set in the database.
      *
-     * @param   string  $quiz_id        Quiz ID
+     * @param   string  $quizID        Quiz ID
      * @param   array   $introfields    Array of intro field prompts
      * @return  integer         New result set ID
      */
-    public function Create($quiz_id, $introfields = array())
+    public function Create($quizID, $introfields = array())
     {
         global $_TABLES, $_USER;
 
-        $Q = Quiz::getInstance($quiz_id);
+        $Q = Quiz::getInstance($quizID);
         $questions = Question::getQuestions($Q->getID(), $Q->getNumQ());
         if (empty($questions)) {
             return $this;
         }
         $question_ids = array();
-        foreach ($questions as $A) {
-            $question_ids[] = $A['q_id'];
+        foreach ($questions as $Q) {
+            // Here only the IDs are needed to create the value records
+            $question_ids[] = $Q->getID();
         }
 
-        self::clearCurrent($quiz_id);
-        //SESS_setVar('quizzer_questions', $questions);
-        $Q->num_q = count($questions);   // replace with actual number
-        //$num_q = min($Q->num_q, Question::countQ($quiz_id));
+        self::clearCurrent($quizID);
+        $num_asked = count($questions);   // replace with actual number
         $this->uid = $_USER['uid'];
-        $this->quiz_id = COM_sanitizeID($quiz_id);
-        $this->dt = time();
+        $this->quizID = COM_sanitizeID($quizID);
+        $this->ts = time();
         $this->ip = $_SERVER['REAL_ADDR'];
         $ip = DB_escapeString($this->ip);
         $this->token = uniqid();
         $sql = "INSERT INTO {$_TABLES['quizzer_results']} SET
-                quiz_id='{$this->quiz_id}',
+                quizID='{$this->quizID}',
                 uid='{$this->uid}',
-                dt='{$this->dt}',
+                ts='{$this->ts}',
                 ip = '$ip',
                 introfields = '" . DB_escapeString(@serialize($introfields)) . "',
-                asked = {$Q->num_q},
+                asked = {$num_asked},
                 token = '{$this->token}'";
+        //echo $sql;die;
         DB_query($sql, 1);
         if (!DB_error()) {
-            $this->res_id = DB_insertID();
+            $this->resultID = DB_insertID();
             $this->setCurrent();
-            Value::createResultSet($this->res_id, $question_ids);
+            Value::createResultSet($this->resultID, $question_ids);
             $this->readQuestions();
             Cache::Clear();
         } else {
-            $this->res_id = 0;
+            $this->resultID = 0;
         }
         return $this;
     }
@@ -290,13 +294,13 @@ class Result
     /**
      * Delete all results for a quiz.
      *
-     * @param   string  $quiz_id
+     * @param   string  $quizID
      */
-    public static function ResetQuiz($quiz_id)
+    public static function ResetQuiz($quizID)
     {
-        $results = self::findByQuiz($quiz_id);
+        $results = self::findByQuiz($quizID);
         foreach ($results as $R) {
-            self::Delete($R->res_id);
+            self::Delete($R->resultID);
         }
         Cache::Clear();
     }
@@ -305,17 +309,17 @@ class Result
     /**
      * Delete a single result set.
      *
-     * @param   integer $res_id     Database ID of result to delete
+     * @param   integer $resultID     Database ID of result to delete
      * @return  boolean     True on success, false on failure
      */
-    public static function Delete($res_id=0)
+    public static function Delete($resultID=0)
     {
         global $_TABLES;
 
-        $res_id = (int)$res_id;
-        if ($res_id == 0) return false;
-        self::DeleteValues($res_id);
-        DB_delete($_TABLES['quizzer_results'], 'res_id', $res_id);
+        $resultID = (int)$resultID;
+        if ($resultID == 0) return false;
+        self::DeleteValues($resultID);
+        DB_delete($_TABLES['quizzer_results'], 'resultID', $resultID);
         return true;
     }
 
@@ -323,19 +327,19 @@ class Result
     /**
      * Delete the form values related to a result set.
      *
-     * @param   integer $res_id Required result ID
+     * @param   integer $resultID Required result ID
      * @param   integer $uid    Optional user ID
      */
-    public static function DeleteValues($res_id, $uid=0)
+    public static function DeleteValues($resultID, $uid=0)
     {
         global $_TABLES;
 
-        $res_id = (int)$res_id;
-        if ($res_id == 0) return false;
+        $resultID = (int)$resultID;
+        if ($resultID == 0) return false;
         $uid = (int)$uid;
 
-        $keys = array('res_id');
-        $vals = array($res_id);
+        $keys = array('resultID');
+        $vals = array($resultID);
         if ($uid > 0) {
             $keys[] = 'uid';
             $vals[] = $uid;
@@ -352,7 +356,7 @@ class Result
      *
      * @return  string      Token saved with this result set
      */
-    public function Token()
+    public function getToken()
     {
         return $this->token;
     }
@@ -375,7 +379,7 @@ class Result
             $correct = round($correct, 2);
         }
 
-        $Q = Quiz::getInstance($this->quiz_id);
+        $Q = Quiz::getInstance($this->quizID);
         $Q->Reset();
         if ($total_q > 0) {
             $pct = round(($correct / $total_q) * 100);
@@ -395,7 +399,7 @@ class Result
         $T->set_var(array(
             'pct' => $pct,
             'quiz_name' => $Q->getName(),
-            'quiz_id'   => $Q->getID(),
+            'quizID'   => $Q->getID(),
             'correct' => $correct,
             'total' => $total_q,
             'prog_status' => $prog_status,
@@ -410,17 +414,17 @@ class Result
     /**
      * Find all results for a particular quiz
      *
-     * @param   string  $quiz_id    Quiz ID
+     * @param   string  $quizID    Quiz ID
      * @return  array       Array of Result objects
      */
-    public static function findByQuiz($quiz_id)
+    public static function findByQuiz($quizID)
     {
         global $_TABLES;
 
         $results = array();
-        $quiz_id = DB_escapeString($quiz_id);
+        $quizID = DB_escapeString($quizID);
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE quiz_id = '$quiz_id'";
+                WHERE quizID = '$quizID'";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $results[] = new self($A);
@@ -434,10 +438,10 @@ class Result
      * Used to check if a user has already filled out a onetime quiz.
      *
      * @param   string  $uid        User ID
-     * @param   string  $quiz_id    Quiz ID
+     * @param   string  $quizID    Quiz ID
      * @return  array       Array of Result objects
      */
-    public static function findByUser($uid, $quiz_id = '')
+    public static function findByUser($uid, $quizID = '')
     {
         global $_TABLES;
 
@@ -445,8 +449,8 @@ class Result
         $uid = (int)$uid;
         $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
                 WHERE uid = '$uid'";
-        if ($quiz_id != '') {
-            $sql .= " AND quiz_id = '" . DB_escapeString($quiz_id) . "'";
+        if ($quizID != '') {
+            $sql .= " AND quizID = '" . DB_escapeString($quizID) . "'";
         }
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -462,7 +466,7 @@ class Result
      */
     public function isNew()
     {
-        return $this->res_id == 0 ? 1 : 0;
+        return $this->resultID == 0 ? 1 : 0;
     }
 
 
@@ -484,7 +488,7 @@ class Result
      */
     public function getQuizID()
     {
-        return $this->quiz_id;
+        return $this->quizID;
     }
 
 
@@ -518,7 +522,7 @@ class Result
      */
     public function getID()
     {
-        return (int)$this->res_id;
+        return (int)$this->resultID;
     }
 
 
@@ -541,7 +545,7 @@ class Result
      */
     public function getNextQuestion()
     {
-        $q_id = Value::getFirstUnanswered($this->res_id);
+        $q_id = Value::getFirstUnanswered($this->resultID);
         return $q_id;
     }
 
@@ -582,7 +586,7 @@ class Result
         $val = DB_escapeString(@serialize($A));
         $sql = "UPDATE {$_TABLES['quizzer_results']}
             SET introfields = '$val'
-            WHERE res_id = {$this->res_id}";
+            WHERE resultID = {$this->resultID}";
         DB_query($sql);
         return $this;
     }
@@ -601,9 +605,9 @@ class Result
             $cutoff = max((int)$days, 1) * 86400;
             $sql = "DELETE r.* FROM {$_TABLES['quizzer_results']} r
                 WHERE NOT EXISTS (
-                    SELECT v.res_id FROM {$_TABLES['quizzer_values']} v
-                    WHERE v.res_id = r.res_id AND v.value IS NOT NULL)
-                AND r.dt < unix_timestamp() - $cutoff";
+                    SELECT v.resultID FROM {$_TABLES['quizzer_values']} v
+                    WHERE v.resultID = r.resultID AND v.value IS NOT NULL)
+                AND r.ts < unix_timestamp() - $cutoff";
             //echo $sql;die;
             DB_query($sql);
         }

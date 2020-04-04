@@ -21,32 +21,22 @@ var QUIZ_submit = function(frm_id)
                     //correct_div = document.getElementById("row_" + correct_ans);
                     //correct_div.className = 'qz-answerrow qz-correct';
                     document.getElementById('answer_msg').style.display = "";
-                    c_len = correct_ans.length;
                     for (var ans in result.answers) {
                         obj = result.answers[ans];
                         div = document.getElementById("row_" + ans);
+                        // Disable the checkbox/radio button
                         document.getElementById("ans_id_" + ans).disabled=true;
-                        if (obj.correct == 1) {
+                        if (obj.is_correct == 1) {
                             if (obj.submitted == 1) {
                                 status_div = document.getElementById("stat_" + ans);
                                 status_div.innerHTML = "<i class=\"uk-icon uk-icon-check uk-icon-medium qz-color-correct\"></i>";
                             }
                             div.className = 'qz-answerrow qz-correct';
-                        } else if (obj.correct == 0 && obj.submitted == 1) {
+                        } else if (obj.is_correct == 0 && obj.submitted == 1) {
                             status_div = document.getElementById("stat_" + ans);
                             status_div.innerHTML = "<i class=\"uk-icon uk-icon-close uk-icon-medium qz-color-incorrect\"></i>";
                         }
                     }
-                    /*if (correct_ans == submitted_ans) {
-                        // Mark the correct answer
-                        status_div = document.getElementById("stat_" + correct_ans);
-                        status_div.innerHTML = "<i class=\"uk-icon uk-icon-check uk-icon-medium qz-color-correct\"></i>";
-                    } else {
-                        status_div = document.getElementById("stat_" + submitted_ans);
-                        status_div.innerHTML = "<i class=\"uk-icon uk-icon-close uk-icon-medium qz-color-incorrect\"></i>";
-                        submitted_div = document.getElementById("row_" + submitted_ans);
-                        submitted_div.className = "qz-answerrow qz-incorrect";
-                    }*/
                     document.getElementById("btn_save").style.display = "none";
                     document.getElementById("btn_next").style.display = "";
                     if (result.answer_msg != "") {
