@@ -60,19 +60,14 @@ class Answer
         global $_TABLES;
 
         $q_id = (int)$q_id;
-        $cache_key = 'answers_q_' . $q_id;
-//        $retval = Cache::get($cache_key);
-        if ($retval == NULL) {
-            $retval = array();
-            $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
-                WHERE questionID = '{$q_id}'";
-            $res = DB_query($sql);
-            if ($res) {
-                while ($A = DB_fetchArray($res, false)) {
-                    $retval[$A['answerID']] = new self($A);
-                }
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
+            WHERE questionID = '{$q_id}'";
+        $res = DB_query($sql);
+        if ($res) {
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['answerID']] = new self($A);
             }
-            Cache::set($cache_key, $retval, array('answers', $q_id));
         }
         return $retval;
     }
