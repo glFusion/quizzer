@@ -219,7 +219,6 @@ case 'editquiz':
     break;
 
 case 'editquestion':
-    $questionID = isset($_GET['questionID']) ? (int)$_GET['questionID'] : 0;
     $Q = Quizzer\Question::getInstance($questionID, $quizID);
     $content .= Quizzer\Menu::Admin($view, 'hlp_question_edit');
     $content .= $Q->EditDef();
