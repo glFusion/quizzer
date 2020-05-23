@@ -41,7 +41,7 @@ class Question
 
     /** Flag to indicate that answers should be shown in random order.
      * @var boolean */
-    private $randomizeAnswersAnswers = 0;
+    private $randomizeAnswers = 0;
 
     /** Question text.
      * @var string */
@@ -57,7 +57,7 @@ class Question
 
     /** Message to show after answering.
      * @var string */
-    private $postAnswerMessage = '';
+    private $postAnswerMsg = '';
 
     /** Flag to indicate that partial credit is granted.
      * @var boolean */
@@ -358,14 +358,13 @@ class Question
             'quizID'   => $this->quizID,
             'questionID'    => $this->questionID,
             'question'      => $this->questionText,
-            'type'      => $this->type,
             'ena_chk'   => $this->enabled == 1 ? 'checked="checked"' : '',
             'doc_url'   => QUIZ_getDocURL('question_def.html'),
             'editing'   => $this->isNew() ? '' : 'true',
             'help_msg'  => $this->help_msg,
             'postAnswerMsg' => $this->postAnswerMsg,
             'can_delete' => $this->isNew() || $this->_wasAnswered() ? false : true,
-            $this->type . '_sel' => 'selected="selected"',
+            $this->questionType . '_sel' => 'selected="selected"',
             'pcred_vis' => $this->allowPartial() ? '' : 'none',
             'random_chk' => $this->randomizeAnswers ? 'checked="checked"' : '',
             'pcred_chk' => $this->isPartialAllowed() ? 'checked="checked"' : '',
@@ -377,7 +376,7 @@ class Question
                 'ans_id'    => $answer->getAid(),
                 'ans_val'   => $answer->getValue(),
                 'ischecked' => $answer->isCorrect() ? 'checked="checked"' : '',
-                'isRadio'   => $this->type == 'radio' ? true : false,
+                'isRadio'   => $this->questionType == 'radio' ? true : false,
             ) );
             $T->parse('Ans', 'Answers', true);
         }
@@ -386,7 +385,7 @@ class Question
             $T->set_var(array(
                 'ans_id'    => $i,
                 'ans_val'   => '',
-                'isRadio'   => $this->type == 'radio' ? true : false,
+                'isRadio'   => $this->questionType == 'radio' ? true : false,
                 'ischecked' => '',
             ) );
             $T->parse('Ans', 'Answers', true);
@@ -412,8 +411,9 @@ class Question
         if ($quizID == '') {
             return 'Invalid form ID';
         }
-        if (empty($A['questionType']))
+        if (empty($A['questionType'])) {
             return;
+        }
 
         $this->setVars($A, false);
 
@@ -450,7 +450,7 @@ class Question
         for ($i = 1; $i <= $count; $i++) {
             if (!empty($A['opt'][$i])) {
                 $answer = DB_escapeString($A['opt'][$i]);
-                if ($this->type == 'radio') {
+                if ($this->questionType == 'radio') {
                     $correct = isset($A['correct']) && $A['correct'] == $i ? 1 : 0;
                 } else {
                     $correct = isset($A['correct'][$i]) && $A['correct'][$i] == 1 ? 1 : 0;
@@ -483,7 +483,7 @@ class Question
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['quizzer_values'], 'q_id', $questionID);
+        DB_delete($_TABLES['quizzer_values'], 'questionID', $questionID);
         DB_delete($_TABLES['quizzer_questions'], 'questionID', $questionID);
     }
 
@@ -518,7 +518,7 @@ class Question
 
         $sql .= "INSERT INTO {$_TABLES['quizzer_questions']} SET
                 quizID = '" . DB_escapeString($this->quizID) . "',
-                type = '" . DB_escapeString($this->type) . "',
+                type = '" . DB_escapeString($this->questionType) . "',
                 enabled = {$this->enabled},
                 help_msg = '" . DB_escapeString($this->help_msg) . "'";
         DB_query($sql, 1);

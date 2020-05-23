@@ -611,7 +611,6 @@ class Quiz
             'fail_msg' => $this->getFailMsg(),
             'introfields' => $this->getIntrofields(),
             'ena_chk' => $this->isEnabled() ? 'checked="checked"' : '',
-            'email' => $this->email,
             'user_group_dropdown' => $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
