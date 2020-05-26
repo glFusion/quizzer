@@ -660,6 +660,19 @@ class Question
 
 
     /**
+     * Check if this question allows partial credit.
+     * Only returns true if the question type and question itself
+     * allow partial credit.
+     *
+     * @return  boolean     True if partial credit allowed, False if not
+     */
+    protected function allowsPartialCredit()
+    {
+        return $this->allowPartial() && $this->allowPartialCredit;
+    }
+
+
+    /**
      * Check if partial credit is allowed for this question.
      * Must have the partial checkbox checked, and be allowed by
      * the question type.

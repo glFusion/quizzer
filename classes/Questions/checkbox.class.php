@@ -65,7 +65,7 @@ class checkbox extends \Quizzer\Question
                 }
             }
         }
-        if ($this->partial_credit) {
+        if ($this->allowsPartialCredit()) {
             return ($correct / $possible);
         } else {
             return ($correct == $possible) ? 1 : 0;
