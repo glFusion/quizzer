@@ -19,6 +19,7 @@ if (!in_array('quizzer', $_PLUGINS)) {
 
 $content = '';
 $action = '';
+$actionval = '';
 $quizID = '';
 $expected = array(
     'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz',
