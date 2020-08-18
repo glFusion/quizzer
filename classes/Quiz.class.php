@@ -982,7 +982,16 @@ class Quiz
     {
         global $_TABLES;
 
-        $sql = "SELECT quiz.*, COUNT(questions.questionID) as q_count
+        $sql = "SELECT quiz.quizID, MAX(quiz.quizName) AS quizName,
+            MAX(quiz.enabled) AS enabled, MAX(quiz.owner_id) AS owner_id,
+            MAX(quiz.group_id) AS group_id, MAX(quiz.fill_gid) AS fill_gid,
+            MAX(quiz.onetime) AS onetime, MAX(quiz.introtext) AS introtext,
+            MAX(quiz.introfields) AS introfields,
+            MAX(quiz.questionsAsked) AS questionsAsked,
+            MAX(quiz.levels) AS levels, MAX(quiz.pass_msg) AS pass_msg,
+            MAX(quiz.fail_msg) AS fail_msg,
+            MAX(quiz.reward_id) AS reward_id, MAX(quiz.reward_status) AS reward_status,
+            COUNT(questions.questionID) as q_count
             FROM {$_TABLES['quizzer_quizzes']} AS quiz
             LEFT JOIN {$_TABLES['quizzer_questions']} AS questions
                 ON quiz.quizID = questions.quizID
