@@ -94,6 +94,8 @@ case 'startquiz':
         SESS_setVar('quizzer_quizID', $Q->getID());
     } else {
         SESS_unSet('quizzer_quizID');
+        $content .= COM_showMessageText($LANG_QUIZ['msg_noquizzes'], '', true, 'error');
+        break;
     }
     if ($Result->isNew()) {
         $Result->Create($Q->getID());

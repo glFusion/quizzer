@@ -83,6 +83,7 @@ $LANG_QUIZ = array(
 'toggle_failure' => 'Item(s) are unchanged',
 'toggle_success' => 'Item(s) have been updated',
 'completed' => 'Completed',
+'msg_noquizzes' => 'There are no quizzes available.',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';
