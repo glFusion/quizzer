@@ -38,7 +38,7 @@ $expected = array(
     'savereward', 'delreward',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
     'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
-    'delresult',
+    'delresult', 'viewresult',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -240,6 +240,14 @@ case 'resultsbyq':
 
 case 'none':
     // In case any modes create their own content
+    break;
+
+case 'viewresult':
+    $res_id = (int)$actionval;
+    $R = new Quizzer\Result($res_id);       // to get the quiz id
+    if (!$R->isNew()) {
+        $content .= $R->Render();
+    }
     break;
 
 case 'listquizzes':

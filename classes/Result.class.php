@@ -573,6 +573,25 @@ class Result
 
 
     /**
+     * Get the timestamp, optionally formatting as requested.
+     *
+     * @param   string  $fmt    Format
+     * @return  integer|string  Formatted or raw timestamp
+     */
+    public function getTS($fmt='')
+    {
+        global $_CONF;      // to get the timezone
+
+        if ($fmt == '') {
+            return (int)$this->ts;
+        } else {
+            $dt = new \Date($this->ts, $_CONF['timezone']);
+            return $dt->format($fmt, true);
+        }
+    }
+
+
+    /**
      * Save the answers to the intro questions.
      * These go into the results table, not the values.
      *
@@ -611,6 +630,53 @@ class Result
             //echo $sql;die;
             DB_query($sql);
         }
+    }
+
+
+    /**
+     * Display a specific detailed result.
+     *
+     * @return  string      HTML for output
+     */
+    public function Render()
+    {
+        $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
+        $T->set_file('result', 'oneresult.thtml');
+
+        $T->set_block('result', 'IntroRows', 'iRow');
+        foreach ($this->introfields as $prompt=>$value) {
+            $T->set_var(array(
+                'intro_prompt'  => $prompt,
+                'intro_value'   => $value,
+            ) );
+            $T->parse('iRow', 'IntroRows', true);
+        }
+
+        $T->set_block('result', 'DataRows', 'dRow');
+        foreach ($this->getValues() as $V) {
+            $Q = $this->Questions[$V->getQuestionID()];
+            $T->set_var(array(
+                'question' => $Q->getQuestion(),
+            ) );
+            $given = array();
+            foreach ($V->getValue() as $Val) {
+                $Ans = $Q->getAnswers()[$Val];
+                $given[] = $Ans->getValue();
+            }
+            $given = implode(',', $given);
+            $score = $Q->Verify($V->getValue());
+            $T->set_var(array(
+                'answer'    => $given,
+                'is_correct' => $score == 1,
+                'is_partial' => $score < 1 && $score > 0,
+                'is_wrong' => $score == 0,
+                'score' => number_format(round($score * 100, 2), 2) . ' %',
+            ) );
+            $T->parse('dRow', 'DataRows', true);
+            $T->clear_var('aRow');
+        }
+        $T->parse('output', 'result');
+        return $T->finish($T->get_var('output'));
     }
 
 }

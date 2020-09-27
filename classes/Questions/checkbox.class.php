@@ -100,7 +100,7 @@ class checkbox extends \Quizzer\Question
      *
      * @return  boolean     True if partial credit is allowed
      */
-    protected function allowPartial()
+    public function allowPartial()
     {
         return true;
     }

@@ -1,0 +1,34 @@
+{# begin {templatelocation} #}
+<table class="uk-table uk-table-hover uk-table-striped uk-table-condensed uk-width-1-1">
+<!-- BEGIN IntroRows -->
+    <tr>
+        <td style="width:25%;">{intro_prompt}:</td>
+        <td>{intro_value}</td>
+    </tr>
+<!-- END IntroRows -->
+</table>
+
+<table class="uk-table uk-table-hover uk-table-striped uk-table-condensed uk-width-1-1">
+    <th style="text-align:left;width:25%;">{$LANG_QUIZ['question']}</th>
+    <th>{$LANG_QUIZ['answers']}</th>
+    <th>{$LANG_QUIZ['score']}</th>
+<!-- BEGIN DataRows -->
+    <tr>
+        <td>{question}</td>
+        <td>
+            {answer}
+{!if is_correct}
+            <i class="uk-icon-check uk-text-success"></i>
+{!elseif is_partial}
+            <i class="uk-icon-circle-o uk-text-warning"></i>
+{!elseif is_wrong}
+            <i class="uk-icon-remove uk-text-danger"></i>
+{!endif}
+            <br />
+        <td>
+            {score}
+        </td>
+    </tr>
+<!-- END DataRows -->
+</table>
+{# end {templatelocation} #}

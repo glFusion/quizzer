@@ -83,6 +83,10 @@ class Quiz
      * @var boolean */
     private $isNew = true;
 
+    /** Number of questions asked.
+     * @var integer */
+    private $questionsAsked = 0;
+
 
     /**
      * Constructor.
@@ -1150,6 +1154,8 @@ class Quiz
                 'prog_status' => $prog_status,
                 'res_id' => $R->getID(),
                 'all_answered' => $total_a == $total_q,
+                'timestamp' => $R->getTS(),
+                'datetime' => $R->getTS('Y-m-d H:i'),
             ) );
             $T->parse('dRow', 'DataRows', true);
         }

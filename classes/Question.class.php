@@ -653,7 +653,7 @@ class Question
      *
      * @return  boolean     True if partial credit is allowed
      */
-    protected function allowPartial()
+    public function allowPartial()
     {
         return false;
     }
