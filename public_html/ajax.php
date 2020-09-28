@@ -16,6 +16,7 @@ require_once '../lib-common.php';
 
 switch ($_POST['action']) {
 case 'saveresponse':
+    $forfeit = (isset($_POST['forfeit']) && $_POST['forfeit'] == 1);
     $quiz_id = isset($_POST['quizID']) ? $_POST['quizID'] : '';
     $R = Quizzer\Result::getCurrent($quiz_id);
     $Q = Quizzer\Quiz::getInstance($quiz_id);
@@ -27,7 +28,12 @@ case 'saveresponse':
     }
     $q_id = isset($_POST['questionID']) ? (int)$_POST['questionID'] : 0;
     $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
-    if ($R->getID() == 0 || $quiz_id == '' || $q_id == 0 || $a_id == 0) {
+    if (
+        $R->getID() == 0 ||
+        $quiz_id == '' ||
+        $q_id == 0 ||
+        ($a_id == 0 && !$forfeit)
+    ) {
         $retval = array(
             'isvalid' => 0,
             'answer_msg' => $LANG_QUIZ['must_supply_answer'],
@@ -41,7 +47,11 @@ case 'saveresponse':
         $correct = 0;   // so there's something for $retval
         if ($isvalid) {
             $correct = $Question->getCorrectAnswers();
-            Quizzer\Value::Save($R->getID(), $q_id, $a_id);
+            if ($forfeit) {
+                Quizzer\Value::Forfeit($R->getID(), $q_id);
+            } else {
+                Quizzer\Value::Save($R->getID(), $q_id, $a_id);
+            }
         }
         $sub_answers = $Question->getAnswers();
         foreach ($sub_answers as $id=>&$answer) {

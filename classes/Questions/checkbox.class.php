@@ -11,6 +11,8 @@
  * @filesource
  */
 namespace Quizzer\Questions;
+use Quizzer\Value;
+
 
 /**
  * Class for checkbox questions.
@@ -51,6 +53,10 @@ class checkbox extends \Quizzer\Question
     public function Verify($submitted)
     {
         $correct = 0;
+        if ($submitted == Value::FORFEIT) {
+            return $correct;
+        }
+
         $possible = count($this->Answers);
         foreach ($this->Answers as $id=>$ans) {
             switch ($ans->isCorrect()) {

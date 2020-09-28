@@ -84,6 +84,9 @@ $LANG_QUIZ = array(
 'toggle_success' => 'Item(s) have been updated',
 'completed' => 'Completed',
 'msg_noquizzes' => 'There are no quizzes available.',
+'timelimit' => 'Time LImit (seconds)',
+'time_remaining' => 'Time Remaining',
+'zero_to_disable' => '(Zero to disable)',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

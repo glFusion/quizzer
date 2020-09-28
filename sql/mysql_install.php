@@ -1,15 +1,15 @@
 <?php
 /**
-*   Table definitions for the Quizzer plugin
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    quizzer
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Table definitions for the Quizzer plugin.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     0.0.4
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 /** @global array $_TABLES */
 global $_TABLES, $_SQL, $_QUIZ_UPGRADE_SQL;
@@ -105,6 +105,10 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_results']} CHANGE dt ts int(11) unsigned NOT NULL DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_values']} CHANGE res_id resultID int(11) unsigned NOT NULL DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_values']} CHANGE q_id questionID int(11) unsigned NOT NULL DEFAULT '0'",
+    ),
+    '0.0.4' => array(
+        "ALTER TABLE {$_TABLES['quizzer_questions']} ADD timelimit int(4) DEFAULT '0'",
+        "ALTER TABLE {$_TABLES['quizzer_questions']} ADD advanced_editor_mode tinyint(1) unsigned NOT NULL DEFAULT '1'",
     ),
 );
 

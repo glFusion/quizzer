@@ -660,8 +660,10 @@ class Result
             ) );
             $given = array();
             foreach ($V->getValue() as $Val) {
-                $Ans = $Q->getAnswers()[$Val];
-                $given[] = $Ans->getValue();
+                if ($Val > 0) {
+                    $Ans = $Q->getAnswers()[$Val];
+                    $given[] = $Ans->getValue();
+                }
             }
             $given = implode(',', $given);
             $score = $Q->Verify($V->getValue());

@@ -17,6 +17,8 @@ namespace Quizzer;
  */
 class Value
 {
+    const FORFEIT = -1;
+
     /** Flag to indicate that this is a new record.
      * @var boolean */
     private $isNew = true;
@@ -110,9 +112,13 @@ class Value
         $this->questionID     = isset($A['questionID']) ? (int)$A['questionID'] : 0;;
         $this->orderby  = isset($A['orderby']) ? (int)$A['orderby'] : 0;;
         if ($fromDB) {
-            $this->value    = @unserialize($A['value']);
-            if ($this->value === false) {
-                $this->value = array();
+            if ($A['value'] == self::FORFEIT) {
+                $this->value = $A['value'];
+            } else {
+                $this->value    = @unserialize($A['value']);
+                if ($this->value === false) {
+                    $this->value = array();
+                }
             }
         } else {
             // Coming from a submission form
@@ -167,6 +173,19 @@ class Value
 
 
     /**
+     * Forfeit this question, e.g. when the timer runs out.
+     *
+     * @param   integer $resultID     Resultset ID
+     * @param   integer $questionID       Question ID
+     * @return  boolean     True on success, False on failure
+     */
+    public static function Forfeit($resultID, $questionID)
+    {
+        return self::Save($resultID, $questionID, self::FORFEIT);
+    }
+
+
+    /**
      * Save this value to the database.
      *
      * @param   integer $resultID     Resultset ID
@@ -183,10 +202,13 @@ class Value
         if ($resultID == 0 || $questionID == 0) {
             return false;
         }
-        if (!is_array($values)) {
-            $values = array($values);
+
+        if ($values != self::FORFEIT) {
+            if (!is_array($values)) {
+                $values = array($values);
+            }
+            $values = DB_escapeString(@serialize($values));
         }
-        $value = DB_escapeString(@serialize($values));
         /*$sql = "INSERT INTO {$_TABLES['quizzer_values']}
                     (resultID, questionID, value)
                 VALUES
@@ -194,7 +216,7 @@ class Value
                 ON DUPLICATE KEY
                 UPDATE value = '$value'";*/
         $sql = "UPDATE {$_TABLES['quizzer_values']}
-            SET value = '$value'
+            SET value = '$values'
             WHERE resultID = $resultID AND questionID = $questionID";
         DB_query($sql, 1);
         $status = DB_error();

@@ -1,10 +1,158 @@
 {# begin {templatelocation} #}
+<script>
+var quizTimer = null;
+function readTimerCookie(cookiename)
+{
+    var nameEQ = cookiename + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') {
+            c = c.substring(1,c.length);
+        }
+        if (c.indexOf(nameEQ) == 0) {
+            return c.substring(nameEQ.length,c.length);
+        }
+    }
+    return -1;
+}
+
+function startQuizTimer(duration, display)
+{
+    var cookiename = "{cookiename}";
+    var cookietime = -1
+    var timer = duration, minutes, seconds;
+    var low_time = timer / 10;
+    var cookieExpires = new Date();
+    var time = cookieExpires.getTime();
+    cookieExpires.setTime(time + (1000 * duration));
+
+    if (low_time < 10) {
+        low_time = 10;
+    }
+    $("#timer_div").show();
+    quizTimer = setInterval(function () {
+        // check the browser cookie for a time. If set, and
+        // less than the current timer, set the timer to it.
+        // This is to prevent users from resetting the timer
+        // by refreshing their browser sessions.
+        var cookietime = readTimerCookie(cookiename);
+        if (cookietime > -1 && cookietime < timer) {
+            timer = cookietime;
+        }
+
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.text(minutes + ":" + seconds);
+
+        if (timer <= low_time ) {
+            // Highlight the timer when it's close to expiration
+            display.css("color", "red");
+        }
+
+        // create the base cookie and decrement the timer
+        var cookie = "{cookiename}=" + timer + ";domain={cookiedomain};path=/;expires=" +
+            cookieExpires.toGMTString();
+
+        if (--timer < 1) {
+            document.getElementById("f_forfeit").value = "1";
+            display.text("Expired");
+            // expire the cookie upon expiration
+            document.cookie = cookie + "Thu, 01 Jan 1970 00:00:00 GMT";
+            return QUIZ_submit('quiz_form');
+        }
+        document.cookie = cookie + cookieExpires.toGMTString();
+    }, 1000);
+}
+
+function stopQuizTimer()
+{
+    if (quizTimer !== null) {
+        clearInterval(quizTimer);
+        quizTimer = null;
+        $("#timer_div").hide();
+        // create the base cookie and decrement the timer
+        var cookie = "{cookiename}=0;domain={cookiedomain};path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+        // expire the cookie
+        document.cookie = cookie;
+    }
+}
+
+var QUIZ_submit = function(frm_id)
+{
+    data = $("#"+frm_id).serialize();
+    stopQuizTimer();
+
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/quizzer/ajax.php?action=saveresponse",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.isvalid == 1) {
+                    correct_ans = result.correct_ans;
+                    submitted_ans = result.submitted_ans;
+                    answers = result.answers;
+                    //correct_div = document.getElementById("row_" + correct_ans);
+                    //correct_div.className = 'qz-answerrow qz-correct';
+                    document.getElementById('answer_msg').style.display = "";
+                    for (var ans in result.answers) {
+                        obj = result.answers[ans];
+                        div = document.getElementById("row_" + ans);
+                        // Disable the checkbox/radio button
+                        document.getElementById("ans_id_" + ans).disabled=true;
+                        if (obj.is_correct == 1) {
+                            if (obj.submitted == 1) {
+                                status_div = document.getElementById("stat_" + ans);
+                                status_div.innerHTML = "<i class=\"uk-icon uk-icon-check uk-icon-medium qz-color-correct\"></i>";
+                            }
+                            div.className = 'qz-answerrow qz-correct';
+                        } else if (obj.is_correct == 0 && obj.submitted == 1) {
+                            status_div = document.getElementById("stat_" + ans);
+                            status_div.innerHTML = "<i class=\"uk-icon uk-icon-close uk-icon-medium qz-color-incorrect\"></i>";
+                        }
+                    }
+                    document.getElementById("btn_save").style.display = "none";
+                    document.getElementById("btn_next").style.display = "";
+                    if (result.answer_msg != "") {
+                        ans_div = document.getElementById('answer_msg');
+                        ans_div.innerHTML = result.answer_msg;
+                        ans_div.style.display = "";
+                    }
+                } else {
+                    $.UIkit.notify("<i class='uk-icon uk-icon-close uk-text-danger'></i>&nbsp;" + result.answer_msg, {timeout: 5000,pos:'top-center'});
+                }
+            } catch(err) {
+            }
+        }
+    });
+    return false;
+};
+
+{!if timelimit}
+jQuery(function ($) {
+    var timelimit = {timelimit},
+        display = $('#timer');
+    startQuizTimer(timelimit, display);
+});
+{!endif}
+</script>
+<div class="uk-alert uk-alert-danger" id="timer_div" style="display:none;">
+    <h2>{$LANG_QUIZ['time_remaining']}: <span id="timer"></span></h2>
+</div>
 <form autocomplete="off" class="uk-form uk-form-horizontal"
-    id="quiz_form" action="{site_url}/quizzer/index.php" method="post">
+    id="quiz_form" action="{site_url}/{pi_name}/index.php" method="post">
     <input type="hidden" name="quizID" value="{quizID}" />
       <input type="hidden" name="questionID" value="{questionID}" />
       <input type="hidden" name="next_q_id" value="{next_q_id}" />
       <input type="hidden" name="action" value="saveresponse" />
+      <input type="hidden" id="f_forfeit" name="forfeit" value="0" />
+      
     <div class="qz-question-wrapper">
 {!if quiz_name}
         <div class="qz-name">{quizName}</div>
@@ -14,7 +162,11 @@
                 {$LANG_QUIZ['question']} {q_num} of {num_q}
             </div>
         </div>
+{!if adv_edit_mode}
         <div class="qz-question">{questionText}</div>
+{!else}
+        <div class="qz-question plaintext">{questionText}</div>
+{!endif}
         <div class="qz-answers">
 <!-- BEGIN AnswerRow -->
             <div class="qz-answer-wrapper">
