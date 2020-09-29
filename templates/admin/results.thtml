@@ -11,7 +11,7 @@
     <th style="text=align:center;">{$LANG_ADMIN['delete']}</th>
 <!-- BEGIN DataRows -->
     <tr>
-      <td>{username}</td>
+      <td><a href="{site_admin_url}/plugins/quizzer/index.php?viewresult={res_id}">{username}</a></td>
 <!-- BEGIN dataIntroFields -->
       <td>{introfield_value}</td>
 <!-- END dataIntroFields -->
@@ -33,7 +33,7 @@
       <td style="width:20px;text-align:center;">
         <a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
             onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
-         <i class="uk-icon uk-icon-trash-o qz-color-incorrect tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
+         <i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
       </td>
     </tr>
 <!-- END DataRows -->

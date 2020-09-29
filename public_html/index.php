@@ -19,6 +19,7 @@ if (!in_array('quizzer', $_PLUGINS)) {
 
 $content = '';
 $action = '';
+$actionval = '';
 $quizID = '';
 $expected = array(
     'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz',
@@ -60,12 +61,19 @@ if ($quizID == '') {
     $Q = \Quizzer\Quiz::getInstance($quizID);
 }
 
-// get the question ID if specified
-$q_id = isset($_REQUEST['q_id']) ? (int)$_REQUEST['q_id'] : 0;
+// get the question ID if specified.
+// @todo: clean up code to use a single name for question ID
+if (isset($_REQUEST['q_id'])) {
+    $q_id = (int)$_REQUEST['q_id'];
+} elseif (isset($_REQUEST['questionID'])) {
+    $q_id = (int)$_REQUEST['questionID'];
+} else {
+    $q_id = 0;
+}
 $Result = Quizzer\Result::getCurrent($Q->getID());
 $outputHandle = outputHandler::getInstance();
-$outputHandle->addRaw('<meta http-equiv="Pragma" content="no-cache">');
-$outputHandle->addRaw('<meta http-equiv="Expires" content="-1">');
+$outputHandle->addMeta('http-equiv', 'Pragma', 'no-cache');
+$outputHandle->addMeta('http-equiv', 'Expires', '-1');
 
 switch ($action) {
 case 'saveintro':
@@ -93,6 +101,8 @@ case 'startquiz':
         SESS_setVar('quizzer_quizID', $Q->getID());
     } else {
         SESS_unSet('quizzer_quizID');
+        $content .= COM_showMessageText($LANG_QUIZ['msg_noquizzes'], '', true, 'error');
+        break;
     }
     if ($Result->isNew()) {
         $Result->Create($Q->getID());

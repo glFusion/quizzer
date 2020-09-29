@@ -106,6 +106,10 @@ class Quiz
         4 => 'success',
     );
 
+    /** Number of questions asked.
+     * @var integer */
+    private $questionsAsked = 0;
+
 
     /**
      * Constructor.
@@ -685,7 +689,6 @@ class Quiz
             'fail_msg' => $this->getFailMsg(),
             'introfields' => $this->getIntrofields(),
             'ena_chk' => $this->isEnabled() ? 'checked="checked"' : '',
-            'email' => $this->email,
             'user_group_dropdown' => $this->_groupDropdown(),
             'doc_url'   => QUIZ_getDocURL('quiz_def.html'),
             'referrer'      => $referrer,
@@ -1061,7 +1064,16 @@ class Quiz
     {
         global $_TABLES;
 
-        $sql = "SELECT quiz.*, COUNT(questions.questionID) as q_count
+        $sql = "SELECT quiz.quizID, MAX(quiz.quizName) AS quizName,
+            MAX(quiz.enabled) AS enabled, MAX(quiz.owner_id) AS owner_id,
+            MAX(quiz.group_id) AS group_id, MAX(quiz.fill_gid) AS fill_gid,
+            MAX(quiz.onetime) AS onetime, MAX(quiz.introtext) AS introtext,
+            MAX(quiz.introfields) AS introfields,
+            MAX(quiz.questionsAsked) AS questionsAsked,
+            MAX(quiz.levels) AS levels, MAX(quiz.pass_msg) AS pass_msg,
+            MAX(quiz.fail_msg) AS fail_msg,
+            MAX(quiz.reward_id) AS reward_id, MAX(quiz.reward_status) AS reward_status,
+            COUNT(questions.questionID) as q_count
             FROM {$_TABLES['quizzer_quizzes']} AS quiz
             LEFT JOIN {$_TABLES['quizzer_questions']} AS questions
                 ON quiz.quizID = questions.quizID
@@ -1228,6 +1240,8 @@ class Quiz
                 'prog_status' => $prog_status,
                 'res_id' => $R->getID(),
                 'all_answered' => $total_a == $total_q,
+                'timestamp' => $R->getTS(),
+                'datetime' => $R->getTS('Y-m-d H:i'),
             ) );
             $T->parse('dRow', 'DataRows', true);
         }

@@ -60,18 +60,6 @@ function confirmDelete()
       </div>
     </div>
 
-    <div class="uk-form-row" id="div_onetime">
-      <label class="uk-form-label">{$LANG_QUIZ['onetime']}
-        <span id="hlp_onetime" class="tooltip_cfg tooltipstered"></span>
-      </label>
-      <div class="uk-form-controls">
-        <select name="onetime">
-          <option value="0" {one_chk_0} />{$LANG_QUIZ['pul_mult']}</option>
-          <option value="1" {one_chk_1} />{$LANG_QUIZ['pul_once']}</option>
-        </select>
-      </div>
-    </div>
-
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_QUIZ['num_q']}
         <span id="hlp_num_q" class="tooltip_cfg tooltipstered"></span>
@@ -148,6 +136,19 @@ function confirmDelete()
         </select>
       </div>
     </div>
+
+    <div class="uk-form-row" id="div_onetime">
+      <label class="uk-form-label">{$LANG_QUIZ['onetime']}
+        <span id="hlp_onetime" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <select name="onetime">
+          <option value="0" {one_chk_0} />{$LANG_QUIZ['pul_mult']}</option>
+          <option value="1" {one_chk_1} />{$LANG_QUIZ['pul_once']}</option>
+        </select>
+      </div>
+    </div>
+
   </fieldset>
 
   <div class="uk-form-row" style="margin-top:10px">

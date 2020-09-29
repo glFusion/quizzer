@@ -38,7 +38,7 @@ $expected = array(
     'savereward', 'delreward',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
     'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
-    'delresult',
+    'delresult', 'viewresult',
     'rewards', 'editreward',
 );
 foreach($expected as $provided) {
@@ -225,7 +225,6 @@ case 'editquiz':
     break;
 
 case 'editquestion':
-    $questionID = isset($_GET['questionID']) ? (int)$_GET['questionID'] : 0;
     $Q = Quizzer\Question::getInstance($questionID, $quizID);
     $content .= Quizzer\Menu::Admin($view, 'hlp_question_edit');
     $content .= $Q->EditDef();
@@ -267,6 +266,14 @@ case 'editreward':
 
 case 'none':
     // In case any modes create their own content
+    break;
+
+case 'viewresult':
+    $res_id = (int)$actionval;
+    $R = new Quizzer\Result($res_id);       // to get the quiz id
+    if (!$R->isNew()) {
+        $content .= $R->Render();
+    }
     break;
 
 case 'listquizzes':

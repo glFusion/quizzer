@@ -52,6 +52,13 @@ function QUIZ_do_upgrade($dvlp=false)
         if (!QUIZ_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '0.0.4')) {
+        $current_ver = '0.0.4';
+        COM_errorLog("Updating Plugin to $current_ver");
+        if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!QUIZ_do_set_version($current_ver)) return false;
+    }
+
     if (!COM_checkVersion($current_ver, $code_ver)) {
         if (!QUIZ_do_set_version($code_ver)) return false;
     }

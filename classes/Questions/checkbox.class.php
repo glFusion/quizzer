@@ -11,6 +11,8 @@
  * @filesource
  */
 namespace Quizzer\Questions;
+use Quizzer\Value;
+
 
 /**
  * Class for checkbox questions.
@@ -51,6 +53,10 @@ class checkbox extends \Quizzer\Question
     public function Verify($submitted)
     {
         $correct = 0;
+        if ($submitted == Value::FORFEIT) {
+            return $correct;
+        }
+
         $possible = count($this->Answers);
         foreach ($this->Answers as $id=>$ans) {
             switch ($ans->isCorrect()) {
@@ -65,7 +71,7 @@ class checkbox extends \Quizzer\Question
                 }
             }
         }
-        if ($this->partial_credit) {
+        if ($this->allowsPartialCredit()) {
             return ($correct / $possible);
         } else {
             return ($correct == $possible) ? 1 : 0;
@@ -100,7 +106,7 @@ class checkbox extends \Quizzer\Question
      *
      * @return  boolean     True if partial credit is allowed
      */
-    protected function allowPartial()
+    public function allowPartial()
     {
         return true;
     }

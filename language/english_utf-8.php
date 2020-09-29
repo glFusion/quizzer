@@ -91,11 +91,13 @@ $LANG_QUIZ = array(
 'either' => 'Either',
 'reward' => 'Reward',
 'reward_status' => 'Min. Score for Reward',
-
-// Reward strings
 'Giftcard' => 'Gift Card',
 'expiration' => 'Expiration (days)',
 'amount' => 'Amount',
+'msg_noquizzes' => 'There are no quizzes available.',
+'timelimit' => 'Time LImit (seconds)',
+'time_remaining' => 'Time Remaining',
+'zero_to_disable' => '(Zero to disable)',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

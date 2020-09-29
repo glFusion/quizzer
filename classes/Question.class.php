@@ -21,7 +21,7 @@ class Question
     /** Maximum answers allowed.
      * @todo: Make this a per-quiz setting
      * @var integer */
-    const MAX_ANSWERS = 5;
+    const MAX_ANSWERS = 10;
 
     /** Flag to indicate that this is a new question.
      * @var boolean */
@@ -41,7 +41,7 @@ class Question
 
     /** Flag to indicate that answers should be shown in random order.
      * @var boolean */
-    private $randomizeAnswersAnswers = 0;
+    private $randomizeAnswers = 0;
 
     /** Question text.
      * @var string */
@@ -57,7 +57,7 @@ class Question
 
     /** Message to show after answering.
      * @var string */
-    private $postAnswerMessage = '';
+    private $postAnswerMsg = '';
 
     /** Flag to indicate that partial credit is granted.
      * @var boolean */
@@ -81,6 +81,15 @@ class Question
      * Used to create the progress bar.
      * @var integer */
     protected $_totalAsked = 0;
+
+    /** Flag to indicate question was written using the advanced editor.
+     * @var int */
+    protected $advanced_editor_mode = 1;
+
+    /** Time limit to answer the question, in seconds.
+     * @var integer */
+    private $timelimit = 0;
+
 
     /**
      * Constructor.
@@ -183,6 +192,7 @@ class Question
      *
      * @param   array   $A      Array of name->value pairs
      * @param   boolean $fromDB Indicate whether this is read from the DB
+     * @return  object  $this
      */
     public function setVars($A, $fromDB=false)
     {
@@ -197,7 +207,9 @@ class Question
         $this->postAnswerMsg = $A['postAnswerMsg'];
         $this->allowPartialCredit = isset($A['allowPartialCredit']) && $A['allowPartialCredit'] == 1 ? 1 : 0;
         $this->randomizeAnswers = isset($A['randomizeAnswers']) && $A['randomizeAnswers'] == 1 ? 1 : 0;
-        return true;
+        $this->timelimit = isset($A['timelimit']) ? (int)$A['timelimit'] : 0;
+        $this->advanced_editor_mode = isset($A['advanced_editor_mode']) ? (int)$A['advanced_editor_mode'] : 0;
+        return $this;
     }
 
 
@@ -210,6 +222,8 @@ class Question
      */
     public function Render()
     {
+        global $_CONF_QUIZ, $_CONF;
+
         $retval = '';
         $saveaction = 'savedata';
         $allow_submit = true;
@@ -237,7 +251,7 @@ class Question
             'num_q'     => $this->_totalAsked,
             'q_num'     => $this->_seq,
             'questionID' => $this->questionID,
-            'questionText' => $this->questionText,
+            'questionText' => PLG_replaceTags($this->questionText),
             'postAnswerMsg' => $this->have_answer ? $this->postAnswerMsg : '',
             'next_questionID'   => $this->_seq + 1,
             'is_last'       => $this->_seq == $this->_totalAsked,
@@ -245,6 +259,11 @@ class Question
             'next_btn_vis'  => $next_btn_vis,
             'answer_vis'    => $this->have_answer ? '' : 'none',
             'pct'           => (int)(($this->_seq / $this->_totalAsked) * 100),
+            'timelimit'     => $this->timelimit,
+            'pi_name'       => $_CONF_QUIZ['pi_name'],
+            'cookiename'    => $this->getCookieName(),
+            'cookiedomain'  => $_CONF['cookiedomain'],
+            'adv_edit_mode' => $this->advanced_editor_mode,
         ) );
 
         $T->set_block('question', 'AnswerRow', 'Answer');
@@ -340,35 +359,75 @@ class Question
      */
     public function EditDef()
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF_QUIZ, $_CONF;
 
         $retval = '';
         $format_str = '';
         $listinput = '';
 
+        $T = new \Template(QUIZ_PI_PATH. '/templates/admin');
+        $T->set_file('editform', 'editquestion.thtml');
+
+        SEC_setCookie(
+            $_CONF['cookie_name'].'adveditor',
+            SEC_createTokenGeneral('advancededitor'),
+            time() + 1200, $_CONF['cookie_path'],
+            $_CONF['cookiedomain'],
+            $_CONF['cookiesecure'],
+            false
+        );
+
+        // Set up the wysiwyg editor, if available
+        $tpl_var = $_CONF_QUIZ['pi_name'] . '_entry';
+        switch (PLG_getEditorType()) {
+        case 'ckeditor':
+            $T->set_var('show_htmleditor', true);
+            PLG_requestEditor($_CONF_QUIZ['pi_name'], $tpl_var, 'ckeditor_quiz.thtml');
+            PLG_templateSetVars($tpl_var, $T);
+            break;
+        case 'tinymce' :
+            $T->set_var('show_htmleditor',true);
+            PLG_requestEditor($_CONF_QUIZ['pi_name'], $tpl_var, 'tinymce_quiz.thtml');
+            PLG_templateSetVars($tpl_var, $T);
+            break;
+        default :
+            // don't support others right now
+            $T->set_var('show_htmleditor', false);
+            break;
+        }
+
         // Get defaults from the form, if defined
         /*if ($this->quizID > 0) {
             $form = Quiz::getInstance($this->quizID);
         }*/
-        $T = new \Template(QUIZ_PI_PATH. '/templates/admin');
-        $T->set_file('editform', 'editquestion.thtml');
+        if ($this->advanced_editor_mode) {
+            $T->set_var(array(
+                'default_visual_editor' => true,
+                'adv_edit_mode' => 1,
+            ) );
+        } else {
+            $T->set_var(array(
+                'default_visual_editor' => false,
+                'adv_edit_mode' => 0,
+            ) );
+        }
         $T->set_var(array(
             'quiz_name' => DB_getItem($_TABLES['quizzer_quizzes'], 'quizName',
                             "quizID='" . DB_escapeString($this->quizID) . "'"),
             'quizID'   => $this->quizID,
             'questionID'    => $this->questionID,
             'question'      => $this->questionText,
-            'type'      => $this->type,
             'ena_chk'   => $this->enabled == 1 ? 'checked="checked"' : '',
             'doc_url'   => QUIZ_getDocURL('question_def.html'),
             'editing'   => $this->isNew() ? '' : 'true',
             'help_msg'  => $this->help_msg,
             'postAnswerMsg' => $this->postAnswerMsg,
             'can_delete' => $this->isNew() || $this->_wasAnswered() ? false : true,
-            $this->type . '_sel' => 'selected="selected"',
+            $this->questionType . '_sel' => 'selected="selected"',
             'pcred_vis' => $this->allowPartial() ? '' : 'none',
             'random_chk' => $this->randomizeAnswers ? 'checked="checked"' : '',
             'pcred_chk' => $this->isPartialAllowed() ? 'checked="checked"' : '',
+            'timelimit' => $this->timelimit,
         ) );
 
         $T->set_block('editform', 'Answers', 'Ans');
@@ -377,7 +436,7 @@ class Question
                 'ans_id'    => $answer->getAid(),
                 'ans_val'   => $answer->getValue(),
                 'ischecked' => $answer->isCorrect() ? 'checked="checked"' : '',
-                'isRadio'   => $this->type == 'radio' ? true : false,
+                'isRadio'   => $this->questionType == 'radio' ? true : false,
             ) );
             $T->parse('Ans', 'Answers', true);
         }
@@ -386,7 +445,7 @@ class Question
             $T->set_var(array(
                 'ans_id'    => $i,
                 'ans_val'   => '',
-                'isRadio'   => $this->type == 'radio' ? true : false,
+                'isRadio'   => $this->questionType == 'radio' ? true : false,
                 'ischecked' => '',
             ) );
             $T->parse('Ans', 'Answers', true);
@@ -412,8 +471,9 @@ class Question
         if ($quizID == '') {
             return 'Invalid form ID';
         }
-        if (empty($A['questionType']))
+        if (empty($A['questionType'])) {
             return;
+        }
 
         $this->setVars($A, false);
 
@@ -427,13 +487,15 @@ class Question
         }
 
         $sql2 = "quizID = '" . DB_escapeString($this->quizID) . "',
-                questionType = '" . DB_escapeString($this->questionType) . "',
-                enabled = '{$this->enabled}',
-                help_msg = '" . DB_escapeString($this->help_msg) . "',
-                questionText = '" . DB_escapeString($this->questionText) . "',
-                postAnswerMsg = '" . DB_escapeString($this->postAnswerMsg) . "',
-                allowPartialCredit = '{$this->allowPartialCredit}',
-                randomizeAnswers = '{$this->randomizeAnswers}'";
+            questionType = '" . DB_escapeString($this->questionType) . "',
+            enabled = '{$this->enabled}',
+            help_msg = '" . DB_escapeString($this->help_msg) . "',
+            questionText = '" . DB_escapeString($this->questionText) . "',
+            postAnswerMsg = '" . DB_escapeString($this->postAnswerMsg) . "',
+            allowPartialCredit = '{$this->allowPartialCredit}',
+            randomizeAnswers = '{$this->randomizeAnswers}',
+            timelimit='{$this->getTimelimit()}',
+            advanced_editor_mode='{$this->advanced_editor_mode}'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -450,7 +512,7 @@ class Question
         for ($i = 1; $i <= $count; $i++) {
             if (!empty($A['opt'][$i])) {
                 $answer = DB_escapeString($A['opt'][$i]);
-                if ($this->type == 'radio') {
+                if ($this->questionType == 'radio') {
                     $correct = isset($A['correct']) && $A['correct'] == $i ? 1 : 0;
                 } else {
                     $correct = isset($A['correct'][$i]) && $A['correct'][$i] == 1 ? 1 : 0;
@@ -483,7 +545,7 @@ class Question
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['quizzer_values'], 'q_id', $questionID);
+        DB_delete($_TABLES['quizzer_values'], 'questionID', $questionID);
         DB_delete($_TABLES['quizzer_questions'], 'questionID', $questionID);
     }
 
@@ -518,7 +580,7 @@ class Question
 
         $sql .= "INSERT INTO {$_TABLES['quizzer_questions']} SET
                 quizID = '" . DB_escapeString($this->quizID) . "',
-                type = '" . DB_escapeString($this->type) . "',
+                type = '" . DB_escapeString($this->questionType) . "',
                 enabled = {$this->enabled},
                 help_msg = '" . DB_escapeString($this->help_msg) . "'";
         DB_query($sql, 1);
@@ -653,9 +715,22 @@ class Question
      *
      * @return  boolean     True if partial credit is allowed
      */
-    protected function allowPartial()
+    public function allowPartial()
     {
         return false;
+    }
+
+
+    /**
+     * Check if this question allows partial credit.
+     * Only returns true if the question type and question itself
+     * allow partial credit.
+     *
+     * @return  boolean     True if partial credit allowed, False if not
+     */
+    protected function allowsPartialCredit()
+    {
+        return $this->allowPartial() && $this->allowPartialCredit;
     }
 
 
@@ -908,6 +983,35 @@ class Question
     {
         $this->_totalAsked = (int)$num;
         return $this;
+    }
+
+
+    /**
+     * Get the time limit in seconds to answer the question.
+     * Allows access by child classes.
+     *
+     * @return  integer     Time limit, in seconds
+     */
+    protected function getTimelimit()
+    {
+        return (int)$this->timelimit;
+    }
+
+
+    public function getCookieName()
+    {
+        return $this->quizID . '-' . $this->questionID;
+    }
+
+
+    public function expireCookie()
+    {
+        SEC_setCookie(
+            $this->getCookieName(),
+            -1,
+            -1
+        );
+
     }
 
 }

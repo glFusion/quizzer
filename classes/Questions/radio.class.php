@@ -49,6 +49,7 @@ class radio extends \Quizzer\Question
     public function Verify($submitted)
     {
         if (
+            is_array($submitted) &&
             isset($submitted[0]) &&
             isset($this->Answers[$submitted[0]]) &&
             $this->Answers[$submitted[0]]->isCorrect() == 1

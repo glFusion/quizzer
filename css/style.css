@@ -33,10 +33,12 @@ div.qz-correct {
     color: lightgreen;
 }
 div.qz-question {
-    font-size: x-large;
     margin-top: 25px;
     margin-bottom: 15px;
+}
+div.qz-question.plaintext {
     line-height: 2.0rem;
+    font-size: x-large;
 }
 div.qz-answers {
     width: 80%;
