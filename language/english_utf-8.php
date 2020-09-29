@@ -43,6 +43,7 @@ $LANG_QUIZ = array(
 'pass_msg' => 'Message if Passed',
 'fail_msg' => 'Message if Failed',
 'no_answers' => 'No Submissions',
+'no_answer' => 'No Answer Provided',
 'csvbyq'    => 'Export CSV by Question',
 'csvbysubmitter' => 'Export CSV by Submitter',
 'submitter' => 'Submitter',

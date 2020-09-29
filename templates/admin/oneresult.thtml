@@ -16,7 +16,11 @@
     <tr>
         <td>{question}</td>
         <td>
+{!if answer}
             {answer}
+{!else}
+            <span style="font-style:italic;">({$LANG_QUIZ['no_answer']})</span>
+{!endif}
 {!if is_correct}
             <i class="uk-icon-check uk-text-success"></i>
 {!elseif is_partial}

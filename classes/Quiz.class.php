@@ -3,14 +3,15 @@
  * Class to represent a quiz.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2020 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.4.0
+ * @version     v0.0.4
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
+use Quizzer\Models\Score;
 
 
 /**
@@ -32,23 +33,23 @@ class Quiz
 
     /** Current user ID.
      * @var integer */
-    private $uid;
+    private $uid = 0;
 
     /** Name for the quiz.
      * @var string */
-    private $quizName;
+    private $quizName = '';
 
     /** Text message shown at the start of a quiz.
      * @var string */
-    private $introtext;
+    private $introtext = '';
 
     /** Custom fields for data collection at the start of a quiz.
      * @var string */
-    private $introfields;
+    private $introfields = '';
 
     /** Levels to determine pass/fail scores.
      * @var string */
-    private $levels;
+    private $levels = '';
 
     /** Quiz fields, an array of objects.
     * @var array */
@@ -64,16 +65,16 @@ class Quiz
 
     /** Result object for a user submission.
     * @var object */
-    private $Result;
+    private $Result = NULL;
 
     /** Database ID of a result record.
     * @var integer */
-    private $res_id;
+    private $res_id = 0;
 
     /** Flag to indicate that submission is allowed.
      * Turns off the submit button when previewing.
      * @var boolean */
-    private $allow_submit;
+    private $allow_submit = 1;
 
     /** Indicator whether one or multiple submissions are allowed.
      * @var boolean */
@@ -83,7 +84,9 @@ class Quiz
      * @var boolean */
     private $isNew = true;
 
-    /** Number of questions asked.
+    /** Number of questions actually asked.
+     * Used in case a subset of all questions is asked or where the specified
+     * number to ask is less than the available questions.
      * @var integer */
     private $questionsAsked = 0;
 
@@ -109,8 +112,6 @@ class Quiz
         if ($def_group < 1) {
             $def_group = 1;     // default to Root
         }
-        $this->Result = NULL;
-
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
@@ -685,8 +686,9 @@ class Quiz
             $this->Result = new Result($res_id);
             $this->Result->setInstance($this->instance_id);
             $this->Result->setModerate($this->moderate);
-            $this->res_id = $this->Result->SaveData($this->quizID, $this->questions,
-                    $vals, $this->uid);
+            $this->res_id = $this->Result->SaveData(
+                $this->quizID, $this->questions, $vals, $this->uid
+            );
         } else {
             $this->res_id = false;
         }
@@ -986,24 +988,21 @@ class Quiz
     {
         global $_TABLES;
 
-        $sql = "SELECT quiz.quizID, MAX(quiz.quizName) AS quizName,
-            MAX(quiz.enabled) AS enabled, MAX(quiz.owner_id) AS owner_id,
-            MAX(quiz.group_id) AS group_id, MAX(quiz.fill_gid) AS fill_gid,
-            MAX(quiz.onetime) AS onetime, MAX(quiz.introtext) AS introtext,
-            MAX(quiz.introfields) AS introfields,
-            MAX(quiz.questionsAsked) AS questionsAsked,
-            MAX(quiz.levels) AS levels, MAX(quiz.pass_msg) AS pass_msg,
-            MAX(quiz.fail_msg) AS fail_msg,
-            MAX(quiz.reward_id) AS reward_id, MAX(quiz.reward_status) AS reward_status,
-            COUNT(questions.questionID) as q_count
+        $sql = "SELECT quiz.quizID, quiz.quizName,
+            quiz.enabled, quiz.owner_id,
+            quiz.group_id, quiz.fill_gid,
+            quiz.onetime, quiz.introtext,
+            quiz.introfields,
+            quiz.questionsAsked,
+            quiz.levels, quiz.pass_msg, quiz.fail_msg,
+            quiz.reward_id, quiz.reward_status,
+            (SELECT COUNT(ques.questionID)
+                FROM {$_TABLES['quizzer_questions']} AS ques
+                WHERE ques.quizID = quiz.quizID) AS q_count
             FROM {$_TABLES['quizzer_quizzes']} AS quiz
-            LEFT JOIN {$_TABLES['quizzer_questions']} AS questions
-                ON quiz.quizID = questions.quizID
             WHERE quiz.enabled = 1 " .
             SEC_buildAccessSql('AND', 'quiz.fill_gid') .
-            " GROUP BY quiz.quizID
-            HAVING q_count > 0
-            ORDER BY quiz.quizID ASC
+            " ORDER BY quiz.quizID ASC
             LIMIT 1";
         //echo $sql;die;
         $res = DB_query($sql);
@@ -1021,22 +1020,22 @@ class Quiz
      * Get the class to use for the scoring progress bars
      *
      * @param   float   $pct    Percentage of correct answers
-     * @return  string          Class to use
+     * @return  object      Score object
      */
     public function getGrade($pct)
     {
-        static $scores = NULL;
-        if ($scores === NULL) $scores = explode('|', $this->levels);
-        $levels = array('success', 'warning', 'danger');
+        $retval = new Score;
+        $scores = explode('|', $this->levels);
+        // Get the max increments, in case the admin added too many options.
         $max_i = min(count($scores), 3);
-        $grade = 'danger';
         for ($i = 0; $i < $max_i; $i++) {
             if ($pct >= (float)$scores[$i]) {
-                $grade = $levels[$i];
+                $retval->grade = $i;
+                $retval->percent = $pct;
                 break;
             }
         }
-        return $grade;
+        return $retval;
     }
 
 
@@ -1076,13 +1075,13 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->getGrade($pct);
+            $Score = $this->getGrade($pct);
             $T->set_var(array(
                 'question' => $Q->getQuestion(),
                 'pct' => $pct,
                 'correct' => $correct,
                 'total' => $total,
-                'prog_status' => $total > 0 ? $prog_status : false,
+                'prog_status' => $total > 0 ? $Score->getCSS() : false,
             ) );
             $T->parse('dRow', 'DataRows', true);
         }
@@ -1144,14 +1143,14 @@ class Quiz
             } else {
                 $pct = 0;
             }
-            $prog_status = $this->getGrade($pct);
+            $Score = $this->getGrade($pct);
             $T->set_var(array(
                 'username' => COM_getDisplayName($R->getUid()),
                 'pct' => $pct,
                 'correct' => $correct,
                 'total_a' => $total_a,
                 'total' => $total_q,
-                'prog_status' => $prog_status,
+                'prog_status' => $Score->getCSS(),
                 'res_id' => $R->getID(),
                 'all_answered' => $total_a == $total_q,
                 'timestamp' => $R->getTS(),
