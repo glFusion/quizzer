@@ -151,7 +151,7 @@ class Reward
                     $this->config[$key] = (float)$A[$key];
                     break;
                 default:
-                    $this->config[$key] = $A[$key];
+                    $this->config[$key] = trim($A[$key]);
                     break;
                 }
             }
@@ -309,7 +309,7 @@ class Reward
      * @param   integer $sel    Currently-selected option
      * @return  string      Option elements for a select list
      */
-    public function optionList($sel=0)
+    public static function optionList($sel=0)
     {
         global $_TABLES;
 
@@ -477,6 +477,17 @@ class Reward
         } else {
             return $key;
         }
+    }
+
+
+    /**
+     * Get the type of reward, normally the class name.
+     *
+     * @return  string      Reward type, e.g. "Giftcard"
+     */
+    public function getType()
+    {
+        return $this->type;
     }
 
 }

@@ -70,12 +70,6 @@ class Giftcard extends \Quizzer\Reward
     }
 
 
-    public function getType()
-    {
-        return 'Giftcard';
-    }
-
-
     public function getDscp()
     {
         global $LANG_QUIZ;
