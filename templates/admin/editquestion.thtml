@@ -3,7 +3,9 @@
 {wysiwyg}
 {!endif}
 {!if adv_edit_mode}
+<script>
 won('question');
+</script>
 {!endif}
 <form id="frm1" class="uk-form uk-form-horizontal frmForms" method="post"
     action="{site_url}/admin/plugins/quizzer/index.php">
