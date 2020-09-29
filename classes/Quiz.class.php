@@ -1399,6 +1399,24 @@ class Quiz
 
 
     /**
+     * Create a reward, if configured for this quiz.
+     *
+     * @param   integer $uid    Quiz taker's user ID
+     * @param   float   $score  Quiz score
+     * @return  string      Message to show the quiz taker
+     */
+    public function createReward($uid, $score)
+    {
+        $retval = '';
+        if ($this->getRewardID() > 0 && $this->getRewardStatus() <= $score) {
+            $retval = Reward::getById($this->getRewardID())
+                ->createReward($uid);
+        }
+        return $retval;
+    }
+
+
+    /**
      * Helper function to check if the current user can submit to this quiz.
      * Checks if the quiz is valid, enabled, and not one-time that has been
      * answered already.

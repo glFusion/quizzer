@@ -394,10 +394,8 @@ class Result
         } else {
             $msg = $Q->getFailMsg();
         }
-        if ($Q->getRewardStatus() <= $score['grade']) {
-            $msg .= \Quizzer\Reward::getById($Q->getRewardID())
-                ->createReward($this->uid);
-        }
+        $msg .= $Q->createReward($score['grade']);
+
         $T = new \Template(QUIZ_PI_PATH . '/templates');
         $T->set_file('result', 'finish.thtml');
         $T->set_var(array(
