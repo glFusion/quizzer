@@ -1437,7 +1437,6 @@ class Quiz
     }
 
 
->>>>>>> develop
     /**
      * Uses lib-admin to list the quizzer definitions and allow updating.
      *
