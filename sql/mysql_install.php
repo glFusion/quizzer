@@ -97,13 +97,6 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD fail_msg TEXT",
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD reward_id int(11) unsigned NOT NULL DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_quizzes']} ADD reward_status tinyint(1) unsigned NOT NULL DEFAULT '4'",
-        "CREATE TABLE {$_TABLES['quizzer_rewards']} (
-          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-          `name` varchar(80) DEFAULT NULL,
-          `type` varchar(20) DEFAULT NULL,
-          `config` text,
-          PRIMARY KEY (`id`)
-        ) ENGINE=MyISAM",
         "ALTER TABLE {$_TABLES['quizzer_values']} ADD orderby int(5) unsigned NOT NULL DEFAULT '0' AFTER res_id",
         "ALTER TABLE {$_TABLES['quizzer_values']} ADD key `res_orderby` (`res_id`, `orderby`)",
         "UPDATE {$_TABLES['quizzer_quizzes']} SET onetime = 1 WHERE onetime = 2",
@@ -128,5 +121,12 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_questions']} ADD advanced_editor_mode tinyint(1) unsigned NOT NULL DEFAULT '1'",
     ),
 );
-
+/*        "CREATE TABLE {$_TABLES['quizzer_rewards']} (
+          `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+          `name` varchar(80) DEFAULT NULL,
+          `type` varchar(20) DEFAULT NULL,
+          `config` text,
+          PRIMARY KEY (`id`)
+        ) ENGINE=MyISAM",
+ */
 ?>
