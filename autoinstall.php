@@ -64,14 +64,6 @@ $INSTALL_plugin['quizzer'] = array(
         'sql'   => $_SQL['quizzer_values'],
     ),
     array(
-        'type'      => 'group',
-        'group'     => 'quizzer Admin',
-        'desc'      => 'Users in this group can administer the Quizzer plugin',
-        'variable'  => 'admin_group_id',
-        'admin'     => true,
-        'addroot'   => true,
-    ),
-    array(
         'type'      => 'feature',
         'feature'   => 'quizzer.admin',
         'desc'      => 'Quizzer Administration access',
@@ -79,7 +71,7 @@ $INSTALL_plugin['quizzer'] = array(
     ),
     array(
         'type'      => 'mapping',
-        'group'     => 'admin_group_id',
+        'findgroup' => 'Root',
         'feature'   => 'admin_feature_id',
         'log'       => 'Adding Admin feature to the admin group',
     ),

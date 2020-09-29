@@ -126,7 +126,6 @@ class Quiz
         } else {
             $this->isNew = true;
             $this->setFillGid($_CONF_QUIZ['fill_gid'])
-                ->setGid($def_group)
                 ->setEnabled(1)
                 ->setID(COM_makeSid())
                 ->setIntrotext('')
@@ -375,30 +374,6 @@ class Quiz
     public function getFillGid()
     {
         return (int)$this->fill_gid;
-    }
-
-
-    /**
-     * Set the ID of the owner group for this quiz.
-     *
-     * @param   integer $gid    Owner Group ID
-     * @return  object  $this
-     */
-    private function setGid($gid)
-    {
-        $this->group_id = (int)$gid;
-        return $this;
-    }
-
-
-    /**
-     * Get the owner group ID for the quiz.
-     *
-     * @return  integer     Group ID
-     */
-    public function getGid()
-    {
-        return (int)$this->group_id;
     }
 
 
@@ -908,7 +883,7 @@ class Quiz
             if (SEC_inGroup($this->fill_gid, $uid)) $retval = true;
             break;
         case QUIZ_ACCESS_ADMIN:
-            if (SEC_inGroup($this->group_id, $uid)) $retval = true;
+            if (SEC_hasRights('quizzer.admin')) $retval = true;
             break;
         }
         return $retval;

@@ -59,6 +59,27 @@ function QUIZ_do_upgrade($dvlp=false)
         if (!QUIZ_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '0.0.5')) {
+        $current_ver = '0.0.5';
+        COM_errorLog("Updating Plugin to $current_ver");
+
+        // Map the admin feature to the Root group
+        $ft_id = (int)DB_getItem(
+            $_TABLES['features'],
+            'ft_id',
+            "ft_name = 'quizzer.admin'"
+        );
+        if ($ft_id > 0) {
+            DB_query("INSERT IGNORE INTO {$_TABLES['access']}
+                    (acc_ft_id, acc_grp_id)
+                VALUES
+                    ($feat_id, 1)", 1
+            );
+        }
+        if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!QUIZ_do_set_version($current_ver)) return false;
+    }
+
     if (!COM_checkVersion($current_ver, $code_ver)) {
         if (!QUIZ_do_set_version($code_ver)) return false;
     }
