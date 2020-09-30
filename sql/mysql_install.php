@@ -76,7 +76,8 @@ $_SQL = array(
   `value` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`resultID`,`questionID`),
   UNIQUE KEY `res_q` (`resultID`,`questionID`),
-  KEY `res_orderby` (`resultID`,`orderby`)
+  KEY `res_orderby` (`resultID`,`orderby`),
+  CONSTRAINT `gl_quizzer_values_ibfk_1` FOREIGN KEY (`resultID`) REFERENCES `gl_quizzer_results` (`resultID`) ON DELETE CASCADE
 ) ENGINE=MyISAM",
 
 'quizzer_rewards' => "CREATE TABLE {$_TABLES['quizzer_rewards']} (
@@ -120,6 +121,13 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_questions']} ADD timelimit int(4) DEFAULT '0'",
         "ALTER TABLE {$_TABLES['quizzer_questions']} ADD advanced_editor_mode tinyint(1) unsigned NOT NULL DEFAULT '1'",
     ),
+    '0.0.5' => array(
+        "DELETE FROM {$_TABLES['quizzer_values']} WHERE resultID NOT IN
+            (SELECT resultID FROM {$_TABLES['quizzer_results']}",
+        "ALTER TABLE {$_TABLES['quizzer_values']} ADD FOREIGN KEY (resultID)
+            REFERENCES {$_TABLES['quizzer_results']} (resultID)
+            ON DELETE CASCADE",
+    );
 );
 /*        "CREATE TABLE {$_TABLES['quizzer_rewards']} (
           `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

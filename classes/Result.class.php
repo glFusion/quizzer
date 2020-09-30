@@ -11,6 +11,7 @@
  * @filesource
  */
 namespace Quizzer;
+use Quizzer\Models\Score;
 
 
 /**
@@ -318,7 +319,7 @@ class Result
 
         $resultID = (int)$resultID;
         if ($resultID == 0) return false;
-        self::DeleteValues($resultID);
+        //self::DeleteValues($resultID);
         DB_delete($_TABLES['quizzer_results'], 'resultID', $resultID);
         return true;
     }
@@ -327,6 +328,7 @@ class Result
     /**
      * Delete the form values related to a result set.
      *
+     * @deprecate not needed due to foreight key constraint
      * @param   integer $resultID Required result ID
      * @param   integer $uid    Optional user ID
      */
@@ -386,10 +388,8 @@ class Result
         } else {
             $pct = 0;
         }
-        $score = $Q->getGrade($pct);
-        //$prog_status = $Q->getGrade($pct);
-        //if ($prog_status == 'success') {
-        if ($score['grade'] == Quiz::PASSED) {
+        $Score = $Q->getGrade($pct);
+        if ($Score->grade == Score::PASSED) {
             $msg = $Q->getPassMsg();
         } else {
             $msg = $Q->getFailMsg();
@@ -404,7 +404,7 @@ class Result
             'quizID'   => $Q->getID(),
             'correct' => $correct,
             'total' => $total_q,
-            'prog_status' => $prog_status,
+            'prog_status' => $Score->getCSS(),
             'finish_msg' => $msg,
         ) );
         $T->parse('output', 'result');
@@ -644,7 +644,10 @@ class Result
     {
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('result', 'oneresult.thtml');
-
+        $T->set_var(array(
+            'pi_url' => QUIZ_ADMIN_URL,
+            'quiz_id' => $this->quizID,
+        ) );
         $T->set_block('result', 'IntroRows', 'iRow');
         foreach ($this->introfields as $prompt=>$value) {
             $T->set_var(array(
@@ -658,16 +661,18 @@ class Result
         foreach ($this->getValues() as $V) {
             $Q = $this->Questions[$V->getQuestionID()];
             $T->set_var(array(
-                'question' => $Q->getQuestion(),
+                'question' => self::removeAutotags(strip_tags($Q->getQuestion())),
             ) );
             $given = array();
-            foreach ($V->getValue() as $Val) {
-                if ($Val > 0) {
-                    $Ans = $Q->getAnswers()[$Val];
-                    $given[] = $Ans->getValue();
+            if (is_array($V->getValue())) {
+                foreach ($V->getValue() as $Val) {
+                    if ($Val > 0) {
+                        $Ans = $Q->getAnswers()[$Val];
+                        $given[] = $Ans->getValue();
+                    }
                 }
+                $given = implode(',', $given);
             }
-            $given = implode(',', $given);
             $score = $Q->Verify($V->getValue());
             $T->set_var(array(
                 'answer'    => $given,
@@ -681,6 +686,43 @@ class Result
         }
         $T->parse('output', 'result');
         return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Remove autotags before displaying a question.
+     *
+     * @param   string  $content    Content to examine
+     * @return  string      Content withoug autotags
+     */
+    protected static function removeAutotags($content)
+    {
+        static $autolinkModules = NULL;
+        static $tags = array();
+
+        // Just return content if there are no autotags
+        if (strpos($content, '[') === false) {
+            return $content;
+        }
+
+        if ($autolinkModules === NULL) {
+            $autolinkModules = PLG_collectTags();
+            foreach ($autolinkModules as $moduletag => $module) {
+                $tags[] = $moduletag;
+            }
+            $tags = implode('|', $tags);
+        }
+        if (!empty($tags)) {
+            $result = preg_filter("/\[(($tags):.[^\]]*\])/i", '', $content);
+            if ($result === NULL) {
+                // Just means no match found
+                return $content;
+            } else {
+                return $result;
+            }
+        } else {
+            return $content;
+        }
     }
 
 }

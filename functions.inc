@@ -214,7 +214,7 @@ function plugin_autouninstall_quizzer()
             'quizzer_results',
         ),
         // give the full name of the group, as in the db
-        'groups' => array('quizzer Admin'),
+        'groups' => array('quizzer Admin'), // legacy
         // give the full name of the feature, as in the db
         'features' => array('quizzer.admin'),
         // give the full name of the block, including 'phpblock_', etc

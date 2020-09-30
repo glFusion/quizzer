@@ -342,6 +342,20 @@ class Value
         return !empty($this->value);
     }
 
+
+    /**
+     * Check if this answer was forfeited (not answered).
+     *
+     * @return  boolean     True if forfeit, False if answered
+     */
+    public function isForfeit()
+    {
+        return (
+            $this->value == self::FORFEIT ||
+            $this->value == NULL
+        );
+    }
+
 }
 
 ?>
