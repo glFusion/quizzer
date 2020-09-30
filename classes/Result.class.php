@@ -319,7 +319,7 @@ class Result
 
         $resultID = (int)$resultID;
         if ($resultID == 0) return false;
-        self::DeleteValues($resultID);
+        //self::DeleteValues($resultID);
         DB_delete($_TABLES['quizzer_results'], 'resultID', $resultID);
         return true;
     }
@@ -328,6 +328,7 @@ class Result
     /**
      * Delete the form values related to a result set.
      *
+     * @deprecate not needed due to foreight key constraint
      * @param   integer $resultID Required result ID
      * @param   integer $uid    Optional user ID
      */
@@ -643,7 +644,10 @@ class Result
     {
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('result', 'oneresult.thtml');
-
+        $T->set_var(array(
+            'pi_url' => QUIZ_ADMIN_URL,
+            'quiz_id' => $this->quizID,
+        ) );
         $T->set_block('result', 'IntroRows', 'iRow');
         foreach ($this->introfields as $prompt=>$value) {
             $T->set_var(array(
@@ -657,7 +661,7 @@ class Result
         foreach ($this->getValues() as $V) {
             $Q = $this->Questions[$V->getQuestionID()];
             $T->set_var(array(
-                'question' => self::removeAutotags($Q->getQuestion()),
+                'question' => self::removeAutotags(strip_tags($Q->getQuestion())),
             ) );
             $given = array();
             if (is_array($V->getValue())) {

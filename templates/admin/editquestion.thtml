@@ -106,7 +106,7 @@ won('question');
     </div>
 
     <div class="uk-form-row" id="partial_credit_div" style="display:{pcred_vis}">
-      <label class="uk-form-label">{$LANG_QUIZ['partial_credit']}
+      <label class="uk-form-label">{$LANG_QUIZ['partial_credit']}?
         <span id="hlp_pcredit" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
