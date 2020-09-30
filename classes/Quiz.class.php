@@ -1078,7 +1078,7 @@ class Quiz
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'results.thtml');
         $T->set_var('quiz_name', $this->quizName);
-        $intro = explode('|', $this->introfields);
+        /*$intro = explode('|', $this->introfields);
         $keys = array();
         $T->set_block('results', 'hdrIntroFields', 'hdrIntro');
         foreach ($intro as $key) {
@@ -1087,26 +1087,25 @@ class Quiz
                 $T->parse('hdrIntro', 'hdrIntroFields', true);
                 $keys[] = COM_sanitizeId($key);
             }
-        }
+        }*/
         $results = Result::findByQuiz($this->quizID);
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($results as $R) {
-            $introfields = $R->getIntroFields();
+            /*$introfields = $R->getIntroFields();
             $T->set_block('results', 'dataIntroFields', 'dataIntro');
             $T->clear_var('dataIntro');
             foreach ($keys as $key) {
                 $T->set_var('introfield_value', QUIZ_getVar($introfields, $key));
                 $T->parse('dataIntro', 'dataIntroFields', true);
-            }
+            }*/
             $correct = 0;
             $total_a = 0;
             foreach ($R->getValues() as $V) {
-                $total_a++;
+                if (!$V->isForfeit()) {
+                    $total_a++;
+                }
                 $Q = Question::getInstance($V->getQuestionID());
                 $correct += $Q->Verify($V->getValue());
-                /*if ($Q->Verify($V->value)) {
-                    $correct++;
-                }*/
             }
             $total_q = $R->getAsked();
             // Adjust correct number for cleaner presentation
