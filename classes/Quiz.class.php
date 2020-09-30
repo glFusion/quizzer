@@ -104,14 +104,6 @@ class Quiz
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
         $this->setUid($_USER['uid']);
-        $def_group = (int)DB_getItem(
-            $_TABLES['groups'],
-            'grp_id',
-            "grp_name='quizzer Admin'"
-        );
-        if ($def_group < 1) {
-            $def_group = 1;     // default to Root
-        }
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
