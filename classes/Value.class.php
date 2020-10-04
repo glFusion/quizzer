@@ -18,6 +18,7 @@ namespace Quizzer;
 class Value
 {
     const FORFEIT = -1;
+    const UNANSWERED = NULL;
 
     /** Flag to indicate that this is a new record.
      * @var boolean */
@@ -112,7 +113,7 @@ class Value
         $this->questionID     = isset($A['questionID']) ? (int)$A['questionID'] : 0;;
         $this->orderby  = isset($A['orderby']) ? (int)$A['orderby'] : 0;;
         if ($fromDB) {
-            if ($A['value'] == self::FORFEIT) {
+            if ($A['value'] == self::FORFEIT || $A['value'] == self::UNANSWERED) {
                 $this->value = $A['value'];
             } else {
                 $this->value    = @unserialize($A['value']);
@@ -350,10 +351,20 @@ class Value
      */
     public function isForfeit()
     {
-        return (
-            $this->value == self::FORFEIT ||
-            $this->value == NULL
-        );
+        return !self::isValidAnswer($this->value);
+    }
+
+
+    /**
+     * Static function to check if an answer value is valid.
+     * Returns False if the value represents forfeit or unanswered.
+     *
+     * @param   mixed   $val    Answer value
+     * @return  boolean     True if valid (array), False if not
+     */
+    public static function isValidAnswer($val)
+    {
+        return $val !== self::FORFEIT && $val !== self::UNANSWERED;
     }
 
 }

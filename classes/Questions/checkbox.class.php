@@ -53,7 +53,7 @@ class checkbox extends \Quizzer\Question
     public function Verify($submitted)
     {
         $correct = 0;
-        if ($submitted == Value::FORFEIT) {
+        if (!Value::isValidAnswer($submitted)) {
             return $correct;
         }
 
