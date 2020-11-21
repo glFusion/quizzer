@@ -836,18 +836,9 @@ class Quiz
         // If still no valid ID, do nothing
         if ($quizID == '') return;
 
+        Result::resetQuiz();    // deletes all related results and values
+        Question::deleteQuiz(); // deletes all quesitons and answers
         DB_delete($_TABLES['quizzer_quizzes'], 'quizID', $quizID);
-        //DB_delete($_TABLES['quizzer_frmXfld'], 'frm_id', $quizID);
-        DB_delete($_TABLES['quizzer_questions'], 'quizID', $quizID);
-
-        $sql = "SELECT resultID FROM {$_TABLES['quizzer_results']}
-            WHERE quizID='$quizID'";
-        $r = DB_query($sql, 1);
-        if ($r) {
-            while ($A = DB_fetchArray($r, false)) {
-                Result::Delete($A['resultID']);
-            }
-        }
         Cache::clear();
     }
 

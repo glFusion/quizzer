@@ -541,12 +541,32 @@ class Question
      *
      * @param  integer $questionID     ID number of the question
      */
-    public static function Delete($questionID=0)
+    public static function Delete($questionID)
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['quizzer_values'], 'questionID', $questionID);
-        DB_delete($_TABLES['quizzer_questions'], 'questionID', $questionID);
+        $sql = "DELETE q, v FROM {$_TABLES['quizzer_questions']} q
+            JOIN {$_TABLES['quizzer_answers']} ans
+            ON ans.questionID = q.questionID
+            WHERE q.questionID = $questionID";
+        DB_query ($sql);
+    }
+
+
+    /**
+     * Delete all questions and answers for a quiz.
+     *
+     * @param   string  $quiz_id    Quiz ID
+     */
+    public static function deleteQuiz($quiz_id)
+    {
+        global $_TABLES;
+
+        $sql = "DELETE q, v FROM {$_TABLES['quizzer_questions']} q
+            JOIN {$_TABLES['quizzer_answers']} ans
+            ON ans.questionID = q.questionID
+            WHERE q.quizID = '" . DB_escapeString($quiz_id) . "'";
+        DB_query ($sql);
     }
 
 
