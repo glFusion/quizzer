@@ -101,7 +101,7 @@ function QUIZ_do_upgrade($dvlp=false)
  */
 function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
 {
-    global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL;
+    global $_TABLES, $_CONF_QUIZ, $_QUIZ_UPGRADE_SQL, $_DB_dbms, $_VARS;
 
     // If no sql statements passed in, return success
     if (
@@ -111,9 +111,22 @@ function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
         return true;
     }
 
+    if (
+        $_DB_dbms == 'mysql' &&
+        isset($_VARS['database_engine']) &&
+        $_VARS['database_engine'] == 'InnoDB'
+    ) {
+        $use_innodb = true;
+    } else {
+        $use_innodb = false;
+    }
+
     // Execute SQL now to perform the upgrade
     COM_errorLog("--Updating Quizzer to version $version");
     foreach ($_QUIZ_UPGRADE_SQL[$version] as $sql) {
+        if ($use_innodb) {
+            $sql = str_replace('MyISAM', 'InnoDB', $sql);
+        }
         COM_errorLog("Quizzer Plugin $version update: Executing SQL => $sql");
         DB_query($sql, '1');
         if (DB_error()) {
