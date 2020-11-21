@@ -44,7 +44,8 @@ $_SQL = array(
   `introfields` text,
   `asked` int(3) unsigned NOT NULL DEFAULT '0',
   `questions` text,
-  PRIMARY KEY (`resultID`)
+  PRIMARY KEY (`resultID`),
+  KEY `quizID` (`quizID`)
 ) ENGINE=MyISAM",
 
 'quizzer_questions' => "CREATE TABLE {$_TABLES['quizzer_questions']} (
@@ -57,6 +58,8 @@ $_SQL = array(
   `postAnswerMsg` text,
   `allowPartialCredit` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `randomizeAnswers` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `timelimit` int(4) DEFAULT '0',
+  `advanced_editor_mode` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`questionID`),
   KEY `quiz_id` (`quizID`)
 ) ENGINE=MyISAM",
@@ -76,8 +79,7 @@ $_SQL = array(
   `value` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`resultID`,`questionID`),
   UNIQUE KEY `res_q` (`resultID`,`questionID`),
-  KEY `res_orderby` (`resultID`,`orderby`),
-  CONSTRAINT `gl_quizzer_values_ibfk_1` FOREIGN KEY (`resultID`) REFERENCES `gl_quizzer_results` (`resultID`) ON DELETE CASCADE
+  KEY `res_orderby` (`resultID`,`orderby`)
 ) ENGINE=MyISAM",
 );
 
@@ -112,11 +114,14 @@ $_QUIZ_UPGRADE_SQL = array(
         "ALTER TABLE {$_TABLES['quizzer_questions']} ADD advanced_editor_mode tinyint(1) unsigned NOT NULL DEFAULT '1'",
     ),
     '0.0.5' => array(
+        "DELETE FROM {$_TABLES['quizzer_results']} WHERE quizID NOT IN
+            (SELECT quizID FROM {$_TABLES['quizzer_quizzes']})",
         "DELETE FROM {$_TABLES['quizzer_values']} WHERE resultID NOT IN
             (SELECT resultID FROM {$_TABLES['quizzer_results']}",
-        "ALTER TABLE {$_TABLES['quizzer_values']} ADD FOREIGN KEY (resultID)
-            REFERENCES {$_TABLES['quizzer_results']} (resultID)
-            ON DELETE CASCADE",
+        "DELETE FROM {$_TABLES['quizzer_questions']} WHERE quizID NOT IN
+            (SELECT quizID FROM {$_TABLES['quizzer_quizzes']})",
+        "DELETE FROM {$_TABLES['quizzer_answers']} WHERE questionID NOT IN
+            (SELECT questionID FROM {$_TABLES['quizzer_questions']})",
     );
 );
 
