@@ -38,7 +38,13 @@ class checkbox extends \Quizzer\Question
             $disabled = '';
             $sel = '';
         }
-        return '<input id="ans_id_' . $a_id . '" type="checkbox" name="a_id[]" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+        return Field::checkbox(array(
+            'id' => 'ans_id_' . $a_id,
+            'name' => 'a_id[]',
+            'value' => $a_id,
+            'disabled' => $this->have_answer > 0,
+            'checked' => $this->have_answer == $a_id,
+        ) );
     }
 
 

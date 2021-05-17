@@ -1458,17 +1458,11 @@ class Quiz
             break;
 
         case 'enabled':
-            if ($A[$fieldname] == 1) {
-                $chk = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $chk = '';
-                $enabled = 0;
-            }
-            $retval = "<input name=\"{$fieldname}_{$A['quizID']}\" " .
-                "type=\"checkbox\" $chk " .
-                "onclick='QUIZtoggleEnabled(this, \"{$A['quizID']}\", \"quiz\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' " .
-                "/>\n";
+            $retval = Field::checkbox(array(
+                'name' => $fieldname . '_' . $A['quizID'],
+                'checked' => $fieldvalue == 1,
+                'onclick' => "QUIZtoggleEnabled(this, '{$A['quizID']}', 'quiz', '{$fieldname}', '" . QUIZ_ADMIN_URL . "');",
+            ) );
             break;
 
         case 'submissions':
@@ -1482,16 +1476,19 @@ class Quiz
             break;
 
         case 'action':
-            $retval = '<select name="action"
-                onchange="javascript: document.location.href=\'' .
-                QUIZ_ADMIN_URL . '/index.php?quizID=' . $A['quizID'] .
-                '&action=\'+this.options[this.selectedIndex].value">'. "\n";
-            $retval .= '<option value="">--' . $LANG_QUIZ['select'] . '--</option>'. "\n";
-            $retval .= '<option value="resultsbyq">' . $LANG_QUIZ['resultsbyq'] . '</option>'. "\n";
-            $retval .= '<option value="results">' . $LANG_QUIZ['results'] . '</option>'. "\n";
-            $retval .= '<option value="csvbyq">' . $LANG_QUIZ['csvbyq'] . '</option>'. "\n";
-            $retval .= '<option value="csvbysubmitter">' . $LANG_QUIZ['csvbysubmitter'] . '</option>'. "\n";
-            $retval .= "</select>\n";
+            $retval = Field::select(array(
+                'name' => 'action',
+                'onchange' => "javascript: document.location.href='" .
+                    QUIZ_ADMIN_URL . '/index.php?quizID=' . $A['quizID'] .
+                    "&action='+this.options[this.selectedIndex].value>",
+                'options' => array(
+                    '-- ' . $LANG_QUIZ['select'] . ' --' => array('value' => ''),
+                    $LANG_QUIZ['resultsbyq'] => array('value' => 'resultsbyq'),
+                    $LANG_QUIZ['results'] => array('value' => 'results'),
+                    $LANG_QUIZ['csvbyq'] => array('value' => 'csvbyq'),
+                    $LANG_QUIZ['csvbysubmitter'] => array('value' => 'csvbysubmitter'),
+                ),
+            ) );
             break;
 
         default:

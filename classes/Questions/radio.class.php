@@ -11,6 +11,8 @@
  * @filesource
  */
 namespace Quizzer\Questions;
+use Quizzer\Field;
+
 
 /**
  * Class for radio button questions.
@@ -35,7 +37,13 @@ class radio extends \Quizzer\Question
             $disabled = '';
             $sel = '';
         }
-        return '<input id="ans_id_' . $a_id . '" type="radio" name="a_id" value="' . $a_id . '" ' . $disabled . ' ' . $sel . '/>';
+        return Field::radio(array(
+            'id' => 'ans_id_' . $a_id,
+            'name' => 'a_id',
+            'value' => $a_id,
+            'disabled' => $this->have_answer > 0,
+            'selected' => $this->have_answer == $a_id,
+        ) );
     }
 
 

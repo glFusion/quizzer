@@ -894,10 +894,11 @@ class Question
                 $chk = '';
                 $enabled = 0;
             }
-            $retval = "<input name=\"{$fieldname}_{$A['questionID']}\" " .
-                "type=\"checkbox\" $chk " .
-                "onclick='QUIZtoggleEnabled(this, \"{$A['questionID']}\", \"question\", \"{$fieldname}\", \"" . QUIZ_ADMIN_URL . "\");' ".
-                "/>\n";
+            $retval = Field::checkbox(array(
+                'name' => $fieldname . '_' . $A['questionID'],
+                'checked' => $fieldname == 1,
+                'onclick' => "QUIZtoggleEnabled(this, '{$A['questionID']}', 'question', '{$fieldname}', '" . QUIZ_ADMIN_URL . "');",
+            ) );
             break;
 
         case 'id':
