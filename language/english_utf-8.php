@@ -90,6 +90,7 @@ $LANG_QUIZ = array(
 'timelimit' => 'Time LImit (seconds)',
 'time_remaining' => 'Time Remaining',
 'zero_to_disable' => '(Zero to disable)',
+'preview' => 'Preview',
 );
 
 $PLG_quizzer_MESSAGE1 = 'Could not locate quiz information, resetting to the start.';

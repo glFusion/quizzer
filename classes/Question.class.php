@@ -12,6 +12,7 @@
  */
 namespace Quizzer;
 
+
 /**
  * Base class for quiz questions.
  * @package quizzer
@@ -222,7 +223,7 @@ class Question
      */
     public function Render()
     {
-        global $_CONF_QUIZ, $_CONF;
+        global $_CONF_QUIZ, $_CONF, $_SYSTEM;
 
         $retval = '';
         $saveaction = 'savedata';
@@ -246,6 +247,7 @@ class Question
         $T->set_file('question', 'question.thtml');
         // Set template variables without allowing caching
         $T->set_var(array(
+            'framework' => $_SYSTEM['framework'],
             'quizID'    => $this->quizID,
             'quizName'  => $Q->getName(),
             'num_q'     => $this->_totalAsked,
@@ -896,7 +898,7 @@ class Question
             }
             $retval = Field::checkbox(array(
                 'name' => $fieldname . '_' . $A['questionID'],
-                'checked' => $fieldname == 1,
+                'checked' => $fieldvalue == 1,
                 'onclick' => "QUIZtoggleEnabled(this, '{$A['questionID']}', 'question', '{$fieldname}', '" . QUIZ_ADMIN_URL . "');",
             ) );
             break;

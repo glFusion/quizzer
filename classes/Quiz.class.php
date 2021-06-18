@@ -12,6 +12,7 @@
  */
 namespace Quizzer;
 use Quizzer\Models\Score;
+//use glFusion\FieldList;
 
 
 /**
@@ -1056,11 +1057,12 @@ class Quiz
      */
     public function resultSummary()
     {
-        global $LANG_QUIZ;
+        global $LANG_QUIZ, $_SYSTEM;
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'results.thtml');
         $T->set_var('quiz_name', $this->quizName);
+        $T->set_var('framework', $_SYSTEM['framework']);
         /*$intro = explode('|', $this->introfields);
         $keys = array();
         $T->set_block('results', 'hdrIntroFields', 'hdrIntro');
@@ -1306,11 +1308,6 @@ class Quiz
 
         $header_arr = array(
             array(
-                'text' => 'ID',
-                'field' => 'quizID',
-                'sort' => true,
-            ),
-            array(
                 'text' => $LANG_ADMIN['edit'],
                 'field' => 'edit',
                 'sort' => false,
@@ -1319,6 +1316,17 @@ class Quiz
             array(
                 'text' => $LANG_ADMIN['copy'],
                 'field' => 'copy',
+                'sort' => false,
+                'align' => 'center',
+            ),
+            array(
+                'text' => 'ID',
+                'field' => 'quizID',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_QUIZ['preview'],
+                'field' => 'preview',
                 'sort' => false,
                 'align' => 'center',
             ),
@@ -1427,6 +1435,12 @@ class Quiz
             );
             break;
 
+        case 'preview':
+            $retval = FieldList::preview(array(
+                'url' => QUIZ_PI_URL . '/index.php?startquiz=' . $fieldvalue,
+            ) );
+            break;
+
         /*case 'questions':
             $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quizID={$A['quizID']}";
             $retval = COM_createLink(
@@ -1458,7 +1472,7 @@ class Quiz
             break;
 
         case 'enabled':
-            $retval = Field::checkbox(array(
+            $retval = FieldList::checkbox(array(
                 'name' => $fieldname . '_' . $A['quizID'],
                 'checked' => $fieldvalue == 1,
                 'onclick' => "QUIZtoggleEnabled(this, '{$A['quizID']}', 'quiz', '{$fieldname}', '" . QUIZ_ADMIN_URL . "');",
@@ -1476,11 +1490,11 @@ class Quiz
             break;
 
         case 'action':
-            $retval = Field::select(array(
+            $retval = FieldList::select(array(
                 'name' => 'action',
                 'onchange' => "javascript: document.location.href='" .
                     QUIZ_ADMIN_URL . '/index.php?quizID=' . $A['quizID'] .
-                    "&action='+this.options[this.selectedIndex].value>",
+                    "&action='+this.options[this.selectedIndex].value",
                 'options' => array(
                     '-- ' . $LANG_QUIZ['select'] . ' --' => array('value' => ''),
                     $LANG_QUIZ['resultsbyq'] => array('value' => 'resultsbyq'),
