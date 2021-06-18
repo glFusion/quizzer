@@ -157,11 +157,15 @@ jQuery(function ($) {
 {!if quiz_name}
         <div class="qz-name">{quizName}</div>
 {!endif}
+{!!if {framework} == 'uikit3' !!}
+		<progress class="uk-progress tooltip" title="{$LANG_QUIZ['question']} {q_num} of {num_q}" max="100" value="{pct}"></progress>
+{!else}
         <div class="uk-progress">
             <div class="uk-progress-bar" style="width:{pct}%">
                 {$LANG_QUIZ['question']} {q_num} of {num_q}
             </div>
         </div>
+{!endif}
 {!if adv_edit_mode}
         <div class="qz-question">{questionText}</div>
 {!else}

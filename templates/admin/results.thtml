@@ -1,41 +1,46 @@
 {# begin {templatelocation} #}
 <h2>{$LANG_QUIZ['results']}: {quiz_name}</h2>
 <a href="{site_admin_url}/plugins/quizzer/index.php?action=export&quiz_id={quiz_id}">{$LANG_QUIZ['export']}</a>
-  <table class="uk-table uk-table-hover uk-table-striped uk-table-condensed uk-width-1-1">
-    <th style="text-align:left;width:15%;">{$LANG_QUIZ['name']}</th>
+<table class="uk-table uk-table-hover uk-table-striped uk-table-condensed uk-width-1-1">
+	<tr>
+		<th style="text-align:left;width:15%;">{$LANG_QUIZ['name']}</th>
 <!-- BEGIN hdrIntroFields -->
-    <th style="text-align:left">{introfield_value}</th>
+		<th style="text-align:left">{introfield_value}</th>
 <!-- END hdrIntroFields -->
-    <th style="text-align:center;">{$LANG_QUIZ['score']}</th>
-    <th style="text-align:center;">{$LANG_QUIZ['completed']}</th>
-    <th style="text=align:center;">{$LANG_ADMIN['delete']}</th>
+		<th style="text-align:center;">{$LANG_QUIZ['score']}</th>
+		<th style="text-align:center;">{$LANG_QUIZ['completed']}</th>
+		<th style="text=align:center;">{$LANG_ADMIN['delete']}</th>
 <!-- BEGIN DataRows -->
-    <tr>
-      <td><a href="{site_admin_url}/plugins/quizzer/index.php?viewresult={res_id}">{username}</a></td>
+	</tr>
+	<tr>
+		<td><a href="{site_admin_url}/plugins/quizzer/index.php?viewresult={res_id}">{username}</a></td>
 <!-- BEGIN dataIntroFields -->
-      <td>{introfield_value}</td>
+		<td>{introfield_value}</td>
 <!-- END dataIntroFields -->
+		<td>
 {!if prog_status}
-      <td>
-        <div class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}">
-            <div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
-        </div>
-      </td>
+{!!if {framework} == 'uikit3' !!}
+			<progress class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}" max="100" value="{pct}"></progress>
 {!else}
-      <td></td>
+			<div class="uk-progress uk-progress-{prog_status} tooltip" title="{correct} / {total}">
+				<div class="uk-progress-bar" style="width:{pct}%">{pct}%</div>
+			</div>
 {!endif}
-      <td style="width:20px;text-align:center;white-space:nowrap;">
+{!endif}
+		</td>
+		<td style="width:20px;text-align:center;white-space:nowrap;">
 {!if all_answered}
-        <i class="uk-icon uk-icon-check uk-text-success"></i>
+			<i class="uk-icon uk-icon-check uk-text-success"></i>
 {!else}
-        {total_a} / {total}
+			{total_a} / {total}
 {!endif}
-      <td style="width:20px;text-align:center;">
-        <a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
-            onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
-         <i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
-      </td>
-    </tr>
+		</td>
+		<td style="width:20px;text-align:center;">
+			<a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
+				onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
+			<i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
+		</td>
+	</tr>
 <!-- END DataRows -->
-  </table>
+</table>
 {# end {templatelocation} #}
