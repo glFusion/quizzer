@@ -1472,7 +1472,7 @@ class Quiz
             break;
 
         case 'enabled':
-            $retval = FieldList::checkbox(array(
+            $retval = Field::checkbox(array(
                 'name' => $fieldname . '_' . $A['quizID'],
                 'checked' => $fieldvalue == 1,
                 'onclick' => "QUIZtoggleEnabled(this, '{$A['quizID']}', 'quiz', '{$fieldname}', '" . QUIZ_ADMIN_URL . "');",
@@ -1490,7 +1490,7 @@ class Quiz
             break;
 
         case 'action':
-            $retval = FieldList::select(array(
+            $retval = Field::select(array(
                 'name' => 'action',
                 'onchange' => "javascript: document.location.href='" .
                     QUIZ_ADMIN_URL . '/index.php?quizID=' . $A['quizID'] .
