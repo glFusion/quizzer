@@ -17,7 +17,7 @@ function confirmDelete()
 				<span id="hlp_quiz_id" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<input required class="uk-input uk-form-small uk-form-width-medium" id="f_id" type="text" size="32" name="quizID" value="{quizID}" />
+				<input required class="uk-input uk-form-small uk-form-width-medium" id="f_id" type="text" name="quizID" value="{quizID}" />
 				<i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
 			</div>
 		</div>
@@ -27,7 +27,7 @@ function confirmDelete()
 				<span id="hlp_quiz_name" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<input required class="uk-input uk-form-small uk-form-width-medium" id="f_name" type="text" size="32" name="quizName" value="{quizName}" />
+				<input required class="uk-input uk-form-small uk-form-width-medium" id="f_name" type="text" name="quizName" value="{quizName}" />
 				<i class="uk-icon uk-icon-warning uk-text-danger tooltip" title="{$LANG_QUIZ['required']}"></i>
 			</div>
 		</div>
@@ -65,7 +65,7 @@ function confirmDelete()
 				<span id="hlp_num_q" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<input class="uk-input uk-form-small uk-form-width-xsmall" id="f_num_q" type="text" value="{questionsAsked}" name="questionsAsked" size="3" />
+				<input class="uk-input uk-form-small uk-form-width-xsmall" id="f_num_q" type="text" value="{questionsAsked}" name="questionsAsked" />
 			</div>
 		</div>
 
@@ -74,7 +74,7 @@ function confirmDelete()
 				<span id="hlp_levels" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<input class="uk-input uk-form-small uk-form-width-xsmall" id="f_levels" type="text" value="{levels}" name="levels" size="15" />
+				<input class="uk-input uk-form-small uk-form-width-xsmall" id="f_levels" type="text" value="{levels}" name="levels" />
 			</div>
 		</div>
 
