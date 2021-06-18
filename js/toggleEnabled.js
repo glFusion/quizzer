@@ -18,8 +18,21 @@ var QUIZtoggleEnabled = function(cbox, id, type, component) {
         success: function(result) {
             cbox.checked = result.newval == 1 ? true : false;
             try {
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
-            }
+				var icon = '<i class="uk-icon uk-icon-check"></i>&nbsp;';
+				if (typeof UIkit.notify === 'function') {
+					// uikit v2 theme
+				    UIkit.notify(icon + result.statusMessage, {timeout: 1000});
+				} else if (typeof UIkit.notification === 'function') {
+					// uikit v3 theme
+					UIkit.notification({
+				        message: icon + result.statusMessage,
+					    timeout: 1000,
+						status: 'success',
+					});
+				} else {
+					alert(result.statusMessage);
+				}
+			}
             catch(err) {
                 alert(result.statusMessage);
             }
