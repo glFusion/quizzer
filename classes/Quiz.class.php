@@ -473,7 +473,7 @@ class Quiz
      */
     public function getQuestions()
     {
-        return $this->questions;
+        return Question::getQuestions($this->quizID, 0, false);
     }
 
 
@@ -837,8 +837,8 @@ class Quiz
         // If still no valid ID, do nothing
         if ($quizID == '') return;
 
-        Result::resetQuiz();    // deletes all related results and values
-        Question::deleteQuiz(); // deletes all quesitons and answers
+        Result::resetQuiz($quizID);    // deletes all related results and values
+        Question::deleteQuiz($quizID); // deletes all quesitons and answers
         DB_delete($_TABLES['quizzer_quizzes'], 'quizID', $quizID);
         Cache::clear();
     }
@@ -871,29 +871,6 @@ class Quiz
             break;
         }
         return $retval;
-    }
-
-
-    /**
-     * Duplicate this quiz.
-     * Creates a copy of this quiz with all its fields.
-     *
-     * @uses    Question::Duplicate()
-     * @return  string      Error message, empty if successful
-     */
-    public function Duplicate()
-    {
-        $this->quizName .= ' -Copy';
-        $this->quizID = COM_makeSid();
-        $this->isNew = true;
-        $this->SaveDef();
-
-        foreach ($this->questions as $Q) {
-            $Q->frm_id = $this->quizID;
-            $msg = $F->Duplicate();
-            if (!empty($msg)) return $msg;
-        }
-        return '';
     }
 
 
@@ -1299,7 +1276,7 @@ class Quiz
      */
     public static function adminList()
     {
-        global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $perm_sql;
+        global $_CONF, $_TABLES, $LANG_ADMIN, $LANG_QUIZ, $perm_sql, $LANG01;
 
         // Import administration functions
         USES_lib_admin();
@@ -1313,12 +1290,12 @@ class Quiz
                 'sort' => false,
                 'align' => 'center',
             ),
-            array(
+            /*array(
                 'text' => $LANG_ADMIN['copy'],
                 'field' => 'copy',
                 'sort' => false,
                 'align' => 'center',
-            ),
+            ),*/
             array(
                 'text' => 'ID',
                 'field' => 'quizID',
@@ -1376,20 +1353,40 @@ class Quiz
             ) as submissions
             FROM {$_TABLES['quizzer_quizzes']} q
             WHERE 1=1 $perm_sql";
-        $text_arr = array();
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => QUIZ_ADMIN_URL . "/index.php",
+            'has_limit' => true,
+            'has_paging' => true,
+            'has_search' => true,
+        );
+        $options_arr = array(
+            'chkselect' => 'true',
+            'chkname'   => 'delfield',
+            'chkfield'  => 'quizID',
+            'chkactions' => '<button name="delQuizmulti" type="submit" '
+                . 'class="uk-text-danger"'
+                . 'style="vertical-align:text-bottom;" title="' . $LANG01[124]
+                . '" onclick="return confirm(\'' . $LANG01[125] . '\');"'
+                . '><i class="uk-icon uk-icon-minus"></i></button>',
+
+        );
         $query_arr = array(
             'table' => 'quizzer_quizzes',
             'sql' => $sql,
             'query_fields' => array('quizName'),
             'default_filter' => ''
         );
-        $defsort_arr = array('field' => 'quizName', 'direction' => 'ASC');
+        $defsort_arr = array(
+            'field' => 'quizName',
+            'direction' => 'ASC',
+        );
         $form_arr = array();
         $retval .= ADMIN_list(
             'quizzer_quizes',
             array(__CLASS__,  'getAdminField'),
             $header_arr,
-            $text_arr, $query_arr, $defsort_arr, '', '', '', $form_arr
+            $text_arr, $query_arr, $defsort_arr, '', '', $options_arr, $form_arr
         );
 
         return $retval;
@@ -1427,13 +1424,13 @@ class Quiz
             );
             break;
 
-        case 'copy':
+        /*case 'copy':
             $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quizID={$A['quizID']}";
             $retval = COM_createLink(
                 Icon::getHTML('copy'),
                 $url
             );
-            break;
+            break;*/
 
         case 'preview':
             $retval = FieldList::preview(array(

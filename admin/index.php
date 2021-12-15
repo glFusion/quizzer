@@ -33,7 +33,7 @@ $action = 'listquizzes';      // Default view
 $expected = array(
     'edit','updateform','editquestion', 'updatequestion',
     'savequiz', 'print', 'editresult', 'updateresult', 'resetquiz',
-    'editquiz', 'copyform', 'delbutton_x', 'showhtml',
+    'editquiz', 'delQuizmulti', 'showhtml',
     'moderate',
     'savereward', 'delreward',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
@@ -125,32 +125,14 @@ case 'updatequestion':
     $view = 'editquiz';
     break;
 
-case 'delbutton_x':
+case 'delQuizmulti':
     if (isset($_POST['delfield']) && is_array($_POST['delfield'])) {
         // Deleting one or more fields
         foreach ($_POST['delfield'] as $key=>$value) {
-            Field::Delete($value);
+            Quizzer\Quiz::DeleteDef($value);
         }
-    } elseif (isset($_POST['delresmulti']) && is_array($_POST['delresmulti'])) {
-        foreach ($_POST['delresmulti'] as $key=>$value) {
-            Quizzer\Result::Delete($value);
-        }
-        $view = 'results';
     }
     CTL_clearCache();   // so the autotags will pick it up.
-    break;
-
-case 'copyform':
-    $F = new Quizzer\Quiz($quizID);
-    $msg = $F->Duplicate();
-    if (empty($msg)) {
-        echo COM_refresh(
-            QUIZ_ADMIN_URL . '/index.php?editquiz=x&amp;quizID=' . $F->id
-        );
-        exit;
-    } else {
-        $view = 'listquizzes';
-    }
     break;
 
 case 'savequiz':

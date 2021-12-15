@@ -464,25 +464,27 @@ class Question
      * @param   array   $A  Array of name->value pairs
      * @return  string          Error message, or empty string for success
      */
-    public function SaveDef($A = '')
+    public function SaveDef(?array $A)
     {
         global $_TABLES;
 
-        $questionID = isset($A['questionID']) ? (int)$A['questionID'] : 0;
-        $quizID = isset($A['quizID']) ? COM_sanitizeID($A['quizID']) : '';
-        if ($quizID == '') {
+        if (is_array($A)) {
+            $questionID = isset($A['questionID']) ? (int)$A['questionID'] : 0;
+            $quizID = isset($A['quizID']) ? COM_sanitizeID($A['quizID']) : '';
+            $this->setVars($A, false);
+        }
+
+        if ($this->quizID == '') {
             return 'Invalid form ID';
         }
-        if (empty($A['questionType'])) {
+        if (empty($this->questionType)) {
             return;
         }
 
-        $this->setVars($A, false);
-
-        if ($questionID > 0) {
+        if ($this->questionID > 0) {
             // Existing record, perform update
             $sql1 = "UPDATE {$_TABLES['quizzer_questions']} SET ";
-            $sql3 = " WHERE questionID = $questionID";
+            $sql3 = " WHERE questionID = {$this->questionID}";
         } else {
             $sql1 = "INSERT INTO {$_TABLES['quizzer_questions']} SET ";
             $sql3 = '';
@@ -504,7 +506,7 @@ class Question
         if (DB_error()) {
             return 5;
         }
-        if ($questionID == 0) {
+        if ($this->questionID == 0) {
             $this->questionID = DB_insertID();
         }
 
@@ -564,7 +566,7 @@ class Question
     {
         global $_TABLES;
 
-        $sql = "DELETE q, v FROM {$_TABLES['quizzer_questions']} q
+        $sql = "DELETE q, ans FROM {$_TABLES['quizzer_questions']} q
             JOIN {$_TABLES['quizzer_answers']} ans
             ON ans.questionID = q.questionID
             WHERE q.quizID = '" . DB_escapeString($quiz_id) . "'";
@@ -588,26 +590,6 @@ class Question
             return false;
 
         return Value::Save($res_id, $this->questionID, $value);
-    }
-
-
-    /**
-     * Copy this question to another quiz.
-     *
-     * @see     Quiz::Duplicate()
-     */
-    public function Duplicate()
-    {
-        global $_TABLES;
-
-        $sql .= "INSERT INTO {$_TABLES['quizzer_questions']} SET
-                quizID = '" . DB_escapeString($this->quizID) . "',
-                type = '" . DB_escapeString($this->questionType) . "',
-                enabled = {$this->enabled},
-                help_msg = '" . DB_escapeString($this->help_msg) . "'";
-        DB_query($sql, 1);
-        $msg = DB_error() ? 5 : '';
-        return $msg;
     }
 
 
