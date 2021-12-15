@@ -12,6 +12,7 @@
  */
 namespace Quizzer\Questions;
 use Quizzer\Value;
+use Quizzer\Field;
 
 
 /**
