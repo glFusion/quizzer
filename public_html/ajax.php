@@ -14,6 +14,10 @@
 /** Include required glFusion common functions */
 require_once '../lib-common.php';
 
+$retval = array(
+    'invalid' => 1,
+);
+
 switch ($_POST['action']) {
 case 'saveresponse':
     $forfeit = (isset($_POST['forfeit']) && $_POST['forfeit'] == 1);

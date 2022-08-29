@@ -11,6 +11,8 @@
  * @filesource
  */
 namespace Quizzer;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -59,13 +61,21 @@ class Answer
     {
         global $_TABLES;
 
-        $q_id = (int)$q_id;
         $retval = array();
-        $sql = "SELECT * FROM {$_TABLES['quizzer_answers']}
-            WHERE questionID = '{$q_id}'";
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_answers']}
+                WHERE questionID = ?",
+                array($q_id),
+                array(Database::INTEGER)
+            )->fetchAll(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
                 $retval[$A['answerID']] = new self($A);
             }
         }
@@ -104,18 +114,34 @@ class Answer
     {
         global $_TABLES;
 
-        $answerText = DB_escapeString($this->answerText);
-        $sql = "INSERT INTO {$_TABLES['quizzer_answers']} SET
-                questionID = '{$this->getQid()}',
-                answerID = '{$this->getAid()}',
-                answerText = '$answerText',
-                is_correct = '{$this->isCorrect()}'
-            ON DUPLICATE KEY UPDATE
-                answerText = '$answerText',
-                is_correct = '{$this->isCorrect()}'";
-        DB_query($sql);
-        if (DB_error()) {
-            return 6;
+        $retval = '0';  // success message number
+        $qb = Database::getInstance()->conn->createQueryBuilder();
+        $qb->setParameter('qid', $this->getQid(), Database::INTEGER)
+           ->setParameter('aid', $this->getAid(), Database::INTEGER)
+           ->setParameter('text', $this->answerText, Database::STRING)
+           ->setParameter('correct', $this->isCorrect(), Database::INTEGER);
+        try {
+            $qb->insert($_TABLES['quizzer_answers'])
+                ->setValue('questionID', ':qid')
+                ->setValue('answerID', ':aid')
+                ->setValue('answerText', ':text')
+                ->setvalue('is_correct', ':correct')
+                ->execute();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
+            try {
+            $qb->update($_TABLES['quizzer_answers'])
+                ->set('questionID', ':qid')
+                ->set('answerID', ':aid')
+                ->set('answerText', ':text')
+                ->set('is_correct', ':correct')
+                ->execute();
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, $e->getMessage());
+                $retval = '6';
+            }
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $retval = '6';
         }
         Cache::clear(array('answers', $this->questionID));
         return 0;
@@ -126,18 +152,20 @@ class Answer
      * Delete the current question definition.
      *
      * @param   integer $q_id       ID number of the question
-     * @param   string  $a_id       Comma-separated answer IDs
+     * @param   array   $a_ids      Array of answer IDs
      */
-    public static function Delete($q_id, $a_id)
+    public static function Delete(int $q_id, array $a_ids) : void
     {
         global $_TABLES;
 
-        $q_id = (int)$q_id;
-        $a_id= DB_escapeString($a_id);
-        $sql = "DELETE FROM {$_TABLES['quizzer_answers']}
-            WHERE questionID = $q_id
-            AND answerID IN ($a_id)";
-        DB_query($sql);
+        $db = Database::getInstance();
+        $db->conn->executeUpdate(
+            "DELETE FROM {$_TABLES['quizzer_answers']}
+            WHERE questionID = ?
+            AND answerID IN ($?)",
+            array($q_id, $a_ids),
+            array(Databaes::INTEGER, Database::PARAM_INT_ARRAY)
+        );
     }
 
 
@@ -255,4 +283,3 @@ class Answer
 
 }
 
-?>

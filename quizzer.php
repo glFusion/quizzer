@@ -3,9 +3,9 @@
  * Table definitions and other static config variables.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.4
+ * @version     v0.1.1
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
@@ -35,9 +35,8 @@ $_TABLES['quizzer_values']   = $_DB_table_prefix . 'quizzer_values';
  */
 global $_CONF_QUIZ;
 $_CONF_QUIZ['pi_name']           = 'quizzer';
-$_CONF_QUIZ['pi_version']        = '0.0.4';
-$_CONF_QUIZ['gl_version']        = '1.7.8';
-$_CONF_QUIZ['pi_url']            = 'http://www.leegarner.com';
+$_CONF_QUIZ['pi_version']        = '0.1.1';
+$_CONF_QUIZ['gl_version']        = '2.0.0';
+$_CONF_QUIZ['pi_url']            = 'http://www.glfusion.org';
 $_CONF_QUIZ['pi_display_name']   = 'Quizzer';
 
-?>

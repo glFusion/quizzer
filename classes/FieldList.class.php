@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2021 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.4
+ * @version     v0.1.0
  * @since       v0.0.4
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,7 +18,7 @@ namespace Quizzer;
  * Class to handle custom fields.
  * @package quizzer
  */
-class FieldList // extends \glFusion\FieldList
+class FieldList extends \glFusion\FieldList
 {
     private static $t = NULL;
 
@@ -66,6 +66,61 @@ class FieldList // extends \glFusion\FieldList
             }
         }
         $t->parse('output','field-preview');
+        return $t->finish($t->get_var('output'));
+    }
+
+
+    public static function refresh($args)
+    {
+        $t = self::init();
+        $t->set_block('field','field-refresh');
+
+        $txt_style = 'danger';
+        if (isset($args['url'])) {
+            $t->set_var('refresh_url',$args['url']);
+        } else {
+            $t->set_var('refresh_url','#');
+        }
+        if (isset($args['style'])) {
+            $txt_style = $args['style'];
+        }
+        $t->set_var('txt_style', $txt_style);
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-refresh','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-refresh',true);
+        return $t->finish($t->get_var('output'));
+    }
+
+
+    public static function question($args)
+    {
+        $t = self::init();
+        $t->set_block('field','field-question');
+
+        $txt_style = '';
+        if (isset($args['style'])) {
+            $txt_style = $args['style'];
+        }
+        $t->set_var('txt_style', $txt_style);
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-question','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-question',true);
         return $t->finish($t->get_var('output'));
     }
 

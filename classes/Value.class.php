@@ -3,14 +3,17 @@
  * Base class to handle quiz values (user-supplied answers).
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzes
- * @version     v0.0.3
+ * @version     v0.1.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
+
 
 /**
  * Class for answer values.
@@ -69,30 +72,34 @@ class Value
      * @param   integer     $questionID       Question ID
      * @return  boolean     Status from setVars()
      */
-    public function Read($resultID = 0, $questionID = 0)
+    public function Read(?int $resultID, ?int $questionID) : bool
     {
         global $_TABLES;
 
-        if ($resultID > 0) {
+        if (!empty($resultID)) {
             $this->resultID = (int)$resultID;
         }
-        if ($questionID > 0) {
+        if (!empty($questionID)) {
             $this->questionID = (int)$questionID;
         }
-        $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE resultID = {$this->resultID} AND questionID = {$this->questionID}";
-        $res = DB_query($sql, 1);
-        if (DB_error() || !$res) {
-            return false;
+        try {
+            $data = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_values']}
+                WHERE resultID = ? AND questionID = ?",
+                array($this->resultID, $this->questionID),
+                array(Database::INTEGER, Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
         }
-        $A = DB_fetchArray($res, false);
-        if ($this->setVars($A, true)) {
-            $this->isNew = false;
-            return true;
-        } else {
-            $this->isNew = true;
-            return false;
+        if (!empty($data)) {
+            if ($this->setVars($data, true)) {
+                $this->isNew = false;
+                return true;
+            }
         }
+        return false;
     }
 
 
@@ -135,17 +142,37 @@ class Value
      * @param   integer $resultID     Resultset ID
      * @param   integer $questionID       Question ID
      */
-    public static function Delete($resultID = 0, $questionID = 0)
+    public static function Delete(int $resultID, int $questionID) : void
     {
         global $_TABLES;
 
-        DB_delete(
-            $_TABLES['quizzer_values'],
-            array('resultID', 'questionID'),
-            array($resultID,$questionID)
-        );
+        try {
+            Database::getInstance()->conn->delete(
+                $_TABLES['quizzer_values'],
+                array(
+                    'resultID' => $resultID,
+                    'questionID' => $questionID,
+                ),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
+
+/*    public static function resetQuiz(string $quizID) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['quizzer_values'],
+                array('')
+
+    }
+ */
 
     /**
      * Create a set of answer records for a new result set.
@@ -155,7 +182,7 @@ class Value
      * @param   integer $resultID     Result ID
      * @param   array   $questions  Array of question IDs
      */
-    public static function createResultSet($resultID, $questions)
+    public static function createResultSet(int $resultID, array $questions) : void
     {
         global $_TABLES;
 
@@ -167,9 +194,14 @@ class Value
             $values[] = "($resultID, $i, $questionID)";
         }
         $values = implode(',', $values);
-        $sql = "INSERT INTO {$_TABLES['quizzer_values']}
-            (resultID, orderby, questionID) VALUES $values";
-        DB_query($sql);
+        try {
+            Database::getInstance()->conn->executeStatement(
+                "INSERT INTO {$_TABLES['quizzer_values']}
+                (resultID, orderby, questionID) VALUES $values"
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -188,13 +220,14 @@ class Value
 
     /**
      * Save this value to the database.
+     * The resultset has already been created so only an UPDATE is needed.
      *
      * @param   integer $resultID     Resultset ID
      * @param   integer $questionID       Question ID
      * @param   integer|array   $values     Value(s) of answer
      * @return  boolean     True on success, False on failure
      */
-    public static function Save($resultID, $questionID, $values)
+    public static function Save(int $resultID, int $questionID, $values) : bool
     {
         global $_TABLES;
 
@@ -208,20 +241,20 @@ class Value
             if (!is_array($values)) {
                 $values = array($values);
             }
-            $values = DB_escapeString(@serialize($values));
+            $values = @serialize($values);
         }
-        /*$sql = "INSERT INTO {$_TABLES['quizzer_values']}
-                    (resultID, questionID, value)
-                VALUES
-                    ('$resultID', '$questionID', '$value')
-                ON DUPLICATE KEY
-                UPDATE value = '$value'";*/
-        $sql = "UPDATE {$_TABLES['quizzer_values']}
-            SET value = '$values'
-            WHERE resultID = $resultID AND questionID = $questionID";
-        DB_query($sql, 1);
-        $status = DB_error();
-        return $status ? false : true;
+        try {
+            Database::getInstance()->conn->update(
+                $_TABLES['quizzer_values'],
+                array('value' => $values),
+                array('resultID' => $resultID, 'questionID' => $questionID),
+                array(Database::STRING, Database::INTEGER, Database::INTEGER)
+            );
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -231,15 +264,27 @@ class Value
      * @param   integer $resultID     Result set ID
      * @return  integer     ID of the question to be presented
      */
-    public static function getFirstUnanswered($resultID)
+    public static function getFirstUnanswered(int $resultID) : int
     {
         global $_TABLES;
 
-        return (int)DB_getItem(
-            $_TABLES['quizzer_values'],
-            'questionID',
-            "resultID = $resultID AND value IS NULL ORDER BY resultID,orderby ASC LIMIT 1"
-        );
+        try {
+            $data = Database::getInstance()->conn->executeQuery(
+                "SELECT questionID FROM {$_TABLES['quizzer_values']}
+                WHERE resultID = ? AND value IS NULL
+                ORDER BY resultID,orderby ASC LIMIT 1",
+                array($resultID),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            return (int)$data['resultID'];
+        } else {
+            return 0;
+        }
     }
 
 
@@ -248,19 +293,29 @@ class Value
      * Used for scoring overall results by submitter
      *
      * @param   integer $resultID Resultset ID
-     * @return  objecdt         Value object
+     * @return  array   Array of Value objects
      */
-    public static function getByResult($resultID)
+    public static function getByResult(int $resultID) : array
     {
         global $_TABLES;
 
         $vals = array();
-        $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE resultID = $resultID
-                ORDER BY orderby ASC";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $vals[$A['orderby']] = new self($A);
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_values']}
+                WHERE resultID = ?
+                ORDER BY orderby ASC",
+                array($resultID),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $vals[$A['orderby']] = new self($A);
+            }
         }
         return $vals;
     }
@@ -271,19 +326,29 @@ class Value
      * Used for scoring overall results by question.
      *
      * @param   integer $questionID   Question ID
-     * @return  objecdt         Value object
+     * @return  array       Array of Value objects
      */
-    public static function getByQuestion($questionID)
+    public static function getByQuestion(int $questionID) : array
     {
         global $_TABLES;
 
         $vals = array();
         $questionID = (int)$questionID;
-        $sql = "SELECT * FROM {$_TABLES['quizzer_values']}
-                WHERE questionID = $questionID";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $vals[] = new self($A);
+        try {
+            $stmt = Database::getInstance()->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_values']}
+                WHERE questionID = ?",
+                array($questionID),
+                array(Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $stmt = false;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetchAssociative()) {
+                $vals[] = new self($A);
+            }
         }
         return $vals;
     }
@@ -369,4 +434,3 @@ class Value
 
 }
 
-?>

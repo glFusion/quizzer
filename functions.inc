@@ -81,6 +81,8 @@ spl_autoload_register(function ($class)
         require $file;
     }
 });
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 /**
  * Called by the plugin Editor to display the current plugin code version.
@@ -391,8 +393,17 @@ function plugin_user_move_quizzer($origUID, $destUID)
     $origUID = (int)$origUID;
     $destUID = (int)$destUID;
 
-    DB_query("UPDATE {$_TABLES['quizzer_results']}
-            SET uid = $destUID WHERE uid = $origUID", 1);
+    $db = Database::getInstance();
+    try {
+        $db->conn->executeUpdate(
+            "UPDATE {$_TABLES['quizzer_results']}
+            SET uid = ? WHERE uid = ?",
+            array($destUID, $origUID),
+            array(Database::INTEGER, Database::INTEGER)
+        );
+    } catch (\Throwable $e) {
+        Log::write('system', Log::ERROR, $e->getMessage());
+    }
 }
 
 
@@ -421,10 +432,17 @@ function QUIZ_GetGroups($selected=0)
 
     $A = array();
 
-    $query = "SELECT grp_id, grp_name FROM {$_TABLES['groups']}";
-    $result = DB_query($query, 1);
-    if ($result && DB_numRows($result) > 0) {
-        while ($row = DB_fetchArray($result)) {
+    $db = Database::getInstance();
+    try {
+        $data = $db->conn->executeQuery(
+            "SELECT grp_id, grp_name FROM {$_TABLES['groups']}",
+        )->fetchAll(Database::ASSOCIATIVE);
+    } catch (\Throwable $e) {
+        Log::write('system', Log::ERROR, $e->getMessage());
+        $data = NULL;
+    }
+    if (is_array($data)) {
+        foreach ($data as $row) {
             $row['grp_name'] = htmlspecialchars($row['grp_name']);
             $A[$row['grp_name']] = $row['grp_id'];
         }
@@ -475,4 +493,3 @@ function QUIZ_getVar($A, $varname, $type = 'string', $default = NULL)
     }
 }
 
-?>

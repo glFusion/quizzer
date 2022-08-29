@@ -3,9 +3,9 @@
 *   Provides automatic installation of the Quizzer plugin.
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
 *   @package    quizzer
-*   @version    0.0.1
+*   @version    v0.1.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
@@ -14,6 +14,8 @@
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 /** @global string $_DB_dbms */
 global $_DB_dbms;
@@ -87,7 +89,11 @@ function plugin_install_quizzer()
 {
     global $INSTALL_plugin, $_CONF_QUIZ;
 
-    COM_errorLog("Attempting to install the {$_CONF_QUIZ['pi_display_name']} plugin", 1);
+    Log::write(
+        'system',
+        Log::INFO,
+        "Attempting to install the {$_CONF_QUIZ['pi_display_name']} plugin"
+    );
 
     $ret = INSTALLER_install($INSTALL_plugin[$_CONF_QUIZ['pi_name']]);
     if ($ret > 0) {
@@ -110,9 +116,13 @@ function plugin_load_configuration_quizzer()
     require_once __DIR__ . '/install_defaults.php';
 
     // Get the admin group ID that was saved previously.
-    $group_id = (int)DB_getItem($_TABLES['groups'], 'grp_id',
-            "grp_name='{$_CONF_QUIZ['pi_name']} Admin'");
+    $db = Database::getInstance();
+    $group_id = (int)$db->getItem(
+        $_TABLES['groups'],
+        'grp_id',
+        array('grp_name' => "{$_CONF_QUIZ['pi_name']} Admin"),
+        array(Database::STRING)
+    );
     return plugin_initconfig_quizzer($group_id);
 }
 
-?>

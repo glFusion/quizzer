@@ -3,14 +3,16 @@
  * Base class to handle quiz questions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.3
+ * @version     v0.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -176,12 +178,23 @@ class Question
         $cache_key = 'question_' . $id;
         $A = Cache::get($cache_key);
         if ($A === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                    WHERE questionID = $id";
-            $res = DB_query($sql, 1);
-            if (DB_error() || !$res) return false;
-            $A = DB_fetchArray($res, false);
-            Cache::set($cache_key, $A, array('questions', $A['quizID']));
+            $db = Database::getInstance();
+            try {
+                $A = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['quizzer_questions']}
+                    WHERE questionID = ?",
+                    array($id),
+                    array(Database::INTEGER)
+                )->fetch(Database::ASSOCIATIVE);
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
+                $data = NULL;
+            }
+            if (is_array($A)) {
+                Cache::set($cache_key, $A, array('questions', $A['quizID']));
+            } else {
+                $A = false;
+            }
         }
         return $A;
     }
@@ -414,8 +427,12 @@ class Question
             ) );
         }
         $T->set_var(array(
-            'quiz_name' => DB_getItem($_TABLES['quizzer_quizzes'], 'quizName',
-                            "quizID='" . DB_escapeString($this->quizID) . "'"),
+            'quiz_name' => $db->getItem(
+                $_TABLES['quizzer_quizzes'],
+                'quizName',
+                array('quizID' => $this->quizID),
+                array(Database::INTEGER)
+            ),
             'quizID'   => $this->quizID,
             'questionID'    => $this->questionID,
             'question'      => $this->questionText,
@@ -481,33 +498,52 @@ class Question
             return;
         }
 
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
         if ($this->questionID > 0) {
             // Existing record, perform update
-            $sql1 = "UPDATE {$_TABLES['quizzer_questions']} SET ";
-            $sql3 = " WHERE questionID = {$this->questionID}";
+            $qb->update($_TABLES['quizzer_questions'])
+               ->set('quizID', ':quizID')
+               ->set('questionType', ':questionType')
+               ->set('enabled', ':enabled')
+               ->set('help_msg', ':help_msg')
+               ->set('questionText', ':questionText')
+               ->set('postAnswerMsg', ':postAnswerMsg')
+               ->set('allowPartialCredit', ':allowPartialCredit')
+               ->set('randomizeAnswers', ':randomizeAnswers')
+               ->set('timelimit', ':timelimit')
+               ->set('advanced_editor_mode', ':advanced_editor_mode')
+               ->where('questionID = :questionID');
         } else {
-            $sql1 = "INSERT INTO {$_TABLES['quizzer_questions']} SET ";
-            $sql3 = '';
+            $qb->insert($_TABLES['quizzer_questions'])
+               ->setValue('quizID', ':quizID')
+               ->setValue('questionType', ':questionType')
+               ->setValue('enabled', ':enabled')
+               ->setValue('help_msg', ':help_msg')
+               ->setValue('questionText', ':questionText')
+               ->setValue('postAnswerMsg', ':postAnswerMsg')
+               ->setValue('allowPartialCredit', ':allowPartialCredit')
+               ->setValue('randomizeAnswers', ':randomizeAnswers')
+               ->setValue('timelimit', ':timelimit')
+               ->setValue('advanced_editor_mode', ':advanced_editor_mode');
         }
-
-        $sql2 = "quizID = '" . DB_escapeString($this->quizID) . "',
-            questionType = '" . DB_escapeString($this->questionType) . "',
-            enabled = '{$this->enabled}',
-            help_msg = '" . DB_escapeString($this->help_msg) . "',
-            questionText = '" . DB_escapeString($this->questionText) . "',
-            postAnswerMsg = '" . DB_escapeString($this->postAnswerMsg) . "',
-            allowPartialCredit = '{$this->allowPartialCredit}',
-            randomizeAnswers = '{$this->randomizeAnswers}',
-            timelimit='{$this->getTimelimit()}',
-            advanced_editor_mode='{$this->advanced_editor_mode}'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (DB_error()) {
+        $qb->setParameter('questionID', $this->questionID, Database::INTEGER)
+            ->setParameter('quizID', $this->quizID, Database::INTEGER)
+            ->setParameter('questionType', $this->questionType, Database::STRING)
+            ->setParameter('enabled', $this->enabled, Database::INTEGER)
+            ->setParameter('help_msg', $this->help_msg, Database::STRING)
+            ->setParameter('questionText', $this->questionText, Database::STRING)
+            ->setParameter('postAnswerMsg', $this->postAnswerMsg, Database::STRING)
+            ->setParameter('allowPartialCredit', $this->allowPartialCredit, Database::INTEGER)
+            ->setParameter('randomizeAnswers', $this->randomizeAnswers, Database::INTEGER)
+            ->setParameter('timelimit', $this->getTimelimit(), Database::INTEGER)
+            ->setParameter('advanced_editor_mode', $this->advanced_editor_mode, Database::INTEGER);
+        try {
+            $qb->execute();
+            $this->questionID = $db->conn->lastInsertId();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
             return 5;
-        }
-        if ($this->questionID == 0) {
-            $this->questionID = DB_insertID();
         }
 
         // Now save the answer options
@@ -515,7 +551,6 @@ class Question
         $to_del = array();
         for ($i = 1; $i <= $count; $i++) {
             if (!empty($A['opt'][$i])) {
-                $answer = DB_escapeString($A['opt'][$i]);
                 if ($this->questionType == 'radio') {
                     $correct = isset($A['correct']) && $A['correct'] == $i ? 1 : 0;
                 } else {
@@ -545,15 +580,21 @@ class Question
      *
      * @param  integer $questionID     ID number of the question
      */
-    public static function Delete($questionID)
+    public static function Delete(int $questionID) : void
     {
         global $_TABLES;
 
-        $sql = "DELETE q, v FROM {$_TABLES['quizzer_questions']} q
-            JOIN {$_TABLES['quizzer_answers']} ans
-            ON ans.questionID = q.questionID
-            WHERE q.questionID = $questionID";
-        DB_query ($sql);
+        $db = Database::getInstance();
+        $db->conn->delete(
+            $_TABLES['quizzer_questions'],
+            array('questionID' => $questionID),
+            array(Database::INTEGER)
+        );
+        $db->conn->delete(
+            $_TABLES['quizzer_answers'],
+            array('questionID' => $questionID),
+            array(Database::INTEGER)
+        );
     }
 
 
@@ -562,15 +603,23 @@ class Question
      *
      * @param   string  $quiz_id    Quiz ID
      */
-    public static function deleteQuiz($quiz_id)
+    public static function deleteQuiz(string $quiz_id) : void
     {
         global $_TABLES;
 
-        $sql = "DELETE q, ans FROM {$_TABLES['quizzer_questions']} q
-            JOIN {$_TABLES['quizzer_answers']} ans
-            ON ans.questionID = q.questionID
-            WHERE q.quizID = '" . DB_escapeString($quiz_id) . "'";
-        DB_query ($sql);
+        $db = Database::getInstance();
+        try {
+            Database::getInstance()->conn->executeStatement(
+                "DELETE q, ans FROM {$_TABLES['quizzer_questions']} q
+                JOIN {$_TABLES['quizzer_answers']} ans
+                ON ans.questionID = q.questionID
+                WHERE q.quizID = ?",
+                array($quiz_id),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
     }
 
 
@@ -599,25 +648,27 @@ class Question
      * @param   integer $id     Question def ID
      * @param   string  $fld    DB field name to change
      * @param   integer $oldval Original value
-     * @return  integer         New value
+     * @return  integer         New value, old value on error
      */
-    public static function toggle($id, $fld, $oldval)
+    public static function toggle(int $id, string $fld, int $oldval) : int
     {
         global $_TABLES;
 
-        $id = DB_escapeString($id);
-        $fld = DB_escapeString($fld);
+        $db = Database::getInstance();
+        $fld = $this->conn->quoteIdentifier($fld);
         $oldval = $oldval == 0 ? 0 : 1;
         $newval = $oldval == 0 ? 1 : 0;
-        $sql = "UPDATE {$_TABLES['quizzer_questions']}
-                SET $fld = $newval
-                WHERE questionID = '$id'";
-        $res = DB_query($sql, 1);
-        if (DB_error($res)) {
-            COM_errorLog(__CLASS__ . '\\' . __FUNCTION__ . ':: ' . $sql);
-            return $oldval;
-        } else {
+        try {
+            $db->conn->update(
+                $_TABLES['quizzer_questions'],
+                array($fld => $newval),
+                array('questionID' => $id),
+                array(Database::INTEGER, Database::INTEGER)
+            );
             return $newval;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            return $oldval;
         }
     }
 
@@ -629,27 +680,39 @@ class Question
      * @param   integer $quizID    Quiz ID
      * @param   integer $max        Max questions, default to all
      * @param   boolean $rand       True to randomizeAnswers the return array
-     * @return  array       Array of question data
+     * @return  array       Array of question objects
      */
-    public static function getQuestions($quizID, $max = 0, $rand = true)
+    public static function getQuestions(string $quizID, int $max = 0, bool $rand = true) : array
     {
         global $_TABLES;
 
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
         $max = (int)$max;
-        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quizID = '" . DB_escapeString($quizID) . "'
-                AND enabled = 1";
-        if ($rand) $sql .= ' ORDER BY RAND()';
-        if ($max > 0) $sql .= " LIMIT $max";
-        //echo $sql;die;
-        $res = DB_query($sql);
-
-        // Question #0 indicates the start of the quiz, so index actual
-        // questions starting at #1
+        $qb->select('*')
+           ->from($_TABLES['quizzer_questions'])
+           ->where('quizID = :quizID')
+           ->setParameter('quizID', $quizID, Database::STRING)
+           ->andWhere('enabled = 1');
+        if ($rand) {
+            $qb->orderBy('RAND()');
+        }
+        if ($max > 0) {
+            $qb->setFirstResult(0)
+               ->setMaxResults($max);
+        }
+        try {
+            $data = $qb->execute()->fetchAll(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
         $questions = array();   // array of question objects to return
-        $i = 0;
-        while ($A = DB_fetchArray($res, false)) {
-            $questions[++$i] = self::getInstance($A);
+        $i = 0;                 // need to have array bias of one
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $questions[++$i] = self::getInstance($A);
+            }
         }
         return $questions;
     }
@@ -684,10 +747,12 @@ class Question
     {
         global $_TABLES;
 
-        if (DB_count(
+        $db = Database::getInstance();
+        if ($db->getCount(
             $_TABLES['quizzer_values'],
-            'questionID',
-            $this->questionID
+            array('questionID'),
+            array($this->questionID),
+            array(Database::INTEGER)
         ) > 0) {
             return true;
         } else {
@@ -708,7 +773,13 @@ class Question
     {
         global $_TABLES;
 
-        return DB_count($_TABLES['quizzer_questions'], 'quizID', $quizID);
+        $db = Database::getInstance();
+        return $db->getCount(
+            $_TABLES['quizzer_questions'],
+            array('quizID'),
+            array($quizID),
+            array(Database::STRING)
+        );
     }
 
 
@@ -1021,4 +1092,3 @@ class Question
 
 }
 
-?>

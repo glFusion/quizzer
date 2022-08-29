@@ -23,7 +23,7 @@ class Icon
      * @var array */
     static $icons = array(
         'edit'      => 'uk-icon uk-icon-edit',
-        'delete'    => 'uk-icon uk-icon-remove uk-text-danger',
+        'delete'    => 'uk-icon uk-icon-minus-square uk-text-danger',
         'copy'      => 'uk-icon uk-icon-clone',
         'edit'      => 'uk-icon uk-icon-edit',
         'arrow-up'  => 'uk-icon uk-icon-arrow-up',

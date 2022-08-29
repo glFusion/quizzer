@@ -257,4 +257,3 @@ $display .= COM_siteFooter();
 echo $display;
 exit;
 
-?>

@@ -3,15 +3,17 @@
  * Class to handle the Quiz result sets.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.3
+ * @version     v0.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
 use Quizzer\Models\Score;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -156,20 +158,23 @@ class Result
             $this->resultID = (int)$id;
         }
 
-        $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE resultID = " . $this->resultID;
-        //echo $sql;die;
-        $res1 = DB_query($sql);
-        if (!$res1) {
-            return false;
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_results']}
+                WHERE resultID = ?",
+                array($this->resultID),
+                array(Database::INTEGER)
+            )->fetch(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
         }
-
-        $A = DB_fetchArray($res1, false);
-        if (empty($A)) {
-            return false;
-        } else {
-            $this->SetVars($A);
+        if (is_array($data)) {
+            $this->setVars($data);
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -183,8 +188,11 @@ class Result
         $this->Values = Value::getByResult($this->resultID);
         $this->Questions = array();
         foreach ($this->Values as $val) {
-            $this->Questions[$val->getQuestionID()] = Question::getInstance($val->getQuestionID())
-                ->setSeq($val->getOrderby());
+            $qid = $val->getQuestionID();
+            $this->Questions[$qid] = Question::getInstance($qid);
+            if ($this->Questions[$qid]) {
+                $this->Questions[$qid]->setSeq($val->getOrderby());
+            }
         }
     }
 
@@ -219,16 +227,27 @@ class Result
      *
      * @param   array   $fields     Array of Field objects
      */
-    public function readValues($fields)
+    public function readValues(array $fields) : void
     {
         global $_TABLES;
-        $sql = "SELECT * from {$_TABLES['quizzer_values']}
-                WHERE resultID = '{$this->resultID}'";
-        $res = DB_query($sql);
-        $vals = array();
-        // First get the values into an array indexed by field ID
-        while($A = DB_fetchArray($res, false)) {
-            $vals[$A['fld_id']] = $A;
+
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * from {$_TABLES['quizzer_values']}
+                WHERE resultID = ?", //'{$this->resultID}'";
+                array($this->resultID),
+                array(Database::INTEGER)
+            )->fetchAll(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $vals[$A['fld_id']] = $A;
+            }
         }
         // Then they can be pushed into the field array
         foreach ($fields as $field) {
@@ -267,25 +286,33 @@ class Result
         $this->quizID = COM_sanitizeID($quizID);
         $this->ts = time();
         $this->ip = $_SERVER['REAL_ADDR'];
-        $ip = DB_escapeString($this->ip);
         $this->token = uniqid();
-        $sql = "INSERT INTO {$_TABLES['quizzer_results']} SET
-                quizID='{$this->quizID}',
-                uid='{$this->uid}',
-                ts='{$this->ts}',
-                ip = '$ip',
-                introfields = '" . DB_escapeString(@serialize($introfields)) . "',
-                asked = {$num_asked},
-                token = '{$this->token}'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            $this->resultID = DB_insertID();
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        try {
+            $qb->insert($_TABLES['quizzer_results'])
+               ->setValue('quizID', ':quizID')
+               ->setValue('uid', ':uid')
+               ->setValue('ts', ':ts')
+               ->setValue('ip', ':ip')
+               ->setValue('introfields', ':intro')
+               ->setValue('asked', ':asked')
+               ->setValue('token', ':token')
+               ->setParameter('quizID', $this->quizID, Database::STRING)
+               ->setParameter('uid', $this->uid, Database::INTEGER)
+               ->setParameter('ts', $this->ts, Database::INTEGER)
+               ->setParameter('ip', $this->ip, Database::STRING)
+               ->setParameter('intro', @serialize($introfields), Database::STRING)
+               ->setParameter('asked', $num_asked, Database::INTEGER)
+               ->setParameter('token', $this->token, Database::STRING)
+               ->execute();
+            $this->resultID = $db->conn->lastInsertId();
             $this->setCurrent();
             Value::createResultSet($this->resultID, $question_ids);
             $this->readQuestions();
             Cache::Clear();
-        } else {
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
             $this->resultID = 0;
         }
         return $this;
@@ -297,9 +324,10 @@ class Result
      *
      * @param   string  $quizID
      */
-    public static function ResetQuiz($quizID)
+    public static function XResetQuiz($quizID)
     {
         $results = self::findByQuiz($quizID);
+        var_dumP($results);die;
         foreach ($results as $R) {
             self::Delete($R->resultID);
         }
@@ -313,22 +341,70 @@ class Result
      * @param   integer $resultID     Database ID of result to delete
      * @return  boolean     True on success, false on failure
      */
-    public static function Delete($resultID=0)
+    public static function Delete(int $resultID) : bool
     {
         global $_TABLES;
 
-        $resultID = (int)$resultID;
         if ($resultID == 0) return false;
-        //self::DeleteValues($resultID);
-        DB_delete($_TABLES['quizzer_results'], 'resultID', $resultID);
+        $db = Database::getInstance();
+        $db->conn->delete(
+            $_TABLES['quizzer_results'],
+            array('resultID' => $resultID),
+            array(Database::INTEGER)
+        );
         return true;
+    }
+
+
+    public static function resetQuiz(string $quizID) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        $r_ids = array();
+        try {
+            $stmt = $db->conn->executeQuery(
+                "SELECT resultID FROM {$_TABLES['quizzer_results']}
+                WHERE quizID = ?",
+                array($quizID),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
+            $stmt = NULL;
+        }
+        if ($stmt) {
+            while ($A = $stmt->fetch(Database::ASSOCIATIVE)) {
+                $r_ids[] = $A['resultID'];
+            }
+        }
+        if (!empty($r_ids)) {
+            try {
+                $db->conn->delete(
+                    $_TABLES['quizzer_values'],
+                    array('resultID' => $r_ids),
+                    array(Database::PARAM_INT_ARRAY)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
+            }
+
+            try {
+                $db->conn->delete(
+                    $_TABLES['quizzer_results'],
+                    array('resultID' => $r_ids),
+                    array(Database::PARAM_INT_ARRAY)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
+            }
+        }
     }
 
 
     /**
      * Delete the form values related to a result set.
      *
-     * @deprecate not needed due to foreight key constraint
      * @param   integer $resultID Required result ID
      * @param   integer $uid    Optional user ID
      */
@@ -336,17 +412,16 @@ class Result
     {
         global $_TABLES;
 
-        $resultID = (int)$resultID;
         if ($resultID == 0) return false;
-        $uid = (int)$uid;
 
-        $keys = array('resultID');
-        $vals = array($resultID);
+        $params = array('resultID' => $resultID);
+        $types = array(Database::INTEGER);
         if ($uid > 0) {
-            $keys[] = 'uid';
-            $vals[] = $uid;
+            $params['uid'] = $uid;
+            $types[] = Database::INTEGER;
         }
-        DB_delete($_TABLES['quizzer_values'], $keys, $vals);
+        $db = Database::getInstance();
+        $db->conn->delete($_TABLES['quizzer_values'], $params, $types);
     }
 
 
@@ -419,17 +494,27 @@ class Result
      * @param   string  $quizID    Quiz ID
      * @return  array       Array of Result objects
      */
-    public static function findByQuiz($quizID)
+    public static function findByQuiz(string $quizID) : array
     {
         global $_TABLES;
 
         $results = array();
-        $quizID = DB_escapeString($quizID);
-        $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE quizID = '$quizID'";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $results[] = new self($A);
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_results']}
+                WHERE quizID = ?",
+                array($quizID),
+                array(Database::STRING)
+            )->fetchAll(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $results[] = new self($A);
+            }
         }
         return $results;
     }
@@ -443,23 +528,38 @@ class Result
      * @param   string  $quizID    Quiz ID
      * @return  array       Array of Result objects
      */
-    public static function findByUser($uid, $quizID = '')
+    public static function findByUser(int $uid, string $quizID = '') : array
     {
         global $_TABLES;
 
         $results = array();
-        $uid = (int)$uid;
-        $sql = "SELECT * FROM {$_TABLES['quizzer_results']}
-                WHERE uid = '$uid'";
+        $db = Database::getInstance();
+        $sql = 
+                "SELECT * FROM {$_TABLES['quizzer_results']}
+                WHERE uid = ?";
+        $params = array($uid);
+        $types = array(Database::INTEGER);
         if ($quizID != '') {
-            $sql .= " AND quizID = '" . DB_escapeString($quizID) . "'";
+            $sql .= " AND quizID = ?";
+            $params[] = $quizID;
+            $types[] = Database::STRING;
         }
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $results[] = new self($A);
+
+        try {
+            $data = $db->conn->executeQuery($sql, $params, $types)
+                             ->fetchAll(Database::ASSOCIATIVE);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $results[] = new self($A);
+            }
         }
         return $results;
     }
+
 
     /**
      * Determinie if this is a new record or an existing one.
@@ -600,15 +700,22 @@ class Result
      * @param   array   $A      Array of prompt->value pairs
      * @return  object  $this
      */
-    public function saveIntro($A)
+    public function saveIntro(array $A) : self
     {
         global $_TABLES;
 
-        $val = DB_escapeString(@serialize($A));
-        $sql = "UPDATE {$_TABLES['quizzer_results']}
-            SET introfields = '$val'
-            WHERE resultID = {$this->resultID}";
-        DB_query($sql);
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "UPDATE {$_TABLES['quizzer_results']}
+                SET introfields = ?
+                WHERE resultID = ?",
+                array(@serialize($A), $this->resultID),
+                array(Database::STRING, Database::INTEGER)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+        }
         return $this;
     }
 
@@ -618,7 +725,7 @@ class Result
      *
      * @param   integer $days   How old, in days, the record must be
      */
-    public static function purgeNulls($days=1)
+    public static function purgeNulls(int $days=1) : void
     {
         global $_TABLES;
 
@@ -628,9 +735,13 @@ class Result
                 WHERE NOT EXISTS (
                     SELECT v.resultID FROM {$_TABLES['quizzer_values']} v
                     WHERE v.resultID = r.resultID AND v.value IS NOT NULL)
-                AND r.ts < unix_timestamp() - $cutoff";
-            //echo $sql;die;
-            DB_query($sql);
+                AND r.ts < unix_timestamp() - ?";
+            $db = Database::getInstance();
+            try {
+                $db->conn->executeUpdate($sql, array($cutoff), array(Database::INTEGER));
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, $e->getMessage());
+            }
         }
     }
 
@@ -727,4 +838,3 @@ class Result
 
 }
 
-?>

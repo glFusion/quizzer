@@ -35,11 +35,7 @@
 			{total_a} / {total}
 {!endif}
 		</td>
-		<td style="width:20px;text-align:center;">
-			<a href="{site_admin_url}/plugins/quizzer/index.php?delresult={res_id}"
-				onclick="return confirm('{$LANG_QUIZ['confirm_delete']}');">
-			<i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_ADMIN['delete']}"></i></a>
-		</td>
+		<td style="width:20px;text-align:center;">{del_link}</td>
 	</tr>
 <!-- END DataRows -->
 </table>

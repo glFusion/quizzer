@@ -8,4 +8,21 @@
     ><i class="uk-icon uk-icon-hover uk-icon-justifiy uk-icon-eye uk-text-primary"></i></a>
 <!-- END field-preview -->
 
+<!-- BEGIN field-refresh -->
+    <a href="{refresh_url}"
+    <!-- BEGIN attr -->
+    {name}="{value}"
+    <!-- END attr -->
+    ><i class="uk-icon uk-icon-hover uk-icon-justifiy uk-icon-refresh uk-text-{txt_style}"></i>
+    </a>
+<!-- END field-refresh -->
+
+<!-- BEGIN field-question -->
+    <i class="uk-icon uk-icon-hover uk-icon-justifiy uk-icon-question-circle uk-text-{txt_style}"
+    <!-- BEGIN attr -->
+    {name}="{value}"
+    <!-- END attr -->
+	></i>
+<!-- END field-question -->
+
 {# end {templatelocation} #}

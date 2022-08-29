@@ -10,6 +10,8 @@
  *              GNU Public License v2 or later
  * @filesource
  */
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 // Required to get the config values
 global $_CONF, $_CONF_QUIZ;
@@ -30,7 +32,9 @@ require_once __DIR__ . "/sql/{$_DB_dbms}_install.php";
  */
 function QUIZ_do_upgrade($dvlp=false)
 {
-    global $_CONF_QUIZ, $_PLUGIN_INFO;
+    global $_CONF_QUIZ, $_PLUGIN_INFO, $_TABLES;
+
+    $db = Database::getInstance();
 
     if (isset($_PLUGIN_INFO[$_CONF_QUIZ['pi_name']])) {
         if (is_array($_PLUGIN_INFO[$_CONF_QUIZ['pi_name']])) {
@@ -47,34 +51,42 @@ function QUIZ_do_upgrade($dvlp=false)
 
     if (!COM_checkVersion($current_ver, '0.0.3')) {
         $current_ver = '0.0.3';
-        COM_errorLog("Updating Plugin to $current_ver");
+        Log::write('system', Log::INFO, "Updating Plugin to $current_ver");
         if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!QUIZ_do_set_version($current_ver)) return false;
     }
 
     if (!COM_checkVersion($current_ver, '0.0.4')) {
         $current_ver = '0.0.4';
-        COM_errorLog("Updating Plugin to $current_ver");
+        Log::write('system', Log::INFO, "Updating Plugin to $current_ver");
         if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!QUIZ_do_set_version($current_ver)) return false;
     }
 
     if (!COM_checkVersion($current_ver, '0.0.5')) {
         $current_ver = '0.0.5';
-        COM_errorLog("Updating Plugin to $current_ver");
+        Log::write('system', Log::INFO, "Updating Plugin to $current_ver");
 
         // Map the admin feature to the Root group
-        $ft_id = (int)DB_getItem(
+        $ft_id = (int)$db->getItem(
             $_TABLES['features'],
             'ft_id',
-            "ft_name = 'quizzer.admin'"
+            array('ft_name' => 'quizzer.admin'),
+            array(Database::INTEGER)
         );
         if ($ft_id > 0) {
-            DB_query("INSERT IGNORE INTO {$_TABLES['access']}
-                    (acc_ft_id, acc_grp_id)
-                VALUES
-                    ($feat_id, 1)", 1
-            );
+            try {
+                $db->conn->executeStatement(
+                    "INSERT IGNORE INTO {$_TABLES['access']}
+                        (acc_ft_id, acc_grp_id)
+                        VALUES
+                        (?, 1)",
+                    array($ft_id),
+                    array(Database::INTEGER)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            }
         }
         if (!QUIZ_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!QUIZ_do_set_version($current_ver)) return false;
@@ -86,7 +98,7 @@ function QUIZ_do_upgrade($dvlp=false)
     include_once 'install_defaults.php';
     plugin_updateconfig_quizzer();
     QUIZ_remove_old_files();
-    COM_errorLog('Successfully updated the Quizzer plugin');
+    Log::write('system', Log::INFO, 'Successfully updated the Quizzer plugin');
     return true;
 }
 
@@ -121,16 +133,19 @@ function QUIZ_do_upgrade_sql($version, $ignore_errors=false)
         $use_innodb = false;
     }
 
+    $db = Database::getInstance();
+
     // Execute SQL now to perform the upgrade
-    COM_errorLog("--Updating Quizzer to version $version");
+    Log::write('system', Log::INFO, "--Updating Quizzer to version $version");
     foreach ($_QUIZ_UPGRADE_SQL[$version] as $sql) {
         if ($use_innodb) {
             $sql = str_replace('MyISAM', 'InnoDB', $sql);
         }
-        COM_errorLog("Quizzer Plugin $version update: Executing SQL => $sql");
-        DB_query($sql, '1');
-        if (DB_error()) {
-            COM_errorLog("SQL Error during Quizzer plugin update",1);
+        Log::write('system', Log::INFO, "Quizzer Plugin $version update: Executing SQL => $sql");
+        try {
+            $db->conn->executeStatement($sql);
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
             if (!$ignore_errors) return false;
         }
     }
@@ -150,20 +165,31 @@ function QUIZ_do_set_version($ver)
 {
     global $_TABLES, $_CONF_QUIZ;
 
-    // now update the current version number.
-    $sql = "UPDATE {$_TABLES['plugins']} SET
-            pi_version = '{$_CONF_QUIZ['pi_version']}',
-            pi_gl_version = '{$_CONF_QUIZ['gl_version']}',
-            pi_homepage = '{$_CONF_QUIZ['pi_url']}'
-        WHERE pi_name = '{$_CONF_QUIZ['pi_name']}'";
-
-    $res = DB_query($sql, 1);
-    if (DB_error()) {
-        COM_errorLog("Error updating the {$_CONF_QUIZ['pi_display_name']} Plugin version",1);
+    try {
+        Database::getInstance()->conn->executeStatement(
+            "UPDATE {$_TABLES['plugins']} SET
+            pi_version = ?,
+            pi_gl_version = ?,
+            pi_homepage = ?
+            WHERE pi_name = ?",
+            array(
+                $_CONF_QUIZ['pi_version'],
+                $_CONF_QUIZ['gl_version'],
+                $_CONF_QUIZ['pi_url'],
+                $_CONF_QUIZ['pi_name'],
+            ),
+            array(
+                Database::STRING,
+                Database::STRING,
+                Database::STRING,
+                Database::STRING,
+            )
+        );
+    } catch (\Throwable $e) {
+        Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 
@@ -221,4 +247,3 @@ function QUIZ_rmdir($dir)
     }
 }
 
-?>

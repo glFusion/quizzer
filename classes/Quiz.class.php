@@ -3,16 +3,17 @@
  * Class to represent a quiz.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2010-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.4
+ * @version     v0.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
 use Quizzer\Models\Score;
-//use glFusion\FieldList;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -501,18 +502,23 @@ class Quiz
 
         // Clear out any existing items, in case we're reusing this instance.
         $this->fields = array();
-
-        $sql = "SELECT * FROM {$_TABLES['quizzer_quizzes']}
-                WHERE quizID = '" . $this->quizID . "'";
-        //echo $sql;die;
-        $res1 = DB_query($sql, 1);
-        if (!$res1 || DB_numRows($res1) < 1) {
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_quizzes']} WHERE quizID = ?",
+                array($this->quizID),
+                array(Database::STRING)
+            )->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            $this->setVars($data, true);
+            return true;
+        } else {
             return false;
         }
-
-        $A = DB_fetchArray($res1, false);
-        $this->setVars($A, true);
-        return true;
     }
 
 
@@ -685,56 +691,95 @@ class Quiz
             return $LANG_QUIZ['err_name_required'];
         }
 
+        $db = Database::getInstance();
+
         // If saving a new record or changing the ID of an existing one,
         // make sure the new quiz ID doesn't already exist.
         $changingID = (!$this->isNew && $this->quizID != $this->old_id);
         if ($this->isNew || $changingID) {
-            $x = DB_count($_TABLES['quizzer_quizzes'], 'quizID', $this->quizID);
+            $x = $db->conn->getCount(
+                $_TABLES['quizzer_quizzes'],
+                array('quizID'),
+                array($this->quizID),
+                array(Database::STRING)
+            );
             if ($x > 0) {
                 $this->quizID = COM_makeSid();
                 $changingID = true;     // tread as a changed ID if we have to create one
             }
         }
 
-        if (!$this->isNew && $this->old_id != '') {
-            $sql1 = "UPDATE {$_TABLES['quizzer_quizzes']} ";
-            $sql3 = " WHERE quizID = '{$this->old_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['quizzer_quizzes']} ";
-            $sql3 = '';
-        }
-        $sql2 = "SET quizID = '" . DB_escapeString($this->quizID) . "',
-            quizName = '" . DB_escapeString($this->quizName) . "',
-            introtext = '" . DB_escapeString($this->introtext) . "',
-            introfields= '" . DB_escapeString($this->introfields) . "',
-            pass_msg= '" . DB_escapeString($this->pass_msg) . "',
-            fail_msg= '" . DB_escapeString($this->fail_msg) . "',
-            enabled = '{$this->enabled}',
-            fill_gid = '{$this->fill_gid}',
-            onetime = '{$this->onetime}',
-            questionsAsked = {$this->questionsAsked},
-            levels = '" . DB_escapeString($this->levels) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql, 1);
+        $values = array(
+           'quizID' => $this->quizID,
+           'quizName' => $this->quizName,
+           'introtext' => $this->introtext,
+           'introfields' => $this->introfields,
+           'pass_msg' => $this->pass_msg,
+           'fail_msg' => $this->fail_msg,
+           'enabled' => $this->enabled,
+           'fill_gid' => $this->fill_gid,
+           'onetime' => $this->onetime,
+           'asked' => $this->onetime,
+           'levels' => $this->levels,
+           );
+        $types = array(
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::STRING,
+        );
 
-        if (!DB_error()) {
-            // Now, if the ID was changed, update the field & results tables
-            if (!$this->isNew && $changingID) {
-                DB_query("UPDATE {$_TABLES['quizzer_results']}
-                        SET quizID = '{$this->quizID}'
-                        WHERE quizID = '{$this->old_id}'");
-                DB_query("UPDATE {$_TABLES['quizzer_questions']}
-                        SET quizID = '{$this->quizID}'
-                        WHERE quizID = '{$this->old_id}'");
+        try {
+            if (!$this->isNew && $this->old_id != '') {
+                $types[] = Database::STRING;
+                $db->conn->update(
+                    $_TABLES['quizzer_quizzes'],
+                    $values,
+                    array('old_id' => $this->old_id),
+                    $types
+                );
+            } else {
+                $db->conn->insert(
+                    $_TABLES['quizzer_quizzes'],
+                    $values,
+                    $types
+                );
             }
-            CTL_clearCache();       // so autotags pick up changes
-            Cache::clear();         // Clear plugin cache
-            $msg = '';              // no error message if successful
-        } else {
-            $msg = 5;
+        } catch (\Throwable $e) {
+            Log::write('system', 'error', $e->getMessage());
+            return '5';
         }
-        return $msg;
+
+        if (!$this->isNew && $changingID) {
+            try {
+                $params = array($this->quizID, $this->old_id);
+                $types = array(Database::STRING, Database::STRING);
+                $db->conn->update(
+                    $_TABLES['quizzer_results'],
+                    array('quizID' => $this->quizID),
+                    array('quizID' => $this->old_id),
+                    array(Database::STRING, Database::STRING)
+                );
+                $db->conn->update(
+                    $_TABLES['quizzer_questions'],
+                    array('quizID' => $this->quizID),
+                    array('quizID' => $this->old_id),
+                    array(Database::STRING, Database::STRING)
+                );
+            } catch (\Throwable $e) {
+                Log::write('system', 'error', $e->getMessage());
+            }
+        }
+        CTL_clearCache();       // so autotags pick up changes
+        Cache::clear();         // Clear plugin cache
+        return '';              // no error message if successful
     }
 
 
@@ -833,13 +878,19 @@ class Quiz
     {
         global $_TABLES;
 
-        $quizID = COM_sanitizeID($quizID);
-        // If still no valid ID, do nothing
-        if ($quizID == '') return;
-
         Result::resetQuiz($quizID);    // deletes all related results and values
         Question::deleteQuiz($quizID); // deletes all quesitons and answers
-        DB_delete($_TABLES['quizzer_quizzes'], 'quizID', $quizID);
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['quizzer_quizzes'],
+                array('quizID = ?'),
+                array($quizID),
+                array(Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+        }
         Cache::clear();
     }
 
@@ -892,26 +943,32 @@ class Quiz
      * @param   string  $id     Field def ID
      * @param   string  $fld    DB variable to change
      * @param   integer $oldval Original value
-     * @return  integer New value
+     * @return  integer New value, Original value on error
      */
-    public static function toggle($id, $fld, $oldval)
+    public static function toggle(string $id, string $fld, int $oldval) : int
     {
         global $_TABLES;
 
-        $id = DB_escapeString($id);
-        $fld = DB_escapeString($fld);
+        // Verify a valid field name
+        if (!in_array($fld, array('enabled', 'onetime'))) {
+            return $oldval;
+        }
+        $db = Database::getInstance();
         $oldval = $oldval == 0 ? 0 : 1;
         $newval = $oldval == 0 ? 1 : 0;
-        $sql = "UPDATE {$_TABLES['quizzer_quizzes']}
-                SET $fld = $newval
-                WHERE quizID = '$id'";
-        $res = DB_query($sql, 1);
-        if (DB_error($res)) {
-            COM_errorLog(__CLASS__ . '\\' . __FUNCTION__ . ':: ' . $sql);
-            return $oldval;
-        } else {
-            return $newval;
+        $fld = $db->conn->quoteIdentifier($fld);
+        try {
+            $db->conn->update(
+                $_TABLES['quizzer_quizzes'],
+                array($fld => $newval),
+                array('quizID' => $id),
+                array(Database::INTEGER, Database::STRING)
+            );
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $newval = $oldval;
         }
+        return $newval;
     }
 
 
@@ -924,6 +981,7 @@ class Quiz
     {
         global $_TABLES;
 
+        $db = Database::getInstance();
         $sql = "SELECT quiz.quizID, quiz.quizName,
             quiz.enabled, quiz.owner_id,
             quiz.group_id, quiz.fill_gid,
@@ -937,14 +995,18 @@ class Quiz
                 WHERE ques.quizID = quiz.quizID) AS q_count
             FROM {$_TABLES['quizzer_quizzes']} AS quiz
             WHERE quiz.enabled = 1 " .
-            SEC_buildAccessSql('AND', 'quiz.fill_gid') .
+            $db->getAccessSql('AND', 'quiz.fill_gid') .
             " ORDER BY quiz.quizID ASC
             LIMIT 1";
         //echo $sql;die;
-        $res = DB_query($sql);
-        if (DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $Q = new self($A);
+        try {
+            $data = $db->conn->executeQuery($sql)->fetchAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            $Q = new self($data);
         } else {
             $Q = new self();
         }
@@ -988,12 +1050,21 @@ class Quiz
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'resultsbyq.thtml');
         $T->set_var('quiz_name', $this->quizName);
-        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quizID = '{$this->quizID}'";
-        $res = DB_query($sql);
-        $questions = array();
-        while ($A = DB_fetchArray($res, false)) {
-            $questions[] = Question::getInstance($A);
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_questions']} WHERE quizID = ?",
+                array($this->quizID),
+                array(Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $questions[] = Question::getInstance($A);
+            }
         }
         $T->set_block('results', 'DataRows', 'dRow');
         foreach ($questions as $Q) {
@@ -1034,7 +1105,7 @@ class Quiz
      */
     public function resultSummary()
     {
-        global $LANG_QUIZ, $_SYSTEM;
+        global $LANG_ADMIN, $LANG_QUIZ, $_SYSTEM;
 
         $T = new \Template(QUIZ_PI_PATH . '/templates/admin');
         $T->set_file('results', 'results.thtml');
@@ -1067,7 +1138,9 @@ class Quiz
                     $total_a++;
                 }
                 $Q = Question::getInstance($V->getQuestionID());
-                $correct += $Q->Verify($V->getValue());
+                if ($Q) {
+                    $correct += $Q->Verify($V->getValue());
+                }
             }
             $total_q = $R->getAsked();
             // Adjust correct number for cleaner presentation
@@ -1091,6 +1164,14 @@ class Quiz
                 'all_answered' => $total_a == $total_q,
                 'timestamp' => $R->getTS(),
                 'datetime' => $R->getTS('Y-m-d H:i'),
+                'del_link' => FieldList::delete(array(
+                    'delete_url' => QUIZ_ADMIN_URL . '/index.php?delresult=' . $R->getID(),
+                    'attr' => array(
+				        'onclick' => "return confirm('{$LANG_QUIZ['confirm_delete']}');",
+			            'class' => 'tooltip',
+                        'title' => $LANG_ADMIN['delete']
+                    )
+                ) ),
             ) );
             $T->parse('dRow', 'DataRows', true);
         }
@@ -1154,12 +1235,21 @@ class Quiz
         global $_TABLES, $LANG_QUIZ;
 
         $questions = Question::getQuestions($this->quizID, 0, false);
-        $sql = "SELECT * FROM {$_TABLES['quizzer_questions']}
-                WHERE quizID = '{$this->quizID}'";
-        $res = DB_query($sql);
-        $questions = array();
-        while ($A = DB_fetchArray($res, false)) {
-            $questions[] = Question::getInstance($A);
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['quizzer_questions']} WHERE quizID = ?",
+                array($this->quizID),
+                array(Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, $e->getMessage());
+            $data = NULL;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $questions[] = Question::getInstance($A);
+            }
         }
         $retval = '"' . $LANG_QUIZ['question'] . '","' .
                     $LANG_QUIZ['answers'] . '","' .
@@ -1209,6 +1299,22 @@ class Quiz
      */
     public function Reset()
     {}
+
+
+    /**
+     * Delete all results for a quiz.
+     *
+     */
+    public function ResetResults()
+    {
+        $qids = array();
+        $Questions = $this->getQuestions();
+        foreach ($Questions as $Q) {
+            $qids[] = $Q->getID();
+        }
+
+        var_dumP($Questions);die;
+    }
 
 
     /**
@@ -1331,16 +1437,22 @@ class Quiz
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_QUIZ['reset'] . '&nbsp;' . Icon::getHTML('question', 'tooltip', array(
-                    'title' => $LANG_QUIZ['hlp_quiz_reset'],
+                'text' => $LANG_QUIZ['reset'] . '&nbsp;' . FieldList::question(array(
+                    'attr' => array(
+                        'class' => 'tooltip',
+                        'title' => $LANG_QUIZ['hlp_quiz_reset'],
+                    ),
                 )),
                 'field' => 'reset',
                 'sort' => false,
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_ADMIN['delete'] . '&nbsp;' . Icon::getHTML('question', 'tooltip', array(
-                    'title' => $LANG_QUIZ['hlp_quiz_delete'],
+                'text' => $LANG_ADMIN['delete'] . '&nbsp;' . FieldList::question(array(
+                    'attr' => array(
+                        'class' => 'tooltip',
+                        'title' => $LANG_QUIZ['hlp_quiz_delete'],
+                    ),
                 )),
                 'field' => 'delete',
                 'sort' => false,
@@ -1417,11 +1529,9 @@ class Quiz
             break;
 
         case 'edit':
-            $url = QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quizID={$A['quizID']}";
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                $url
-            );
+            $retval = FieldList::edit(array(
+                'url' => QUIZ_ADMIN_URL . "/index.php?editquiz=x&amp;quizID={$A['quizID']}",
+            ) );
             break;
 
         /*case 'copy':
@@ -1458,14 +1568,22 @@ class Quiz
             break;
 
         case 'reset':
-            $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quizID={$A['quizID']}";
-            $retval = COM_createLink(
-                Icon::getHTML('reset', 'uk-text-danger'),
-                $url,
-                array(
+            if ((int)$A['submissions'] > 0) {
+                $url = QUIZ_ADMIN_URL . "/index.php?resetquiz=x&quizID={$A['quizID']}";
+                $style = 'danger';
+                $attr = array(
                     'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_reset']}?');",
-                )
-            );
+                );
+            } else {
+                $url = NULL;
+                $style = 'muted';
+                $attr = array();
+            }
+            $retval = FieldList::refresh(array(
+                'url' => $url,
+                'style' => $style,
+                'attr' => $attr,
+            ) );
             break;
 
         case 'enabled':
@@ -1511,4 +1629,3 @@ class Quiz
 
 }
 
-?>
