@@ -117,12 +117,11 @@ $_QUIZ_UPGRADE_SQL = array(
         "DELETE FROM {$_TABLES['quizzer_results']} WHERE quizID NOT IN
             (SELECT quizID FROM {$_TABLES['quizzer_quizzes']})",
         "DELETE FROM {$_TABLES['quizzer_values']} WHERE resultID NOT IN
-            (SELECT resultID FROM {$_TABLES['quizzer_results']}",
+            (SELECT resultID FROM {$_TABLES['quizzer_results']})",
         "DELETE FROM {$_TABLES['quizzer_questions']} WHERE quizID NOT IN
             (SELECT quizID FROM {$_TABLES['quizzer_quizzes']})",
         "DELETE FROM {$_TABLES['quizzer_answers']} WHERE questionID NOT IN
             (SELECT questionID FROM {$_TABLES['quizzer_questions']})",
-    );
+    ),
 );
 
-?>
