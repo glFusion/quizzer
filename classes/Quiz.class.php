@@ -1476,12 +1476,15 @@ class Quiz
             'chkselect' => 'true',
             'chkname'   => 'delfield',
             'chkfield'  => 'quizID',
-            'chkactions' => '<button name="delQuizmulti" type="submit" '
-                . 'class="uk-text-danger"'
-                . 'style="vertical-align:text-bottom;" title="' . $LANG01[124]
-                . '" onclick="return confirm(\'' . $LANG01[125] . '\');"'
-                . '><i class="uk-icon uk-icon-minus"></i></button>',
-
+            'chkactions' => FieldList::button(array(
+                'text' => $LANG_ADMIN['delete'],
+                'name' => 'delQuizmulti',
+                'style' => 'danger',
+                'size' => 'mini',
+                'attr' => array(
+                    'onclick' => "return confirm('{$LANG01[125]}')",
+                ),
+            ) ),
         );
         $query_arr = array(
             'table' => 'quizzer_quizzes',
@@ -1534,13 +1537,11 @@ class Quiz
             ) );
             break;
 
-        /*case 'copy':
-            $url = QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quizID={$A['quizID']}";
-            $retval = COM_createLink(
-                Icon::getHTML('copy'),
-                $url
-            );
-            break;*/
+        case 'copy':
+            $retval = FieldList::copy(array(
+                'url' => QUIZ_ADMIN_URL . "/index.php?copyform=x&amp;quizID={$A['quizID']}",
+            ) );
+            break;
 
         case 'preview':
             $retval = FieldList::preview(array(
@@ -1548,23 +1549,14 @@ class Quiz
             ) );
             break;
 
-        /*case 'questions':
-            $url = QUIZ_ADMIN_URL . "/index.php?questions=x&amp;quizID={$A['quizID']}";
-            $retval = COM_createLink(
-                Icon::getHTML('question'),
-                $url
-            );
-            break;*/
-
         case 'delete':
             $url = QUIZ_ADMIN_URL . "/index.php?delQuiz=x&quizID={$A['quizID']}";
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                $url,
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => $url,
+                'attr' => array(
                     'onclick' => "return confirm('{$LANG_QUIZ['confirm_quiz_delete']}?');",
                 )
-            );
+            ) );
             break;
 
         case 'reset':

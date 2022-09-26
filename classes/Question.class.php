@@ -655,7 +655,7 @@ class Question
         global $_TABLES;
 
         $db = Database::getInstance();
-        $fld = $this->conn->quoteIdentifier($fld);
+        $fld = $db->conn->quoteIdentifier($fld);
         $oldval = $oldval == 0 ? 0 : 1;
         $newval = $oldval == 0 ? 1 : 0;
         try {
@@ -924,22 +924,20 @@ class Question
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;questionID={$A['questionID']}"
-            );
+            $retval = FieldList::edit(array(
+                'url' => QUIZ_ADMIN_URL . "/index.php?editquestion=x&amp;questionID={$A['questionID']}",
+            ) );
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                QUIZ_ADMIN_URL . '/index.php?delQuestion=x&questionID=' .
+            $retval = FieldList::delete(array(
+                'delete_url' => QUIZ_ADMIN_URL . '/index.php?delQuestion=x&questionID=' .
                     $A['questionID'] . '&quizID=' . $A['quizID'],
-                array(
+                'attr' => array(
                     'onclick' => "return confirm('{$LANG_QUIZ['confirm_delete']}');",
                 )
-            );
-           break;
+            ) );
+            break;
 
         case 'enabled':
             if ($A[$fieldname] == 1) {
