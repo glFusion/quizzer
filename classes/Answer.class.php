@@ -105,7 +105,7 @@ class Answer
 
 
     /**
-     * Save the field definition to the database.
+     * Save an answer definition to the database.
      *
      * @param   array   $A  Array of name->value pairs
      * @return  string          Error message, or empty string for success
@@ -130,10 +130,10 @@ class Answer
         } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $k) {
             try {
             $qb->update($_TABLES['quizzer_answers'])
-                ->set('questionID', ':qid')
-                ->set('answerID', ':aid')
                 ->set('answerText', ':text')
                 ->set('is_correct', ':correct')
+                ->where('questionID = :qid')
+                ->andWhere('answerID = :aid')
                 ->execute();
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, $e->getMessage());
@@ -151,21 +151,30 @@ class Answer
     /**
      * Delete the current question definition.
      *
-     * @param   integer $q_id       ID number of the question
-     * @param   array   $a_ids      Array of answer IDs
+     * @param   integer $q_ids  Array of question IDs
+     * @param   array   $a_ids  Array of answer IDs
      */
-    public static function Delete(int $q_id, array $a_ids) : void
+    public static function Delete(array $q_ids, ?array $a_ids=NULL) : bool
     {
         global $_TABLES;
 
         $db = Database::getInstance();
-        $db->conn->executeUpdate(
-            "DELETE FROM {$_TABLES['quizzer_answers']}
-            WHERE questionID = ?
-            AND answerID IN ($?)",
-            array($q_id, $a_ids),
-            array(Databaes::INTEGER, Database::PARAM_INT_ARRAY)
-        );
+        $sql = "DELETE FROM {$_TABLES['quizzer_answers']}
+            WHERE questionID IN (?)";
+        $values = array($q_ids);
+        $types = array(Database::PARAM_INT_ARRAY);
+        if (is_array($a_ids) && !empty($a_ids)) {
+            $sql .= " AND answerID IN (?)";
+            $values[] = $a_ids;
+            $types[] = Database::PARAM_INT_ARRAY;
+        }
+        try {
+            $db->conn->executeStatement($sql, $values, $types);
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -282,4 +291,3 @@ class Answer
     }
 
 }
-
