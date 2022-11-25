@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.1.0
+ * @version     v0.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -85,6 +85,14 @@ class Quiz
     /** Flag to indicate that this is a new quiz.
      * @var boolean */
     private $isNew = true;
+
+    /** Flag to indicate that the quiz is open for submissions.
+     * @var boolean */
+    private $enabled = true;
+
+    /** Group allowed to fill out the quiz.
+     * @var integer */
+    private $fill_gid = 13;
 
     /** Number of questions actually asked.
      * Used in case a subset of all questions is asked or where the specified
@@ -678,7 +686,7 @@ class Quiz
      * @param   array   $A      Array of values (e.g. $_POST)
      * @return  string      Error message, empty on success
      */
-    function SaveDef($A = '')
+    function SaveDef(?array $A=NULL)
     {
         global $_TABLES, $LANG_QUIZ;
 
@@ -697,7 +705,7 @@ class Quiz
         // make sure the new quiz ID doesn't already exist.
         $changingID = (!$this->isNew && $this->quizID != $this->old_id);
         if ($this->isNew || $changingID) {
-            $x = $db->conn->getCount(
+            $x = $db->getCount(
                 $_TABLES['quizzer_quizzes'],
                 array('quizID'),
                 array($this->quizID),
@@ -719,7 +727,7 @@ class Quiz
            'enabled' => $this->enabled,
            'fill_gid' => $this->fill_gid,
            'onetime' => $this->onetime,
-           'asked' => $this->onetime,
+           'questionsAsked' => $this->questionsAsked,
            'levels' => $this->levels,
            );
         $types = array(
@@ -742,7 +750,7 @@ class Quiz
                 $db->conn->update(
                     $_TABLES['quizzer_quizzes'],
                     $values,
-                    array('old_id' => $this->old_id),
+                    array('quizID' => $this->old_id),
                     $types
                 );
             } else {
@@ -1224,7 +1232,6 @@ class Quiz
     }
 
 
-
     /**
      * Export questions, total responses and correct responses as a CSV.
      *
@@ -1312,8 +1319,6 @@ class Quiz
         foreach ($Questions as $Q) {
             $qids[] = $Q->getID();
         }
-
-        var_dumP($Questions);die;
     }
 
 
@@ -1620,4 +1625,3 @@ class Quiz
     }
 
 }
-
