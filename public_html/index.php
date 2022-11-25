@@ -17,6 +17,7 @@ if (!in_array('quizzer', $_PLUGINS)) {
     COM_404();
 }
 
+$Request = Quizzer\Models\Request::getInstance();
 $content = '';
 $action = '';
 $actionval = '';
@@ -25,17 +26,8 @@ $expected = array(
     'savedata', 'saveintro', 'results', 'mode', 'print', 'startquiz',
     'next_q', 'finishquiz',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list($action, $actionval) = $Request->getAction($expected);
+
 if (empty($action)) {
     COM_setArgNames(array('quizID', 'action'));
     $quizID = COM_getArgument('quizID');
@@ -46,7 +38,7 @@ if (empty($action)) {
 }
 if (empty($quizID)) {
     // Still no quiz ID? Get from POST or possibly from URL
-    $quizID= isset($_REQUEST['quizID']) ? $_REQUEST['quizID'] : '';
+    $quizID= $Request->getString('quizID');
 }
 if ($quizID == '') {
     // Missing quiz ID, get the first enabled one
@@ -63,13 +55,14 @@ if ($quizID == '') {
 
 // get the question ID if specified.
 // @todo: clean up code to use a single name for question ID
-if (isset($_REQUEST['q_id'])) {
-    $q_id = (int)$_REQUEST['q_id'];
-} elseif (isset($_REQUEST['questionID'])) {
-    $q_id = (int)$_REQUEST['questionID'];
+if (isset($Request['q_id'])) {
+    $q_id = $Request->getInt('q_id');
+} elseif (isset($Request['questionID'])) {
+    $q_id = $Request->getInt('questionID');
 } else {
     $q_id = 0;
 }
+
 $Result = Quizzer\Result::getCurrent($Q->getID());
 $outputHandle = outputHandler::getInstance();
 $outputHandle->addMeta('http-equiv', 'Pragma', 'no-cache');
@@ -77,7 +70,7 @@ $outputHandle->addMeta('http-equiv', 'Expires', '-1');
 
 switch ($action) {
 case 'saveintro':
-    $intro = isset($_POST['intro']) ? $_POST['intro'] : '';
+    $intro = $Request->getArray('intro');
     if ($Result->isNew()) {
         $Result->Create($Q->getID(), $intro);
     }
@@ -109,17 +102,18 @@ case 'startquiz':
     }
     if (!$Q->isNew()) {
         // If the quiz exists, render the question
+        if (count($Q->getQuestions()) == 0) {
+            COM_setMsg($LANG_QUIZ['msg_no_questions']);
+            echo COM_refresh($_CONF['site_url']);
+        }
         $content .= $Q->Render(0);
     }
     if ($content == '') {
-        // If no content found, start over fresh
-        Quizzer\Result::clearCurrent($Q->getID());
         COM_refresh(QUIZ_PI_URL . '/index.php');
     }
     break;
 
 case 'next_q':
-    //$q_id = isset($_REQUEST['next_q_id']) ? $_REQUEST['next_q_id'] : $q_id++;
     $q_id = $Result->getNextQuestion();
 default:
     if (!$Q->isNew()) {
@@ -133,5 +127,3 @@ echo COM_siteHeader();
 echo $content;
 echo COM_siteFooter();
 exit;
-
-?>

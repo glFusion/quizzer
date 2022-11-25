@@ -100,6 +100,9 @@ $PLG_quizzer_MESSAGE4 = 'Error updating the Quizzer plugin version.';
 $PLG_quizzer_MESSAGE5 = 'A database error occurred. Check your site\'s error.log';
 $PLG_quizzer_MESSAGE6 = 'Your quiz has been saved. You may now create or update questions.';
 $PLG_quizzer_MESSAGE7 = 'Sorry, the maximum number of submissions has been reached.';
+$PLG_quizzer_MESSAGE8 = 'Invalid form quiz ID provided.';
+$PLG_quizzer_MESSAGE9 = 'Invalid question ID provided.';
+
 
 /** Language strings for the plugin configuration section */
 $LANG_configsections['quizzer'] = array(

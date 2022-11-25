@@ -1,14 +1,14 @@
 <?php
 /**
- *  Common AJAX functions.
+ * Common AJAX functions.
  *
- *  @author     Lee Garner <lee@leegarner.com>
- *  @copyright  Copyright (c) 2010-2022 Lee Garner <lee@leegarner.com>
- *  @package    quizzer
- *  @version    0.2.0
- *  @license    http://opensource.org/licenses/gpl-2.0.php
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2022 Lee Garner <lee@leegarner.com>
+ * @package     quizzer
+ * @version     v0.2.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
- *  @filesource
+ * @filesource
  */
 
 /**
@@ -27,23 +27,23 @@ if (!plugin_isadmin_quizzer()) {
     exit;
 }
 
-switch ($_POST['action']) {
+$Request = Quizzer\Models\Request::getInstance();
+if (!$Request->isAjax()) {
+    COM_404();
+}
+
+switch ($Request->getString('action')) {
 case 'toggleEnabled':
-    $oldval = $_POST['oldval'] == 0 ? 0 : 1;
+    $oldval = $Request->getInt('oldval');
     $newval = 99;
-    $var = trim($_POST['var']);  // sanitized via switch below
-    $id = DB_escapeString($_POST['id']);
-    if (isset($_POST['type'])) {
-        switch ($_POST['type']) {
-        case 'quiz':
-            $newval = \Quizzer\Quiz::toggle($_POST['id'], 'enabled', $_POST['oldval']);
-            break;
-        case 'question':
-            $newval = \Quizzer\Question::toggle($_POST['id'], 'enabled', $_POST['oldval']);
-            break;
-        default:
-            break;
-        }
+    $id = $Request->getString('id');
+    switch ($Request->getString('type')) {
+    case 'quiz':
+        $newval = \Quizzer\Quiz::toggle($id, 'enabled', $oldval);
+        break;
+    case 'question':
+        $newval = \Quizzer\Question::toggle((int)$id, 'enabled', $oldval);
+        break;
     }
 
     $result = array(

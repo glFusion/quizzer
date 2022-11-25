@@ -11,7 +11,7 @@ var QUIZtoggleEnabled = function(cbox, id, type, component) {
     };
     data = $.param(dataS);
     $.ajax({
-        type: "POST",
+        type: "post",
         dataType: "json",
         url: site_admin_url + "/plugins/quizzer/ajax.php",
         data: data,

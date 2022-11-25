@@ -13,15 +13,16 @@
 
 /** Include required glFusion common functions */
 require_once '../lib-common.php';
-
+$Request = Quizzer\Models\Request::getInstance();
 $retval = array(
     'invalid' => 1,
 );
+COM_errorLog($Request->getQueryString());
 
-switch ($_POST['action']) {
+switch ($Request->getString('action')) {
 case 'saveresponse':
-    $forfeit = (isset($_POST['forfeit']) && $_POST['forfeit'] == 1);
-    $quiz_id = isset($_POST['quizID']) ? $_POST['quizID'] : '';
+    $forfeit = $Request->getBool('forfeit');
+    $quiz_id = $Request->getString('quizID');
     $R = Quizzer\Result::getCurrent($quiz_id);
     $Q = Quizzer\Quiz::getInstance($quiz_id);
     $isvalid = $Q->isNew() ? 0 : 1;
@@ -30,13 +31,13 @@ case 'saveresponse':
         // which would have created a result set.
         $R->Create($Q->getID());
     }
-    $q_id = isset($_POST['questionID']) ? (int)$_POST['questionID'] : 0;
-    $a_id = isset($_POST['a_id']) ? $_POST['a_id'] : 0;
+    $q_id = $Request->getInt('questionID');
+    $a_id = $Request->get('a_id');
     if (
         $R->getID() == 0 ||
         $quiz_id == '' ||
         $q_id == 0 ||
-        ($a_id == 0 && !$forfeit)
+        (empty($a_id) && !$forfeit)
     ) {
         $retval = array(
             'isvalid' => 0,
@@ -77,5 +78,3 @@ header('Cache-Control: no-cache, must-revalidate');
 //A date in the past
 header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 echo json_encode($retval);
-
-?>

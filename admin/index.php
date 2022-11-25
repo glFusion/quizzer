@@ -29,55 +29,46 @@ if (!plugin_isadmin_quizzer()) {
     COM_404();
 }
 
-$action = 'listquizzes';      // Default view
+$Request = Quizzer\Models\Request::getInstance();
 $expected = array(
     'edit','updateform','editquestion', 'updatequestion',
     'savequiz', 'print', 'editresult', 'updateresult', 'resetquiz',
     'editquiz', 'delQuizmulti', 'showhtml',
     'moderate',
-    'savereward', 'delreward',
+    'savereward', 'delreward', 'delbutton', 'delbutton_x',
     'delQuiz', 'delQuestion', 'cancel', 'action', 'view',
     'results', 'resultsbyq', 'csvbyq', 'csvbysubmitter',
     'delresult', 'viewresult',
 );
-foreach($expected as $provided) {
-    if (isset($_POST[$provided])) {
-        $action = $provided;
-        $actionval = $_POST[$provided];
-        break;
-    } elseif (isset($_GET[$provided])) {
-        $action = $provided;
-        $actionval = $_GET[$provided];
-        break;
-    }
-}
+list ($action, $actionval) = $Request->getAction($expected, 'listquizzes');
 
-$view = isset($_REQUEST['view']) ? $_REQUEST['view'] : $action;
-$quizID = QUIZ_getVar($_REQUEST, 'quizID', 'string');
+$view = $Request->getString('view', $action);
+$quizID = $Request->getString('quizID');
 if ($quizID == '') {
-    // Question update submissions have "id" as the id field name
-    $quizID = QUIZ_getVar($_REQUEST, 'id', 'string');
+    // Question update submissions have "id" as the quiz_id field name
+    $quizID = $Request->getString('id');
 }
 $quizID = COM_sanitizeID($quizID, false);
-$questionID = isset($_REQUEST['questionID']) ? (int)$_REQUEST['questionID'] : 0;
-$msg = isset($_GET['msg']) && !empty($_GET['msg']) ? $_GET['msg'] : '';
+$questionID = $Request->getInt('questionID');
+$msg = $Request->getString('msg');
 $content = '';
 
 switch ($action) {
 case 'action':      // Got "?action=something".
     switch ($actionval) {
     case 'bulkfldaction':
-        if (!isset($_POST['cb']) || !isset($_POST['quizID']))
+        if (!isset($Request['cb']) || !isset($Request['quizID'])) {
             break;
+        }
         $id = $_POST['quizID'];    // Override the usual 'id' parameter
-        $fldaction = isset($_POST['fldaction']) ? $_POST['fldaction'] : '';
+        $fldaction = $Request->getString('fldaction');
 
         switch ($fldaction) {
         case 'rmfld':
         case 'killfld':
             $deldata = $fldaction = 'killfld' ? true : false;
             $F = new Question();
-            foreach ($_POST['cb'] as $varname=>$val) {
+            foreach ($Request->getArray('cb') as $varname=>$val) {
                 $F->Read($varname);
                 if (!empty($F->id)) {
                     $F->Remove($id, $deldata);
@@ -95,10 +86,10 @@ case 'action':      // Got "?action=something".
     break;
 
 case 'updateresult':
-    $F = new Quizzer\Quiz($_POST['quizID']);
-    $R = new Quizzer\Result($_POST['res_id']);
+    $F = new Quizzer\Quiz($quizID);
+    $R = new Quizzer\Result($Result->getInt('res_id'));
     // Clear the moderation flag when saving a moderated submission
-    $R->SaveData($_POST['quizID'], $F->fields, $_POST, $R->uid);
+    $R->SaveData($quizID, $F->fields, $Request->toArray(), $R->uid);
     Quizzer\Result::Approve($R->id);
     $view = 'results';
     break;
@@ -118,17 +109,18 @@ case 'delresult':
     break;
 
 case 'updatequestion':
-    $Q = Quizzer\Question::getInstance($_POST, $quizID);
+    $Q = Quizzer\Question::getInstance($Request->toArray(), $quizID);
     if ($Q) {
-        $msg = $Q->SaveDef($_POST);
+        $msg = $Q->SaveDef($Request->toArray());
     }
     $view = 'editquiz';
     break;
 
 case 'delQuizmulti':
-    if (isset($_POST['delfield']) && is_array($_POST['delfield'])) {
+    $delfield = $Request->getArray('delfield');
+    if (!empty($delfield)) {
         // Deleting one or more fields
-        foreach ($_POST['delfield'] as $key=>$value) {
+        foreach ($delfield as $key=>$value) {
             Quizzer\Quiz::DeleteDef($value);
         }
     }
@@ -136,11 +128,12 @@ case 'delQuizmulti':
     break;
 
 case 'savequiz':
-    $Q = new Quizzer\Quiz($_POST['old_id']);
-    $msg = $Q->SaveDef($_POST);
-    if ($msg != '') {                   // save operation failed
+    $old_id = $Request->getString('old_id');
+    $Q = new Quizzer\Quiz($old_id);
+    $msg = $Q->SaveDef($Request->toArray());
+    if ($msg != '') {               // save operation failed
         $view = 'editquiz';
-    } elseif (empty($_POST['old_id'])) {    // New form, return to add fields
+    } elseif (empty($old_id)) {     // New form, return to add fields
         $quizID = $Q->getID();
         $view = 'editquiz';
         $msg = 6;
@@ -151,8 +144,7 @@ case 'savequiz':
 
 case 'delQuiz':
     // Delete a form definition.  Also deletes user values.
-    $id = $_REQUEST['quizID'];
-    $msg = Quizzer\Quiz::DeleteDef($id);
+    $msg = Quizzer\Quiz::DeleteDef($quizID);
     $view = 'listquizzes';
     break;
 
@@ -163,9 +155,18 @@ case 'resetquiz':
     break;
 
 case 'delQuestion':
-    // Delete a field definition.  Also deletes user values.
-    $msg = Quizzer\Question::Delete($questionID);
+    // Delete a single question.
+    Quizzer\Question::Delete(array($questionID));
     $view = 'editquiz';
+    break;
+
+case 'delbutton':
+case 'delbutton_x':
+    if (isset($Request['delquestion'])) {
+        $q_ids = $Request->getArray('delquestion');
+        Quizzer\Question::Delete($q_ids);
+        $view = 'editquiz';
+    }
     break;
 }
 
@@ -256,4 +257,3 @@ $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
 $display .= COM_siteFooter();
 echo $display;
 exit;
-

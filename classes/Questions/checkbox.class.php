@@ -3,9 +3,9 @@
  * Class to handle checkbox quiz questions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.0.4
+ * @version     v0.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -91,7 +91,7 @@ class checkbox extends \Quizzer\Question
      *
      * @return   array      Array of correct answer IDs
      */
-    public function getCorrectAnswers()
+    public function getCorrectAnswers() : array
     {
         $retval = array();
         foreach ($this->Answers as $a_id => $ans) {
@@ -119,5 +119,3 @@ class checkbox extends \Quizzer\Question
     }
 
 }
-
-?>

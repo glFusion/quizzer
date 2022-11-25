@@ -5,15 +5,16 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.1.0
+ * @version     v0.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Quizzer;
-use Quizzer\Models\Score;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Quizzer\Models\Score;
+use Quizzer\Models\DataArray;
 
 
 /**
@@ -76,7 +77,7 @@ class Result
     {
         if (is_array($resultID)) {
             // Already read from the DB, just load the values
-            $this->SetVars($resultID);
+            $this->setVars(new DataArray($resultID));
         } elseif ($resultID > 0) {
             // Result ID supplied, read it
             $this->resultID = (int)$resultID;
@@ -171,7 +172,7 @@ class Result
             $data = NULL;
         }
         if (is_array($data)) {
-            $this->setVars($data);
+            $this->setVars(new DataArray($data));
             return true;
         } else {
             return false;
@@ -200,22 +201,18 @@ class Result
     /**
      * Set all the variables from a DB record.
      *
-     * @param   array   $A      Array of values
+     * @param   DataArray   $A  Array of values
      */
-    public function SetVars($A)
+    public function setVars(DataArray $A) : void
     {
-        if (!is_array($A)) {
-            return false;
-        }
-
-        $this->resultID = (int)$A['resultID'];
-        $this->quizID = COM_sanitizeID($A['quizID']);
-        $this->ts = (int)$A['ts'];
-        $this->uid = (int)$A['uid'];
-        $this->ip = $A['ip'];
-        $this->token = $A['token'];
-        $this->asked = (int)$A['asked'];
-        $this->introfields = @unserialize($A['introfields']);
+        $this->resultID = $A->getInt('resultID');
+        $this->quizID = COM_sanitizeID($A->getString('quizID'));
+        $this->ts = $A->getInt('ts');
+        $this->uid = $A->getInt('uid');
+        $this->ip = $A->getString('ip');
+        $this->token = $A->getString('token');
+        $this->asked = $A->getInt('asked');
+        $this->introfields = $A->unserialize('introfields');
         if (!is_array($this->introfields)) {
             $this->introfields = array();
         }
@@ -380,19 +377,18 @@ class Result
         }
         if (!empty($r_ids)) {
             try {
-                $db->conn->delete(
-                    $_TABLES['quizzer_values'],
-                    array('resultID' => $r_ids),
+                $db->conn->executeStatement(
+                    "DELETE FROM {$_TABLES['quizzer_values']} WHERE resultID IN (?)",
+                    array($r_ids),
                     array(Database::PARAM_INT_ARRAY)
                 );
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
             }
-
             try {
-                $db->conn->delete(
-                    $_TABLES['quizzer_results'],
-                    array('resultID' => $r_ids),
+                $db->conn->executeStatement(
+                    "DELETE FROM {$_TABLES['quizzer_results']} WHERE resultID IN (?)",
+                    array($r_ids),
                     array(Database::PARAM_INT_ARRAY)
                 );
             } catch (\Throwable $e) {
@@ -837,4 +833,3 @@ class Result
     }
 
 }
-

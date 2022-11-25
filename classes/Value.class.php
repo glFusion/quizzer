@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzes
- * @version     v0.1.1
+ * @version     v0.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -13,6 +13,7 @@
 namespace Quizzer;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Quizzer\Models\DataArray;
 
 
 /**
@@ -50,13 +51,13 @@ class Value
      * @param   integer $resultID     ID of the result set, if any
      * @param   integer $questionID       Question ID
      */
-    public function __construct($resultID = 0, $questionID = 0)
+    public function __construct($resultID=0, int $questionID=0)
     {
         global $_USER, $_CONF_QUIZ, $_TABLES;
 
         $this->isNew = true;
         if (is_array($resultID)) {
-            $this->setVars($resultID, true);
+            $this->setVars(new DataArray($resultID), true);
             $this->isNew = false;
         } else {
             $this->Read((int)$resultID, (int)$questionID);
@@ -94,7 +95,7 @@ class Value
             $data = false;
         }
         if (!empty($data)) {
-            if ($this->setVars($data, true)) {
+            if ($this->setVars(new DataArray($data), true)) {
                 $this->isNew = false;
                 return true;
             }
@@ -107,18 +108,14 @@ class Value
      * Set all variables for this field.
      * Data is expected to be from $_POST or a database record.
      *
-     * @param   array   $A      Array of name=>value pairs from DB or 
+     * @param   DataArray   $A  Array of name=>value pairs from DB or form
      * @param   boolean $fromDB True if reading from the DB, False if from a form
      */
-    public function setVars($A, $fromDB=false)
+    public function setVars(DataArray $A, bool $fromDB=false) : bool
     {
-        if (!is_array($A)) {
-            return false;
-        }
-
-        $this->resultID   = isset($A['resultID']) ? (int)$A['resultID'] : 0;
-        $this->questionID     = isset($A['questionID']) ? (int)$A['questionID'] : 0;;
-        $this->orderby  = isset($A['orderby']) ? (int)$A['orderby'] : 0;;
+        $this->resultID = $A->getInt('resultID');
+        $this->questionID = $A->getInt('questionID');
+        $this->orderby = $A->getInt('orderby');
         if ($fromDB) {
             if ($A['value'] == self::FORFEIT || $A['value'] == self::UNANSWERED) {
                 $this->value = $A['value'];
@@ -130,7 +127,7 @@ class Value
             }
         } else {
             // Coming from a submission form
-            $this->value    = isset($A['value']) ? $A['value'] : '';
+            $this->value = $A->getString('value');
         }
         return true;
     }
@@ -157,6 +154,24 @@ class Value
             );
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+    }
+
+
+    public static function deleteByQuestion(array $q_ids) : bool
+    {
+        global $_TABLES;
+
+        try {
+            Database::getInstance()->conn->executeStatement(
+                "DELETE FROM {$_TABLES['quizzer_values']} WHERE questionID IN (?)",
+                array($q_ids),
+                array(Database::PARAM_INT_ARRAY)
+            );
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -281,7 +296,7 @@ class Value
             $data = false;
         }
         if (is_array($data)) {
-            return (int)$data['resultID'];
+            return (int)$data['questionID'];
         } else {
             return 0;
         }

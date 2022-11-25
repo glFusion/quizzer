@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     quizzer
- * @version     v0.1.0
+ * @version     v0.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -13,6 +13,7 @@
 namespace Quizzer;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
+use Quizzer\Models\DataArray;
 
 
 /**
@@ -107,11 +108,11 @@ class Question
         if ($questionID == 0) {
             $this->quizID = $quizID;
         } elseif (is_array($questionID)) {
-            $this->setVars($questionID, true);
+            $this->setVars(new DataArray($questionID));
         } else {
             $q = self::Read($questionID);
             if ($q) {
-                $this->setVars($q);
+                $this->setVars(new DataArray($q));
             }
         }
         $this->Answers = Answer::getByQuestion($this->questionID);
@@ -171,7 +172,7 @@ class Question
      * @param   integer $id     Record ID of question
      * @return  array           DB record array
      */
-    public static function Read($id = 0)
+    public static function Read(int $id=0) : ?array
     {
         global $_TABLES;
         $id = (int)$id;
@@ -185,7 +186,7 @@ class Question
                     WHERE questionID = ?",
                     array($id),
                     array(Database::INTEGER)
-                )->fetch(Database::ASSOCIATIVE);
+                )->fetchAssociative();
             } catch (\Throwable $e) {
                 Log::write('system', Log::ERROR, __CLASS__.'::'.__FUNCTION__.': '.$e->getMessage());
                 $data = NULL;
@@ -193,7 +194,7 @@ class Question
             if (is_array($A)) {
                 Cache::set($cache_key, $A, array('questions', $A['quizID']));
             } else {
-                $A = false;
+                $A = NULL;
             }
         }
         return $A;
@@ -204,25 +205,21 @@ class Question
      * Set all variables for this field.
      * Data is expected to be from $_POST or a database record
      *
-     * @param   array   $A      Array of name->value pairs
-     * @param   boolean $fromDB Indicate whether this is read from the DB
+     * @param   DataArray   $A      Array of name->value pairs
      * @return  object  $this
      */
-    public function setVars($A, $fromDB=false)
+    public function setVars(DataArray $A) : self
     {
-        if (!is_array($A)) {
-            return false;
-        }
-        $this->questionID = $A['questionID'];
-        $this->quizID = $A['quizID'];
-        $this->enabled = isset($A['enabled']) ? $A['enabled'] : 0;
-        $this->questionText = $A['questionText'];
-        $this->questionType = $A['questionType'];
-        $this->postAnswerMsg = $A['postAnswerMsg'];
-        $this->allowPartialCredit = isset($A['allowPartialCredit']) && $A['allowPartialCredit'] == 1 ? 1 : 0;
-        $this->randomizeAnswers = isset($A['randomizeAnswers']) && $A['randomizeAnswers'] == 1 ? 1 : 0;
-        $this->timelimit = isset($A['timelimit']) ? (int)$A['timelimit'] : 0;
-        $this->advanced_editor_mode = isset($A['advanced_editor_mode']) ? (int)$A['advanced_editor_mode'] : 0;
+        $this->questionID = $A->getInt('questionID');
+        $this->quizID = COM_sanitizeID($A->getString('quizID'));
+        $this->enabled = $A->getInt('enabled');
+        $this->questionText = $A->getString('questionText');
+        $this->questionType = $A->getString('questionType');
+        $this->postAnswerMsg = $A->getString('postAnswerMsg');
+        $this->allowPartialCredit = $A->getInt('allowPartialCredit');
+        $this->randomizeAnswers = $A->getInt('randomizeAnswers');
+        $this->timelimit = $A->getInt('timelimit');
+        $this->advanced_editor_mode = $A->getInt('advanced_editor_mode');
         return $this;
     }
 
@@ -356,12 +353,12 @@ class Question
 
     /**
      * Get the ID of the correct answer.
-     * Returns an array regardless of the actuall numbrer of possibilities
+     * Returns an array regardless of the actual number of possibilities
      * to ensure uniform handling by the caller.
      *
      * @return   array      Array of correct answer IDs
      */
-    public function getCorrectAnswers()
+    public function getCorrectAnswers() : array
     {
         return array();
     }
@@ -380,6 +377,7 @@ class Question
         $format_str = '';
         $listinput = '';
 
+        $db = Database::getInstance();
         $T = new \Template(QUIZ_PI_PATH. '/templates/admin');
         $T->set_file('editform', 'editquestion.thtml');
 
@@ -478,69 +476,66 @@ class Question
     /**
      * Save the field definition to the database.
      *
-     * @param   array   $A  Array of name->value pairs
-     * @return  string          Error message, or empty string for success
+     * @param   DataArray   $A  Array of name->value pairs
+     * @return  integer     Message ID to display
      */
-    public function SaveDef(?array $A)
+    public function saveDef(?DataArray $A=NULL) : int
     {
         global $_TABLES;
 
-        if (is_array($A)) {
-            $questionID = isset($A['questionID']) ? (int)$A['questionID'] : 0;
-            $quizID = isset($A['quizID']) ? COM_sanitizeID($A['quizID']) : '';
-            $this->setVars($A, false);
+        if ($A) {
+            $this->setVars($A);
         }
 
         if ($this->quizID == '') {
-            return 'Invalid form ID';
+            return 8;
         }
         if (empty($this->questionType)) {
-            return;
+            return 9;
         }
 
         $db = Database::getInstance();
-        $qb = $db->conn->createQueryBuilder();
-        if ($this->questionID > 0) {
-            // Existing record, perform update
-            $qb->update($_TABLES['quizzer_questions'])
-               ->set('quizID', ':quizID')
-               ->set('questionType', ':questionType')
-               ->set('enabled', ':enabled')
-               ->set('help_msg', ':help_msg')
-               ->set('questionText', ':questionText')
-               ->set('postAnswerMsg', ':postAnswerMsg')
-               ->set('allowPartialCredit', ':allowPartialCredit')
-               ->set('randomizeAnswers', ':randomizeAnswers')
-               ->set('timelimit', ':timelimit')
-               ->set('advanced_editor_mode', ':advanced_editor_mode')
-               ->where('questionID = :questionID');
-        } else {
-            $qb->insert($_TABLES['quizzer_questions'])
-               ->setValue('quizID', ':quizID')
-               ->setValue('questionType', ':questionType')
-               ->setValue('enabled', ':enabled')
-               ->setValue('help_msg', ':help_msg')
-               ->setValue('questionText', ':questionText')
-               ->setValue('postAnswerMsg', ':postAnswerMsg')
-               ->setValue('allowPartialCredit', ':allowPartialCredit')
-               ->setValue('randomizeAnswers', ':randomizeAnswers')
-               ->setValue('timelimit', ':timelimit')
-               ->setValue('advanced_editor_mode', ':advanced_editor_mode');
-        }
-        $qb->setParameter('questionID', $this->questionID, Database::INTEGER)
-            ->setParameter('quizID', $this->quizID, Database::INTEGER)
-            ->setParameter('questionType', $this->questionType, Database::STRING)
-            ->setParameter('enabled', $this->enabled, Database::INTEGER)
-            ->setParameter('help_msg', $this->help_msg, Database::STRING)
-            ->setParameter('questionText', $this->questionText, Database::STRING)
-            ->setParameter('postAnswerMsg', $this->postAnswerMsg, Database::STRING)
-            ->setParameter('allowPartialCredit', $this->allowPartialCredit, Database::INTEGER)
-            ->setParameter('randomizeAnswers', $this->randomizeAnswers, Database::INTEGER)
-            ->setParameter('timelimit', $this->getTimelimit(), Database::INTEGER)
-            ->setParameter('advanced_editor_mode', $this->advanced_editor_mode, Database::INTEGER);
+        $values = array(
+            'quizID' => $this->quizID,
+            'questionID' => $this->questionID,
+            'questionType' => $this->questionType,
+            'enabled' => $this->enabled,
+            'help_msg' => $this->help_msg,
+            'questionText' => $this->questionText,
+            'postAnswerMsg' => $this->postAnswerMsg,
+            'allowPartialCredit' => $this->allowPartialCredit,
+            'randomizeAnswers' => $this->randomizeAnswers,
+            'timelimit' => $this->getTimelimit(),
+            'advanced_editor_mode' => $this->advanced_editor_mode,
+        );
+        $types = array(
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::INTEGER,
+            Database::STRING,
+            Database::STRING,
+            Database::STRING,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+            Database::INTEGER,
+        );
+
         try {
-            $qb->execute();
-            $this->questionID = $db->conn->lastInsertId();
+            if ($this->questionID > 0) {
+                // Existing record, perform update.
+                $types[] = Database::INTEGER;   // for questionID
+                $db->conn->update(
+                    $_TABLES['quizzer_questions'],
+                    $values,
+                    array('questionID' => $this->questionID),
+                    $types
+                );
+            } else {
+                $db->conn->insert($_TABLES['quizzer_questions'], $values, $types);
+                $this->questionID = $db->conn->lastInsertId();
+            }
         } catch (\Throwable $e) {
             Log::write('system', Log::ERROR, $e->getMessage());
             return 5;
@@ -559,7 +554,7 @@ class Question
                 $Ans = new Answer;
                 $Ans->setQid($this->questionID)
                     ->setAid($i)
-                    ->setValue($answer)
+                    ->setValue($A['opt'][$i])
                     ->setCorrect($correct)
                     ->Save();
             } else {
@@ -567,7 +562,7 @@ class Question
             }
         }
         if (!empty($to_del)) {
-            Answer::Delete($this->questionID, implode(',', $to_del));
+            Answer::Delete(array($this->questionID), $to_del);
         }
         Cache::clear(array('questions', $this->quizID));
         Cache::clear(array('answers', $this->questionID));
@@ -578,23 +573,32 @@ class Question
     /**
      * Delete the current question definition.
      *
-     * @param  integer $questionID     ID number of the question
+     * @param   array   $q_ids  Array of question IDs
+     * @return  boolean     True on success, False on error
      */
-    public static function Delete(int $questionID) : void
+    public static function Delete(array $q_ids) : bool
     {
         global $_TABLES;
 
         $db = Database::getInstance();
-        $db->conn->delete(
-            $_TABLES['quizzer_questions'],
-            array('questionID' => $questionID),
-            array(Database::INTEGER)
-        );
-        $db->conn->delete(
-            $_TABLES['quizzer_answers'],
-            array('questionID' => $questionID),
-            array(Database::INTEGER)
-        );
+        if (!Value::deleteByQuestion($q_ids)) {
+            return false;
+        }
+        if (!Answer::Delete($q_ids)) {
+            return false;
+        }
+        try {
+            $db->conn->executeStatement(
+                "DELETE FROM {$_TABLES['quizzer_questions']}
+                WHERE questionID IN (?)",
+                array($q_ids),
+                array(Database::PARAM_INT_ARRAY)
+            );
+            return true;
+        } catch (\Throwable $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
 
@@ -769,7 +773,7 @@ class Question
      * @param   string  $quizID    ID of the quiz
      * return   integer     Number of quiz questions in the database
      */
-    public static function countQ($quizID)
+    public static function countQ(string $quizID) : int
     {
         global $_TABLES;
 
