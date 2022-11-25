@@ -88,7 +88,7 @@ var QUIZ_submit = function(frm_id)
     stopQuizTimer();
 
     $.ajax({
-        type: "POST",
+        type: "post",
         dataType: "json",
         url: glfusionSiteUrl + "/quizzer/ajax.php?action=saveresponse",
         data: data,
@@ -175,7 +175,7 @@ jQuery(function ($) {
 <!-- BEGIN AnswerRow -->
             <div class="qz-answer-wrapper">
                 <div id="row_{a_id}" class="qz-answerrow {border_class}">
-        <label>
+        <label for="ans_id_{a_id}">
           <span class="qz-answerrow qz-question">{answer}</span>
           <span class="qz-answerrow qz-select">{answer_select}</span>
         </label>
@@ -188,7 +188,7 @@ jQuery(function ($) {
 {!if postAnswerMag}
 <div id="answer_msg" class="qz-answermsg uk-alert" style="display:{answer_vis};">{postAnswerMsg}</div>
 {!else}
-<span id="answer_msg" style="display:none;"></span>
+<div id="answer_msg" class="qz-answermsg uk-alert" style="display:none;"></div>
 {!endif}
 <div class="qz-buttons">
 <button type="submit" class="uk-button uk-button-success" id="btn_save" name="saveanswer" onclick="return QUIZ_submit('quiz_form');" style="display:{sub_btn_vis};">{$LANG_ADMIN['submit']}</button>
