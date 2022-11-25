@@ -35,7 +35,7 @@ $_TABLES['quizzer_values']   = $_DB_table_prefix . 'quizzer_values';
  */
 global $_CONF_QUIZ;
 $_CONF_QUIZ['pi_name']           = 'quizzer';
-$_CONF_QUIZ['pi_version']        = '0.1.1';
+$_CONF_QUIZ['pi_version']        = '0.1.1.1';
 $_CONF_QUIZ['gl_version']        = '2.0.0';
 $_CONF_QUIZ['pi_url']            = 'http://www.glfusion.org';
 $_CONF_QUIZ['pi_display_name']   = 'Quizzer';
